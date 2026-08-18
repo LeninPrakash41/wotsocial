@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { auth } from '../auth';
-import { Sparkles, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ShieldCheck, AlertCircle, Loader2, Sparkles, Bot } from 'lucide-react';
 
 export function Login() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export function Login() {
       navigate(from, { replace: true });
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err.message || "Invalid credentials. Please try again.");
+      setError(err.message || "Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -46,101 +46,125 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Glow Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10 space-y-6">
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 bg-white text-black rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-white/10 font-bold text-2xl">
-            W
+    <div className="min-h-screen bg-[#f5f5f4] text-[#0a0a0a] font-sans flex flex-col justify-between p-4 md:p-8">
+      {/* Navigation Header */}
+      <header className="max-w-6xl w-full mx-auto flex items-center justify-between py-2">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+            <span className="text-white font-bold text-xl">W</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Welcome to WotSocial</h1>
-          <p className="text-sm text-slate-400">Sign in to manage your AI agents & brand campaigns</p>
-        </div>
+          <span className="font-bold text-xl tracking-tight text-gray-900">WotSocial</span>
+        </Link>
+        <span className="text-xs font-semibold px-3 py-1 bg-purple-50 text-purple-700 border border-purple-100 rounded-full flex items-center gap-1.5">
+          <Bot className="w-3.5 h-3.5" />
+          Agentic Social Automation Platform
+        </span>
+      </header>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-3 text-red-400 text-sm">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <span>{error}</span>
+      {/* Main Login Card Container */}
+      <div className="w-full max-w-md mx-auto my-auto py-8">
+        <div className="bg-white border border-gray-200 rounded-3xl p-8 md:p-10 shadow-sm hover:shadow-md transition-shadow space-y-6">
+          {/* Brand & Heading */}
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md shadow-black/10">
+              <span className="text-white font-bold text-2xl">W</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Sign in to WotSocial</h1>
+            <p className="text-sm text-gray-500">Access your social media expertise AI agents & ad campaigns</p>
           </div>
-        )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-slate-600"
-                placeholder="admin@wotsocial.com"
-              />
+          {/* Error Alert */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 flex items-center gap-3 text-red-700 text-sm">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 font-medium"
+                  placeholder="admin@wotsocial.com"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 font-medium"
+                  placeholder="••••••••••••"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-sm text-sm disabled:opacity-50 mt-2"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  Sign In <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-gray-400 font-medium tracking-wider">Or</span>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-slate-600"
-                placeholder="••••••••••••"
-              />
-            </div>
-          </div>
-
+          {/* Quick Admin Access Button */}
           <button
-            type="submit"
+            type="button"
+            onClick={handleQuickAdminLogin}
             disabled={loading}
-            className="w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5 disabled:opacity-50 mt-2"
+            className="w-full py-3 bg-purple-50 text-purple-900 border border-purple-100 font-semibold rounded-xl hover:bg-purple-100 transition-all text-sm flex items-center justify-center gap-2"
           >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                Sign In <ArrowRight className="w-4 h-4" />
-              </>
-            )}
+            <ShieldCheck className="w-4 h-4 text-purple-700" />
+            Quick Admin Sign In (1-Click)
           </button>
-        </form>
 
-        {/* Divider */}
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-800" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-slate-900 px-3 text-slate-500 font-medium">Or</span>
+          {/* Credentials Info Badge */}
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3.5 text-center text-xs text-gray-500 space-y-1">
+            <div className="font-semibold text-gray-700 flex items-center justify-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              Seeded Admin Credentials
+            </div>
+            <p>Email: <code className="bg-gray-200/60 px-1.5 py-0.5 rounded text-gray-800 font-mono text-[11px]">admin@wotsocial.com</code></p>
+            <p>Password: <code className="bg-gray-200/60 px-1.5 py-0.5 rounded text-gray-800 font-mono text-[11px]">Admin@123456</code></p>
           </div>
         </div>
-
-        {/* Quick Admin Access Button */}
-        <button
-          type="button"
-          onClick={handleQuickAdminLogin}
-          disabled={loading}
-          className="w-full py-3 bg-purple-950/40 border border-purple-800/50 hover:bg-purple-900/50 text-purple-200 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
-        >
-          <ShieldCheck className="w-4 h-4 text-purple-400" />
-          Quick Admin Sign In (1-Click)
-        </button>
-
-        <p className="text-center text-xs text-slate-500">
-          Default Admin: <code className="text-slate-400">admin@wotsocial.com</code>
-        </p>
       </div>
+
+      {/* Footer */}
+      <footer className="max-w-6xl w-full mx-auto text-center py-4 text-xs text-gray-500">
+        © {new Date().getFullYear()} WotSocial AI Platform. Powered by Gemini & Claude Multi-Agent Automation.
+      </footer>
     </div>
   );
 }
