@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp, limit, getDoc } from 'firebase/firestore';
-import { Loader2, Bot, Sparkles, Target, Users, Search, ShieldCheck, ArrowRight, CheckCircle2, RefreshCw, Send, AlertTriangle, Layers, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Bot, Sparkles, Target, Users, Search, ShieldCheck, ArrowRight, CheckCircle2, RefreshCw, Send, AlertTriangle, Layers, Calendar, ChevronDown, ChevronUp, Megaphone, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   runEndToEndAgentPipeline, 
@@ -14,6 +14,7 @@ import {
   runMarketingStrategyAgent,
   runPostGenerationAgent
 } from '../services/agentService';
+import { downloadGoogleAdsEditorCSV } from '../services/adService';
 import { cn } from '../lib/utils';
 
 export function AgentStudio() {
@@ -39,7 +40,7 @@ export function AgentStudio() {
   const [pipelineResult, setPipelineResult] = useState<AgentPipelineResult | null>(null);
 
   // UI accordion state
-  const [expandedSection, setExpandedSection] = useState<'site' | 'competitor' | 'audience' | 'strategy' | 'posts' | null>('site');
+  const [expandedSection, setExpandedSection] = useState<'site' | 'competitor' | 'audience' | 'strategy' | 'posts' | 'ads' | null>('site');
   const [savingToBrand, setSavingToBrand] = useState(false);
   const [brandSavedSuccess, setBrandSavedSuccess] = useState(false);
   const [schedulingPosts, setSchedulingPosts] = useState(false);
@@ -348,13 +349,14 @@ export function AgentStudio() {
             {running && <span className="text-xs text-amber-400 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Processing agents...</span>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
             {[
               'Site Analysis Agent',
               'Competitor Analysis Agent',
               'Target Audience Agent',
               'Marketing Strategy Agent',
-              'Post Generation Agent'
+              'Post Generation Agent',
+              'Paid Ad Specialist Agent'
             ].map((stepName, i) => {
               const log = stepLogs.find(l => l.step === stepName);
               const isRunning = log?.status === 'running';
@@ -672,6 +674,110 @@ export function AgentStudio() {
               </div>
             )}
           </div>
+
+          {/* Section 6: Paid Ad Specialist Agent Results */}
+          {pipelineResult.adCampaign && (
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+              <button
+                onClick={() => setExpandedSection(expandedSection === 'ads' ? null : 'ads')}
+                className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-amber-600 to-black text-white text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Megaphone className="w-5 h-5 text-amber-300" />
+                  <div>
+                    <h3 className="font-semibold text-white">6. Paid Ad Campaign Agent Results (Meta & Google Ads)</h3>
+                    <p className="text-xs text-amber-200">AIDA/PAS Meta copy, 15 Google RSA headlines, and 1-click Google Ads CSV Export</p>
+                  </div>
+                </div>
+                {expandedSection === 'ads' ? <ChevronUp className="w-5 h-5 text-amber-200" /> : <ChevronDown className="w-5 h-5 text-amber-200" />}
+              </button>
+
+              {expandedSection === 'ads' && (
+                <div className="p-6 border-t border-gray-100 space-y-6">
+                  {/* Meta Ad Card */}
+                  <div className="border border-gray-200 rounded-xl p-5 space-y-3 bg-gray-50/60">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                      <span className="font-bold text-xs text-gray-900">Meta Sponsored Ad Package (FB & IG)</span>
+                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">{pipelineResult.adCampaign.metaAd.framework} Framework</span>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Primary Text (Short):</span>
+                        <p className="font-medium text-gray-900 bg-white p-2.5 rounded-lg border border-gray-200">{pipelineResult.adCampaign.metaAd.primaryTextShort}</p>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Primary Text (Long / Storytelling):</span>
+                        <p className="text-gray-800 bg-white p-2.5 rounded-lg border border-gray-200 whitespace-pre-wrap">{pipelineResult.adCampaign.metaAd.primaryTextLong}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 pt-1">
+                        <div>
+                          <span className="font-bold text-gray-400 uppercase text-[10px]">Ad Headline ($\le 45$ chars):</span>
+                          <p className="font-bold text-gray-900 text-sm">{pipelineResult.adCampaign.metaAd.headline}</p>
+                        </div>
+                        <div>
+                          <span className="font-bold text-gray-400 uppercase text-[10px]">Recommended CTA Button:</span>
+                          <p className="font-bold text-blue-600">{pipelineResult.adCampaign.metaAd.ctaButton}</p>
+                        </div>
+                      </div>
+
+                      {/* Meta Targeting */}
+                      <div className="pt-2 border-t border-gray-200">
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Meta Ads Manager Interest Categories:</span>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {pipelineResult.adCampaign.metaAd.metaTargeting.interests.map((int, i) => (
+                            <span key={i} className="bg-purple-50 text-purple-900 text-[10px] font-semibold px-2.5 py-0.5 rounded border border-purple-200">{int}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Google RSA Card */}
+                  <div className="border border-gray-200 rounded-xl p-5 space-y-3 bg-white">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                      <span className="font-bold text-xs text-emerald-800">Google Search Ads (Responsive Search Ads - RSA)</span>
+                      <button
+                        onClick={() => downloadGoogleAdsEditorCSV(pipelineResult.adCampaign!.googleAd)}
+                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download Google Ads CSV
+                      </button>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">15 Responsive Search Headlines ($\le 30$ chars):</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 mt-1">
+                          {pipelineResult.adCampaign.googleAd.headlines.map((h, i) => (
+                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
+                              <span className="font-semibold text-gray-900 line-clamp-1">{h}</span>
+                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{h.length}/30</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">4 Descriptions ($\le 90$ chars):</span>
+                        <div className="space-y-1 mt-1">
+                          {pipelineResult.adCampaign.googleAd.descriptions.map((d, i) => (
+                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
+                              <span className="text-gray-800">{d}</span>
+                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{d.length}/90</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

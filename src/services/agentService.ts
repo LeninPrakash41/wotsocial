@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { generateClaudeJSON, getClaudeApiKey } from "./claudeService";
+import { generatePaidAdCampaign, PaidAdCampaignPackage } from "./adService";
 
 export type AIProvider = 'gemini' | 'claude';
 export type AIModel = 'gemini-3-flash' | 'gemini-3.1-pro' | 'claude-3-5-sonnet' | 'claude-3-opus';
@@ -74,6 +75,7 @@ export interface AgentPipelineResult {
   audienceProfile: AudienceProfileResult;
   marketingStrategy: MarketingStrategyResult;
   postPackages: GeneratedPostPackage[];
+  adCampaign?: PaidAdCampaignPackage;
 }
 
 // Helper dispatcher for LLM execution
@@ -431,11 +433,24 @@ export const runEndToEndAgentPipeline = async (params: {
   });
   onProgress?.('Post Generation Agent', 'completed', postPackages);
 
+  // Step 6: Paid Ad Specialist Agent
+  onProgress?.('Paid Ad Specialist Agent', 'running');
+  const adCampaign = await generatePaidAdCampaign({
+    productOrOffer: siteAnalysis.keyOfferings[0] || siteAnalysis.valueProposition,
+    brand: { name: params.brandName, industry: params.industry, brandTone: siteAnalysis.brandVoice },
+    targetObjective: 'Conversions',
+    destinationUrl: params.websiteUrl || 'https://example.com',
+    provider: params.provider,
+    model: params.model
+  });
+  onProgress?.('Paid Ad Specialist Agent', 'completed', adCampaign);
+
   return {
     siteAnalysis,
     competitorAnalysis,
     audienceProfile,
     marketingStrategy,
-    postPackages
+    postPackages,
+    adCampaign
   };
 };

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, limit, doc, getDoc } from 'firebase/firestore';
-import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook, Megaphone, Download, ExternalLink, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import * as geminiService from '../services/geminiService';
 import { generateOpenArtVideo, generateOpenArtImage, generateSeedanceVideo } from '../services/mediaService';
 import { publishPostToPlatforms } from '../services/socialPostingService';
+import { generatePaidAdCampaign, downloadGoogleAdsEditorCSV, PaidAdCampaignPackage } from '../services/adService';
 
 declare global {
   interface Window {
@@ -48,6 +49,14 @@ export function ContentGenerator() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [fetchingSuggestions, setFetchingSuggestions] = useState(false);
   const [trendSearchQuery, setTrendSearchQuery] = useState('');
+  
+  // Paid Ads State
+  const [generatorType, setGeneratorType] = useState<'organic' | 'ads'>('organic');
+  const [adObjective, setAdObjective] = useState('Conversions');
+  const [adDestinationUrl, setAdDestinationUrl] = useState('');
+  const [generatingAds, setGeneratingAds] = useState(false);
+  const [generatedAdCampaign, setGeneratedAdCampaign] = useState<PaidAdCampaignPackage | null>(null);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -314,9 +323,39 @@ export function ContentGenerator() {
 
   return (
     <div className="space-y-8 max-w-6xl">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content Generator</h1>
-        <p className="text-gray-500 mt-1">Create brand-aligned posts, images, and videos.</p>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content & Campaign Studio</h1>
+          <p className="text-gray-500 mt-1">Generate organic social posts or high-converting paid ad campaigns (Meta & Google Ads).</p>
+        </div>
+
+        {/* Mode Switcher */}
+        <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
+          <button
+            onClick={() => setGeneratorType('organic')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
+              generatorType === 'organic'
+                ? "bg-white text-black shadow-xs"
+                : "text-gray-500 hover:text-gray-900"
+            )}
+          >
+            <PenTool className="w-3.5 h-3.5" />
+            Organic Posts
+          </button>
+          <button
+            onClick={() => setGeneratorType('ads')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
+              generatorType === 'ads'
+                ? "bg-black text-white shadow-xs"
+                : "text-gray-500 hover:text-gray-900"
+            )}
+          >
+            <Megaphone className="w-3.5 h-3.5 text-amber-400" />
+            Paid Ad Campaigns
+          </button>
+        </div>
       </header>
 
       {/* Suggestions Section */}
@@ -407,9 +446,202 @@ export function ContentGenerator() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Input Section */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6 h-fit">
+      {generatorType === 'ads' ? (
+        <div className="space-y-8">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Ad Input Panel */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6 h-fit">
+              <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+                <Megaphone className="w-5 h-5 text-amber-500" />
+                <h2 className="font-bold text-gray-900">Paid Ad Campaign Setup</h2>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-700">Product / Offer / Headline *</label>
+                <textarea 
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+                  placeholder="e.g. Get 30% Off Annual SaaS Subscriptions - Limited Time Cyber Sale"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700">Campaign Objective</label>
+                  <select 
+                    value={adObjective} 
+                    onChange={(e) => setAdObjective(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg bg-white outline-none"
+                  >
+                    <option value="Conversions">Conversions / Sales</option>
+                    <option value="Leads">Lead Generation</option>
+                    <option value="Traffic">Website Traffic</option>
+                    <option value="Brand Awareness">Brand Awareness</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700">Destination Landing URL</label>
+                  <input 
+                    type="url"
+                    value={adDestinationUrl}
+                    onChange={(e) => setAdDestinationUrl(e.target.value)}
+                    placeholder="https://yourbrand.com/offer"
+                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={async () => {
+                  if (!topic) {
+                    alert("Please specify a Product or Offer description.");
+                    return;
+                  }
+                  setGeneratingAds(true);
+                  try {
+                    const result = await generatePaidAdCampaign({
+                      productOrOffer: topic,
+                      brand,
+                      targetObjective: adObjective,
+                      destinationUrl: adDestinationUrl || 'https://example.com'
+                    });
+                    setGeneratedAdCampaign(result);
+                  } catch (err: any) {
+                    alert(`Failed to generate ad campaign: ${err.message || String(err)}`);
+                  } finally {
+                    setGeneratingAds(false);
+                  }
+                }}
+                disabled={generatingAds || !topic}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-black text-white font-semibold rounded-xl hover:opacity-95 transition-all shadow-md disabled:opacity-50"
+              >
+                {generatingAds ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-amber-300" />}
+                {generatingAds ? 'Crafting High-Converting Ads...' : 'Generate Meta & Google Ad Campaign'}
+              </button>
+            </div>
+
+            {/* Ad Preview Panel */}
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm min-h-[450px] flex flex-col">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Ad Creatives & Copy Preview</h2>
+
+              {!generatedAdCampaign && !generatingAds ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                  <Megaphone className="w-12 h-12 mb-3 opacity-20 text-amber-500" />
+                  <p className="text-sm">Meta Ads & Google Search Ads previews will appear here.</p>
+                </div>
+              ) : generatingAds ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                  <Loader2 className="w-8 h-8 animate-spin mb-4 text-amber-500" />
+                  <p className="text-sm font-medium">Formulating AIDA/PAS Meta copy & Google RSA Headlines...</p>
+                </div>
+              ) : (
+                <div className="space-y-6 overflow-y-auto max-h-[600px] pr-1">
+                  {/* Meta Ad Card */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Facebook className="w-4 h-4 text-blue-600" />
+                        <Instagram className="w-4 h-4 text-pink-600" />
+                        <span className="font-bold text-xs text-gray-900">Meta Sponsored Ad (FB & IG)</span>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{generatedAdCampaign.metaAd.framework} Framework</span>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Primary Text (Short):</span>
+                        <p className="font-medium text-gray-900 mt-0.5 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{generatedAdCampaign.metaAd.primaryTextShort}</p>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Headline (Max 45 chars):</span>
+                        <p className="font-bold text-gray-900 text-sm mt-0.5">{generatedAdCampaign.metaAd.headline}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div>
+                          <span className="font-bold text-gray-400 uppercase text-[10px]">Description:</span>
+                          <p className="text-gray-600 text-xs">{generatedAdCampaign.metaAd.description}</p>
+                        </div>
+                        <button className="px-3 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-md shadow-xs">
+                          {generatedAdCampaign.metaAd.ctaButton}
+                        </button>
+                      </div>
+
+                      {/* Meta Targeting */}
+                      <div className="pt-2 border-t border-gray-100">
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Meta Ads Manager Interest Targeting:</span>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {generatedAdCampaign.metaAd.metaTargeting.interests.map((int, i) => (
+                            <span key={i} className="bg-purple-50 text-purple-800 text-[10px] font-medium px-2 py-0.5 rounded border border-purple-100">{int}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Google Search RSA Card */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-emerald-700">Google Search Ads (RSA)</span>
+                      </div>
+                      <button
+                        onClick={() => downloadGoogleAdsEditorCSV(generatedAdCampaign.googleAd)}
+                        className="px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-lg flex items-center gap-1 hover:bg-emerald-700 transition"
+                      >
+                        <Download className="w-3 h-3" />
+                        Export Google Ads CSV
+                      </button>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Responsive Search Headlines (15 Max 30 chars):</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1">
+                          {generatedAdCampaign.googleAd.headlines.map((h, i) => (
+                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
+                              <span className="font-semibold text-gray-800 line-clamp-1">{h}</span>
+                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{h.length}/30</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">Descriptions (4 Max 90 chars):</span>
+                        <div className="space-y-1 mt-1">
+                          {generatedAdCampaign.googleAd.descriptions.map((d, i) => (
+                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
+                              <span className="text-gray-800">{d}</span>
+                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{d.length}/90</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-100">
+                        <span className="font-bold text-gray-400 uppercase text-[10px]">PPC Keywords:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {generatedAdCampaign.googleAd.keywords.map((kw, i) => (
+                            <span key={i} className="font-mono text-[10px] bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded border border-emerald-100">{kw}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Input Section */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6 h-fit">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">What do you want to post about?</label>
             <textarea 
@@ -697,7 +929,7 @@ export function ContentGenerator() {
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
