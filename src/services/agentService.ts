@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { generateClaudeJSON, getClaudeApiKey } from "./claudeService";
 import { generatePaidAdCampaign, PaidAdCampaignPackage } from "./adService";
 import { safeParseJSON } from "./jsonParser";
+import { generateGeminiWithRetry } from "./geminiRetry";
 
 export type AIProvider = 'gemini' | 'claude';
 export type AIModel = 'gemini-3-flash' | 'gemini-3.1-pro' | 'claude-3-5-sonnet' | 'claude-3-opus';
@@ -79,50 +80,7 @@ export interface AgentPipelineResult {
   adCampaign?: PaidAdCampaignPackage;
 }
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function generateGeminiWithRetry(params: {
-  ai: GoogleGenAI;
-  model: string;
-  contents: string;
-  config: any;
-}): Promise<any> {
-  const primaryModel = params.model;
-  const candidateModels = Array.from(new Set([
-    primaryModel,
-    primaryModel.includes('pro') ? 'gemini-2.5-pro' : 'gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-1.5-flash'
-  ]));
-
-  let lastError: any = null;
-
-  for (const modelToTry of candidateModels) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const response = await params.ai.models.generateContent({
-          model: modelToTry,
-          contents: params.contents,
-          config: params.config
-        });
-        return response;
-      } catch (err: any) {
-        lastError = err;
-        const errStr = String(err?.message || '') + JSON.stringify(err || '');
-        const isTransient = errStr.includes('503') || errStr.includes('429') || errStr.includes('high demand') || errStr.includes('UNAVAILABLE') || errStr.includes('RESOURCE_EXHAUSTED');
-
-        if (isTransient) {
-          console.warn(`[Gemini Retry] Model '${modelToTry}' attempt ${attempt}/3 hit transient demand spike. Retrying in ${attempt * 1500}ms...`);
-          await delay(attempt * 1500);
-        } else {
-          throw err;
-        }
-      }
-    }
-  }
-
-  throw lastError;
-}
 
 // Helper dispatcher for LLM execution
 async function runLLMTask<T>(params: {

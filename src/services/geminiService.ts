@@ -1,51 +1,9 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
+import { generateGeminiWithRetry } from "./geminiRetry";
 
 const getApiKey = () => {
   return localStorage.getItem('gemini_api_key') as string;
 };
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function generateWithRetry(params: {
-  ai: GoogleGenAI;
-  model: string;
-  contents: string;
-  config?: any;
-}): Promise<any> {
-  const candidateModels = Array.from(new Set([
-    params.model,
-    params.model.includes('pro') ? 'gemini-2.5-pro' : 'gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-1.5-flash'
-  ]));
-
-  let lastError: any = null;
-
-  for (const modelToTry of candidateModels) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        return await params.ai.models.generateContent({
-          model: modelToTry,
-          contents: params.contents,
-          config: params.config
-        });
-      } catch (err: any) {
-        lastError = err;
-        const errStr = String(err?.message || '') + JSON.stringify(err || '');
-        const isTransient = errStr.includes('503') || errStr.includes('429') || errStr.includes('high demand') || errStr.includes('UNAVAILABLE') || errStr.includes('RESOURCE_EXHAUSTED');
-
-        if (isTransient) {
-          console.warn(`[Gemini Retry] ${modelToTry} hit 503/429 high demand. Retrying in ${attempt * 1500}ms...`);
-          await delay(attempt * 1500);
-        } else {
-          throw err;
-        }
-      }
-    }
-  }
-
-  throw lastError;
-}
 
 export const fetchSuggestions = async (brandData: any, query?: string) => {
   const apiKey = getApiKey();
@@ -77,7 +35,7 @@ export const fetchSuggestions = async (brandData: any, query?: string) => {
   IMPORTANT: Return ONLY a valid JSON array of objects.
   Format: [{"title": "...", "description": "...", "type": "..."}]`;
 
-  const response = await generateWithRetry({
+  const response = await generateGeminiWithRetry({
     ai,
     model: 'gemini-3-flash-preview',
     contents: prompt,

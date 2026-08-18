@@ -1,5 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { generateClaudeJSON, getClaudeApiKey } from "./claudeService";
+import { GoogleGenAI } from "@google/genai";
+import { generateClaudeJSON } from "./claudeService";
+import { generateGeminiWithRetry } from "./geminiRetry";
+import { safeParseJSON } from "./jsonParser";
 
 export interface MetaAdPackage {
   campaignObjective: string;
@@ -111,7 +113,8 @@ Return a JSON object:
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
+  const response = await generateGeminiWithRetry({
+    ai,
     model: 'gemini-3.1-pro-preview',
     contents: `${systemPrompt}\n\n${userPrompt}\n\nIMPORTANT: Return ONLY a valid JSON object matching the requested schema.`,
     config: {
@@ -120,10 +123,7 @@ Return a JSON object:
   });
 
   const text = response.text || '{}';
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  const cleanJson = jsonMatch ? jsonMatch[0] : '{}';
-
-  const result = JSON.parse(cleanJson) as PaidAdCampaignPackage;
+  const result = safeParseJSON<PaidAdCampaignPackage>(text);
 
   // Post-processing character length safety truncation
   if (result.googleAd?.headlines) {
