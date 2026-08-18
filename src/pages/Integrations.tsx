@@ -4,6 +4,8 @@ import { Save, Key, Shield, AlertCircle, Share2, Instagram, Facebook, Twitter, L
 export function Integrations() {
   const [geminiKey, setGeminiKey] = useState('');
   const [claudeKey, setClaudeKey] = useState('');
+  const [openartKey, setOpenartKey] = useState('');
+  const [seedanceKey, setSeedanceKey] = useState('');
   const [twitterApiKey, setTwitterApiKey] = useState('');
   const [twitterApiSecret, setTwitterApiSecret] = useState('');
   const [linkedinToken, setLinkedinToken] = useState('');
@@ -17,6 +19,12 @@ export function Integrations() {
 
     const cKey = localStorage.getItem('claude_api_key');
     if (cKey) setClaudeKey(cKey);
+
+    const oaKey = localStorage.getItem('openart_api_key');
+    if (oaKey) setOpenartKey(oaKey);
+
+    const sdKey = localStorage.getItem('seedance_api_key');
+    if (sdKey) setSeedanceKey(sdKey);
 
     const twKey = localStorage.getItem('twitter_api_key');
     if (twKey) setTwitterApiKey(twKey);
@@ -45,6 +53,8 @@ export function Integrations() {
 
     saveItem('gemini_api_key', geminiKey);
     saveItem('claude_api_key', claudeKey);
+    saveItem('openart_api_key', openartKey);
+    saveItem('seedance_api_key', seedanceKey);
     saveItem('twitter_api_key', twitterApiKey);
     saveItem('twitter_api_secret', twitterApiSecret);
     saveItem('linkedin_access_token', linkedinToken);
@@ -111,6 +121,36 @@ export function Integrations() {
             <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
               Used for Claude 3.5 Sonnet & Claude 3 Opus agent steps. Get key from <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Anthropic Console</a>.
+            </p>
+          </div>
+
+          <div className="space-y-2 max-w-2xl pt-4 border-t border-gray-100">
+            <label className="text-sm font-medium text-gray-700">OpenArt API Key</label>
+            <input 
+              type="password" 
+              value={openartKey}
+              onChange={(e) => setOpenartKey(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+              placeholder="openart-api-..."
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              Required for OpenArt image and video generation.
+            </p>
+          </div>
+
+          <div className="space-y-2 max-w-2xl pt-4 border-t border-gray-100">
+            <label className="text-sm font-medium text-gray-700">Seedance API Key</label>
+            <input 
+              type="password" 
+              value={seedanceKey}
+              onChange={(e) => setSeedanceKey(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+              placeholder="seedance-api-..."
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              Required for Seedance cinematic AI video generation.
             </p>
           </div>
         </div>

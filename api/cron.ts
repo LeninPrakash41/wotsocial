@@ -72,24 +72,53 @@ app.get("/api/cron", async (req, res) => {
 
       try {
         // Retrieve keys from environment variables directly for security (BYO Vercel)
-        switch (post.platform) {
-          case "twitter":
-            // Implement Twitter API call using process.env.TWITTER_API_KEY
-            if (!process.env.TWITTER_API_KEY)
-              throw new Error("Twitter API Key not configured on Vercel");
-            // Mock API request here...
-            console.log(`Mock posting to Twitter: ${post.content}`);
-            success = true;
-            break;
-          case "linkedin":
-            if (!process.env.LINKEDIN_ACCESS_TOKEN)
-              throw new Error("LinkedIn Token not configured on Vercel");
-            console.log(`Mock posting to LinkedIn: ${post.content}`);
-            success = true;
-            break;
-          // Add others...
-          default:
-            throw new Error(`Unsupported platform: ${post.platform}`);
+        const platform = (post.platform || '').toLowerCase();
+        if (platform.includes('twitter') || platform.includes('x')) {
+          if (!process.env.TWITTER_API_KEY) throw new Error("Twitter API Key not configured on Vercel");
+          const twRes = await fetch('https://api.twitter.com/2/tweets', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.TWITTER_API_KEY}`
+            },
+            body: JSON.stringify({ text: post.content })
+          });
+          if (!twRes.ok) throw new Error(`Twitter API error: ${twRes.statusText}`);
+          success = true;
+        } else if (platform.includes('linkedin')) {
+          if (!process.env.LINKEDIN_ACCESS_TOKEN) throw new Error("LinkedIn Token not configured on Vercel");
+          const liRes = await fetch('https://api.linkedin.com/v2/ugcPosts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.LINKEDIN_ACCESS_TOKEN}`,
+              'X-Restli-Protocol-Version': '2.0.0'
+            },
+            body: JSON.stringify({
+              author: `urn:li:person:${process.env.LINKEDIN_PERSON_URN || 'me'}`,
+              lifecycleState: 'PUBLISHED',
+              specificContent: {
+                'com.linkedin.ugc.ShareContent': {
+                  shareCommentary: { text: post.content },
+                  shareMediaCategory: 'NONE'
+                }
+              },
+              visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' }
+            })
+          });
+          if (!liRes.ok) throw new Error(`LinkedIn API error: ${liRes.statusText}`);
+          success = true;
+        } else if (platform.includes('facebook')) {
+          if (!process.env.FACEBOOK_ACCESS_TOKEN) throw new Error("Facebook Token not configured on Vercel");
+          const fbRes = await fetch(`https://graph.facebook.com/v19.0/me/feed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: post.content, access_token: process.env.FACEBOOK_ACCESS_TOKEN })
+          });
+          if (!fbRes.ok) throw new Error(`Facebook API error: ${fbRes.statusText}`);
+          success = true;
+        } else {
+          throw new Error(`Unsupported or unconfigured platform: ${post.platform}`);
         }
       } catch (err) {
         success = false;

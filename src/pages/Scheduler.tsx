@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, getDocs, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
-import { Calendar, Clock, Trash2, Image as ImageIcon, Video, Type as TypeIcon, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, Trash2, Image as ImageIcon, Video, Type as TypeIcon, CheckCircle2, Send } from 'lucide-react';
+import { publishPostToPlatforms } from '../services/socialPostingService';
 
 export function Scheduler() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -172,6 +173,28 @@ export function Scheduler() {
                             Approve
                           </button>
                         )}
+                        <button
+                          onClick={async () => {
+                            try {
+                              const results = await publishPostToPlatforms({
+                                content: post.content,
+                                mediaUrl: post.mediaUrl,
+                                platforms: post.platforms || ['twitter', 'linkedin']
+                              });
+                              const summary = results.map(r => `${r.platform}: ${r.message}`).join('\n');
+                              alert(`Publish Results:\n\n${summary}`);
+                              await updateDoc(doc(db, 'posts', post.id), { status: 'published' });
+                              setPosts(posts.map(p => p.id === post.id ? { ...p, status: 'published' } : p));
+                            } catch (err: any) {
+                              alert(`Failed to publish: ${err.message || String(err)}`);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                          title="Publish directly to connected social accounts"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          Publish Now
+                        </button>
                       </>
                     )}
                     <button 

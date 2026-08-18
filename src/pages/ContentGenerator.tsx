@@ -5,6 +5,8 @@ import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import * as geminiService from '../services/geminiService';
+import { generateOpenArtVideo, generateOpenArtImage, generateSeedanceVideo } from '../services/mediaService';
+import { publishPostToPlatforms } from '../services/socialPostingService';
 
 declare global {
   interface Window {
@@ -93,7 +95,7 @@ export function ContentGenerator() {
     if (mediaType === 'image') {
       setSelectedModel('gemini-3.1-flash-image-preview');
     } else if (mediaType === 'video') {
-      setSelectedModel('gemini-3-pro-image-preview');
+      setSelectedModel('veo-3.1-fast-generate-preview');
     }
   }, [mediaType]);
 
@@ -194,41 +196,52 @@ export function ContentGenerator() {
       setGeneratedContent(data.text || '');
 
       // Handle Media if requested
-      if (mediaType === 'image' && data.mediaUrl) {
-        if (brand.logoUrl) {
-          // Overlay logo using Canvas
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          const img = new Image();
-          const logo = new Image();
-          
-          await new Promise((resolve) => {
-            img.onload = resolve;
-            img.src = data.mediaUrl;
-          });
-          
-          await new Promise((resolve) => {
-            logo.onload = resolve;
-            logo.src = brand.logoUrl;
-          });
-          
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-          
-          // Draw logo in bottom right corner
-          const logoWidth = canvas.width * 0.15; // 15% of image width
-          const logoHeight = (logo.height / logo.width) * logoWidth;
-          const padding = 20;
-          ctx?.drawImage(logo, canvas.width - logoWidth - padding, canvas.height - logoHeight - padding, logoWidth, logoHeight);
-          
-          setGeneratedMediaUrl(canvas.toDataURL('image/png'));
-        } else {
-          setGeneratedMediaUrl(data.mediaUrl);
+      if (mediaType === 'image') {
+        if (selectedModel === 'openart-image') {
+          const openArtUrl = await generateOpenArtImage({ prompt: finalTopic, aspectRatio });
+          setGeneratedMediaUrl(openArtUrl);
+        } else if (data.mediaUrl) {
+          if (brand.logoUrl) {
+            // Overlay logo using Canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            const logo = new Image();
+            
+            await new Promise((resolve) => {
+              img.onload = resolve;
+              img.src = data.mediaUrl;
+            });
+            
+            await new Promise((resolve) => {
+              logo.onload = resolve;
+              logo.src = brand.logoUrl;
+            });
+            
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            
+            const logoWidth = canvas.width * 0.15;
+            const logoHeight = (logo.height / logo.width) * logoWidth;
+            const padding = 20;
+            ctx?.drawImage(logo, canvas.width - logoWidth - padding, canvas.height - logoHeight - padding, logoWidth, logoHeight);
+            
+            setGeneratedMediaUrl(canvas.toDataURL('image/png'));
+          } else {
+            setGeneratedMediaUrl(data.mediaUrl);
+          }
         }
-      } else if (mediaType === 'video' && data.videoDownloadLink) {
-        // Just set the URL. The browser will fetch it.
-        setGeneratedMediaUrl(data.videoDownloadLink);
+      } else if (mediaType === 'video') {
+        if (selectedModel === 'seedance-video') {
+          const seedanceUrl = await generateSeedanceVideo({ prompt: finalTopic, aspectRatio, resolution: videoResolution });
+          setGeneratedMediaUrl(seedanceUrl);
+        } else if (selectedModel === 'openart-video') {
+          const openArtVidUrl = await generateOpenArtVideo({ prompt: finalTopic, aspectRatio });
+          setGeneratedMediaUrl(openArtVidUrl);
+        } else if (data.videoDownloadLink) {
+          setGeneratedMediaUrl(data.videoDownloadLink);
+        }
       }
 
     } catch (error: any) {
@@ -476,11 +489,14 @@ export function ContentGenerator() {
                         <option value="gemini-3-pro-image-preview">Gemini 3 Pro Image</option>
                         <option value="gemini-3.1-flash-image-preview">Gemini 3.1 Flash Image</option>
                         <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
+                        <option value="openart-image">OpenArt Image AI</option>
                       </>
                     ) : (
                       <>
-                        <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
+                        <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast Video</option>
                         <option value="veo-3.1-generate-preview">Veo 3.1 High Quality</option>
+                        <option value="seedance-video">Seedance AI Video</option>
+                        <option value="openart-video">OpenArt AI Video</option>
                       </>
                     )}
                   </select>
@@ -648,12 +664,17 @@ export function ContentGenerator() {
               
               <button
                 onClick={async () => {
-                  await fetch('/api/post', {
-                    method: 'POST',
-                    body: JSON.stringify({ content: generatedContent, platforms: selectedPlatforms }),
-                    headers: { 'Content-Type': 'application/json' }
-                  });
-                  alert('Posted successfully!');
+                  try {
+                    const results = await publishPostToPlatforms({
+                      content: generatedContent,
+                      mediaUrl: generatedMediaUrl,
+                      platforms: selectedPlatforms
+                    });
+                    const summary = results.map(r => `${r.platform}: ${r.message}`).join('\n');
+                    alert(`Publishing Results:\n\n${summary}`);
+                  } catch (err: any) {
+                    alert(`Publishing failed: ${err.message || String(err)}`);
+                  }
                 }}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white text-black border border-black font-medium rounded-xl hover:bg-gray-50 transition-colors mt-2"
               >
