@@ -78,6 +78,51 @@ export interface AgentPipelineResult {
   adCampaign?: PaidAdCampaignPackage;
 }
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function generateGeminiWithRetry(params: {
+  ai: GoogleGenAI;
+  model: string;
+  contents: string;
+  config: any;
+}): Promise<any> {
+  const primaryModel = params.model;
+  const candidateModels = Array.from(new Set([
+    primaryModel,
+    primaryModel.includes('pro') ? 'gemini-2.5-pro' : 'gemini-2.5-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash'
+  ]));
+
+  let lastError: any = null;
+
+  for (const modelToTry of candidateModels) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const response = await params.ai.models.generateContent({
+          model: modelToTry,
+          contents: params.contents,
+          config: params.config
+        });
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const errStr = String(err?.message || '') + JSON.stringify(err || '');
+        const isTransient = errStr.includes('503') || errStr.includes('429') || errStr.includes('high demand') || errStr.includes('UNAVAILABLE') || errStr.includes('RESOURCE_EXHAUSTED');
+
+        if (isTransient) {
+          console.warn(`[Gemini Retry] Model '${modelToTry}' attempt ${attempt}/3 hit transient demand spike. Retrying in ${attempt * 1500}ms...`);
+          await delay(attempt * 1500);
+        } else {
+          throw err;
+        }
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // Helper dispatcher for LLM execution
 async function runLLMTask<T>(params: {
   provider: AIProvider;
@@ -91,7 +136,6 @@ async function runLLMTask<T>(params: {
 
   if (provider === 'claude') {
     const claudeModelName = model === 'claude-3-opus' ? 'claude-3-opus-20240229' : 'claude-3-5-sonnet-20241022';
-    // If Web Search is requested for Claude, use Gemini Search tool as search provider first
     let enrichedPrompt = userPrompt;
     if (enableWebSearch) {
       try {
@@ -132,7 +176,8 @@ async function runLLMTask<T>(params: {
     config.tools = [{ googleSearch: {} }];
   }
 
-  const response = await ai.models.generateContent({
+  const response = await generateGeminiWithRetry({
+    ai,
     model: geminiModel,
     contents: fullPrompt,
     config
@@ -149,13 +194,19 @@ async function runLLMTask<T>(params: {
 async function executeGeminiSearch(query: string): Promise<string> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) return '';
-  const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Search web for latest insights on: ${query}. Return bullet summary.`,
-    config: { tools: [{ googleSearch: {} }] }
-  });
-  return response.text || '';
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await generateGeminiWithRetry({
+      ai,
+      model: 'gemini-3-flash-preview',
+      contents: `Search web for latest insights on: ${query}. Return bullet summary.`,
+      config: { tools: [{ googleSearch: {} }] }
+    });
+    return response.text || '';
+  } catch (err) {
+    console.warn("Web search query failed, skipping search context:", err);
+    return '';
+  }
 }
 
 // 1. Site Analysis Agent
