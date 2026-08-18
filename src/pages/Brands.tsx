@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db, auth } from '../firebase';
-import { collection, query, where, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { getBrands, deleteBrand } from '../dbAdapter';
+import { auth } from '../auth';
 import { Plus, Globe, Settings, Trash2, ExternalLink, Briefcase, Bot } from 'lucide-react';
 
 export function Brands() {
@@ -11,17 +11,8 @@ export function Brands() {
 
   useEffect(() => {
     const fetchBrands = async () => {
-      if (!auth.currentUser) return;
       try {
-        const q = query(
-          collection(db, 'brands'),
-          where('userId', '==', auth.currentUser.uid)
-        );
-        const snapshot = await getDocs(q);
-        const brandsList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const brandsList = await getBrands();
         setBrands(brandsList);
       } catch (error) {
         console.error("Error fetching brands:", error);
@@ -37,7 +28,7 @@ export function Brands() {
     if (!confirm(`Are you sure you want to delete "${name}"? This will remove all associated settings.`)) return;
     
     try {
-      await deleteDoc(doc(db, 'brands', id));
+      await deleteBrand(id);
       setBrands(brands.filter(b => b.id !== id));
     } catch (error) {
       console.error("Error deleting brand:", error);

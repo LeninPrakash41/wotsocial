@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp, limit, getDoc } from 'firebase/firestore';
+import { getBrands, updateBrand, addPost } from '../dbAdapter';
+import { auth } from '../auth';
 import { Loader2, Bot, Sparkles, Target, Users, Search, ShieldCheck, ArrowRight, CheckCircle2, RefreshCw, Send, AlertTriangle, Layers, Calendar, ChevronDown, ChevronUp, Megaphone, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -47,14 +47,8 @@ export function AgentStudio() {
 
   useEffect(() => {
     const fetchUserBrands = async () => {
-      if (!auth.currentUser) return;
       try {
-        const q = query(
-          collection(db, 'brands'),
-          where('userId', '==', auth.currentUser.uid)
-        );
-        const snapshot = await getDocs(q);
-        const brandList = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+        const brandList = await getBrands();
         setBrands(brandList);
 
         const activeId = localStorage.getItem('activeBrandId') || brandList[0]?.id || '';
@@ -159,16 +153,15 @@ export function AgentStudio() {
           audienceProfile: pipelineResult.audienceProfile,
           marketingStrategy: pipelineResult.marketingStrategy,
           updatedAt: new Date().toISOString()
-        },
-        updatedAt: serverTimestamp()
+        }
       };
 
-      await updateDoc(doc(db, 'brands', selectedBrandId), updatedData);
+      await updateBrand(selectedBrandId, updatedData);
       setBrandSavedSuccess(true);
       setTimeout(() => setBrandSavedSuccess(false), 3000);
     } catch (err) {
       console.error("Error enriching Brand Profile:", err);
-      alert("Failed to enrich brand profile in Firestore.");
+      alert("Failed to enrich brand profile in Database.");
     } finally {
       setSavingToBrand(false);
     }
@@ -184,18 +177,15 @@ export function AgentStudio() {
         schedTime.setDate(schedTime.getDate() + (idx + 1));
         schedTime.setHours(10, 0, 0, 0);
 
-        return await addDoc(collection(db, 'posts'), {
-          userId: auth.currentUser?.uid,
+        return await addPost({
           brandId: selectedBrandId || 'unassigned',
           content: `${pkg.linkedinPost || pkg.twitterPost}\n\n${pkg.hashtags.join(' ')}`,
           mediaUrl: '',
           mediaType: pkg.suggestedMediaType || 'image',
-          scheduledTime: schedTime,
+          scheduledTime: { toDate: () => schedTime } as any,
           status: 'suggested',
           platforms: ['linkedin', 'twitter'],
           visualPrompt: pkg.visualPrompt,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
           isAgentGenerated: true
         });
       });

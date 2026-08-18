@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, where, getDocs, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getPosts, updatePost, deletePost } from '../dbAdapter';
+import { auth } from '../auth';
 import { format } from 'date-fns';
 import { Calendar, Clock, Trash2, Image as ImageIcon, Video, Type as TypeIcon, CheckCircle2, Send } from 'lucide-react';
 import { publishPostToPlatforms } from '../services/socialPostingService';
@@ -13,26 +13,9 @@ export function Scheduler() {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      if (!auth.currentUser) return;
       try {
-        const activeBrandId = localStorage.getItem('activeBrandId');
-        let q;
-        if (activeBrandId) {
-          q = query(
-            collection(db, 'posts'),
-            where('userId', '==', auth.currentUser.uid),
-            where('brandId', '==', activeBrandId),
-            orderBy('scheduledTime', 'asc')
-          );
-        } else {
-          q = query(
-            collection(db, 'posts'),
-            where('userId', '==', auth.currentUser.uid),
-            orderBy('scheduledTime', 'asc')
-          );
-        }
-        const snapshot = await getDocs(q);
-        const postsData = snapshot.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        const activeBrandId = localStorage.getItem('activeBrandId') || undefined;
+        const postsData = await getPosts(activeBrandId);
         setPosts(postsData);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -47,37 +30,34 @@ export function Scheduler() {
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
-      await deleteDoc(doc(db, 'posts', id));
+      await deletePost(id);
       setPosts(posts.filter(p => p.id !== id));
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `posts/${id}`);
+      console.error("Error deleting post:", error);
+      alert("Failed to delete post.");
     }
   };
 
   const handleApprove = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'posts', id), {
-        status: 'scheduled',
-        updatedAt: serverTimestamp()
-      });
+      await updatePost(id, { status: 'scheduled' });
       setPosts(posts.map(p => p.id === id ? { ...p, status: 'scheduled' } : p));
       alert("Post approved and scheduled!");
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `posts/${id}`);
+      console.error("Error approving post:", error);
+      alert("Failed to approve post.");
     }
   };
 
   const handleUpdate = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'posts', id), {
-        content: editingContent,
-        updatedAt: serverTimestamp()
-      });
+      await updatePost(id, { content: editingContent });
       setPosts(posts.map(p => p.id === id ? { ...p, content: editingContent } : p));
       setEditingPostId(null);
       alert("Post updated successfully!");
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `posts/${id}`);
+      console.error("Error updating post:", error);
+      alert("Failed to update post.");
     }
   };
 
@@ -183,7 +163,7 @@ export function Scheduler() {
                               });
                               const summary = results.map(r => `${r.platform}: ${r.message}`).join('\n');
                               alert(`Publish Results:\n\n${summary}`);
-                              await updateDoc(doc(db, 'posts', post.id), { status: 'published' });
+                              await updatePost(post.id, { status: 'published' });
                               setPosts(posts.map(p => p.id === post.id ? { ...p, status: 'published' } : p));
                             } catch (err: any) {
                               alert(`Failed to publish: ${err.message || String(err)}`);

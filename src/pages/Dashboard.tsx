@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { db, auth } from '../firebase';
-import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { getBrands, getBrandById } from '../dbAdapter';
+import { auth } from '../auth';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Calendar, PenTool, Settings, BarChart3, TrendingUp, Bot, Sparkles } from 'lucide-react';
 
@@ -10,27 +10,18 @@ export function Dashboard() {
 
   useEffect(() => {
     const fetchBrand = async () => {
-      if (!auth.currentUser) return;
       try {
         const activeBrandId = localStorage.getItem('activeBrandId');
         let brandData = null;
 
         if (activeBrandId) {
-          const brandDoc = await getDoc(doc(db, 'brands', activeBrandId));
-          if (brandDoc.exists() && brandDoc.data().userId === auth.currentUser.uid) {
-            brandData = { id: brandDoc.id, ...brandDoc.data() };
-          }
+          brandData = await getBrandById(activeBrandId);
         }
 
         if (!brandData) {
-          const q = query(
-            collection(db, 'brands'),
-            where('userId', '==', auth.currentUser.uid),
-            limit(1)
-          );
-          const snapshot = await getDocs(q);
-          if (!snapshot.empty) {
-            brandData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+          const allBrands = await getBrands();
+          if (allBrands.length > 0) {
+            brandData = allBrands[0];
             localStorage.setItem('activeBrandId', brandData.id);
           }
         }

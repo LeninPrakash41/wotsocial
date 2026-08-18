@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import apiApp from "./api/index.ts";
+import dbApiRoutes from "./src/db/apiRoutes.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,8 +13,9 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Mount Gemini API routes
+  // Mount API routes
   app.use(apiApp);
+  app.use("/api", dbApiRoutes);
 
   // API routes
   app.get("/api/health", (req, res) => {

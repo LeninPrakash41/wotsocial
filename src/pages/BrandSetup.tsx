@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp, limit, getDocFromServer, getDoc } from 'firebase/firestore';
+import { getBrandById, addBrand, updateBrand } from '../dbAdapter';
+import { auth } from '../auth';
 import { Loader2, UploadCloud, Link as LinkIcon, Check, Plus, X, Image as ImageIcon, ChevronLeft } from 'lucide-react';
 import * as geminiService from '../services/geminiService';
 
@@ -35,35 +35,12 @@ export function BrandSetup() {
   const [periodUnit, setPeriodUnit] = useState<'day' | 'week' | 'month'>('day');
 
   useEffect(() => {
-    // Test connection to Firestore as required by instructions
-    const testConnection = async () => {
-      try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
-      } catch (error) {
-        if(error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
-        }
-      }
-    };
-    testConnection();
-
     const fetchBrand = async () => {
-      if (!auth.currentUser) return;
-      
-      // If we have a brandId, fetch that specific brand
       if (brandId) {
         try {
-          const brandDoc = await getDoc(doc(db, 'brands', brandId));
-          console.log("Brand doc exists:", brandDoc.exists());
-          if (brandDoc.exists()) {
-            const data = brandDoc.data();
-            console.log("Brand data:", data);
-            // Ensure the brand belongs to the current user
-            if (data.userId !== auth.currentUser.uid) {
-              navigate('/brands');
-              return;
-            }
-            setBrand({ id: brandDoc.id, ...data });
+          const data = await getBrandById(brandId);
+          if (data) {
+            setBrand(data);
             setName(data.name || '');
             setWebsiteUrl(data.websiteUrl || '');
             setGuidelinesText(data.guidelinesText || '');
@@ -101,25 +78,7 @@ export function BrandSetup() {
         }
         return;
       }
-
-      // If no brandId, check if the user has any brands at all
-      // If they have none, this is their first setup
-      // If they have some, this is adding a new one
-      try {
-        const q = query(
-          collection(db, 'brands'),
-          where('userId', '==', auth.currentUser.uid),
-          limit(1)
-        );
-        const snapshot = await getDocs(q);
-        // We don't auto-load the first brand anymore if brandId is not provided
-        // because we want to allow creating new ones.
-        // But we might want to know if it's the very first setup.
-      } catch (error) {
-        console.error("Error checking brands:", error);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     };
 
     fetchBrand();
@@ -169,7 +128,7 @@ export function BrandSetup() {
           postsPerPeriod: postsPerPeriod,
           periodUnit: periodUnit
         },
-        updatedAt: serverTimestamp()
+        updatedAt: new Date().toISOString()
       };
 
       if (analysisResult?.industry || industry) brandData.industry = analysisResult?.industry || industry;
@@ -180,38 +139,19 @@ export function BrandSetup() {
       if (brand?.agentResearchData) brandData.agentResearchData = brand.agentResearchData;
 
       if (brand) {
-        try {
-          await updateDoc(doc(db, 'brands', brand.id), brandData);
-        } catch (error) {
-          handleFirestoreError(error, OperationType.UPDATE, `brands/${brand.id}`);
-        }
+        await updateBrand(brand.id, brandData);
       } else {
-        try {
-          await addDoc(collection(db, 'brands'), {
-            ...brandData,
-            createdAt: serverTimestamp()
-          });
-        } catch (error) {
-          handleFirestoreError(error, OperationType.CREATE, 'brands');
-        }
+        const newB = await addBrand(brandData);
+        setBrand(newB);
+        localStorage.setItem('activeBrandId', newB.id);
       }
-      
       setSaved(true);
       setTimeout(() => {
         navigate('/brands');
       }, 1500);
     } catch (error: any) {
       console.error("Error saving brand:", error);
-      let errorMessage = "Failed to save brand.";
-      try {
-        const parsedError = JSON.parse(error.message);
-        if (parsedError.error.includes("insufficient permissions")) {
-          errorMessage = "Permission denied. Please ensure your brand data is valid and you have access.";
-        }
-      } catch (e) {
-        // Not a JSON error
-      }
-      alert(errorMessage);
+      alert("Failed to save brand settings.");
     } finally {
       setSaving(false);
     }

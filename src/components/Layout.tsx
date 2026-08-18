@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { auth, logout } from '../firebase';
+import { auth } from '../auth';
 import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useState, useEffect } from 'react';
@@ -11,7 +11,7 @@ export function Layout() {
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
+    auth.logout();
     navigate('/');
   };
 

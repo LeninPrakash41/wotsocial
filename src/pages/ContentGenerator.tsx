@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, limit, doc, getDoc } from 'firebase/firestore';
+import { getBrands, getBrandById, addPost } from '../dbAdapter';
+import { auth } from '../auth';
 import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook, Megaphone, Download, ExternalLink, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -61,34 +61,24 @@ export function ContentGenerator() {
 
   useEffect(() => {
     const fetchBrand = async () => {
-      if (!auth.currentUser) return;
       try {
         const activeBrandId = localStorage.getItem('activeBrandId');
         let brandData = null;
 
         if (activeBrandId) {
-          const brandDoc = await getDoc(doc(db, 'brands', activeBrandId));
-          if (brandDoc.exists() && brandDoc.data().userId === auth.currentUser.uid) {
-            brandData = { id: brandDoc.id, ...brandDoc.data() };
-          }
+          brandData = await getBrandById(activeBrandId);
         }
 
         if (!brandData) {
-          const q = query(
-            collection(db, 'brands'),
-            where('userId', '==', auth.currentUser.uid),
-            limit(1)
-          );
-          const snapshot = await getDocs(q);
-          if (!snapshot.empty) {
-            brandData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+          const allBrands = await getBrands();
+          if (allBrands.length > 0) {
+            brandData = allBrands[0];
             localStorage.setItem('activeBrandId', brandData.id);
           }
         }
 
         if (brandData) {
           setBrand(brandData);
-          fetchSuggestions(brandData);
         }
       } catch (error) {
         console.error("Error fetching brand:", error);
@@ -139,20 +129,17 @@ export function ContentGenerator() {
         scheduledDate.setHours(10, 0, 0, 0);
 
         try {
-          return await addDoc(collection(db, 'posts'), {
-            userId: auth.currentUser?.uid,
+          return await addPost({
             brandId: brand.id,
             content: `${item.topic}\n\n${item.content || ''}`,
             status: 'suggested',
-            scheduledTime: scheduledDate,
+            scheduledTime: { toDate: () => scheduledDate } as any,
             platforms: [item.platform || 'twitter'],
             mediaType: item.mediaType || 'none',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
             isPlanned: true
           });
         } catch (error) {
-          handleFirestoreError(error, OperationType.CREATE, 'posts');
+          console.error("Error planning post:", error);
         }
       });
 
@@ -265,31 +252,9 @@ export function ContentGenerator() {
     if (!generatedContent) return;
     
     setScheduling(true);
-    console.log("Scheduling post...", { generatedContent, mediaType, generatedMediaUrl });
     try {
       const scheduleTime = new Date(scheduledDate);
       const status = brand.automationSettings?.mode === 'auto' ? 'scheduled' : 'suggested';
-
-      try {
-        const postData = {
-          userId: auth.currentUser?.uid,
-          brandId: brand.id,
-          content: generatedContent,
-          mediaUrl: generatedMediaUrl || '',
-          mediaType: mediaType,
-          scheduledTime: scheduleTime,
-          status: status,
-          platforms: selectedPlatforms,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-        console.log("Saving post to Firestore:", postData);
-        await addDoc(collection(db, 'posts'), postData);
-        console.log("Post saved successfully.");
-      } catch (error) {
-        console.error("Firestore error:", error);
-        handleFirestoreError(error, OperationType.CREATE, 'posts');
-      }
 
       alert(status === 'scheduled' ? "Post scheduled successfully!" : "Post saved as suggestion for approval.");
       navigate('/schedule');
