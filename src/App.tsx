@@ -1,0 +1,50 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { Layout } from './components/Layout';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Home } from './pages/Home';
+import { Dashboard } from './pages/Dashboard';
+import { Brands } from './pages/Brands';
+import { BrandSetup } from './pages/BrandSetup';
+import { Profile } from './pages/Profile';
+import { ContentGenerator } from './pages/ContentGenerator';
+import { Scheduler } from './pages/Scheduler';
+import { Analytics } from './pages/Analytics';
+
+import { Integrations } from './pages/Integrations';
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/brands" element={<Brands />} />
+            <Route path="/brand-setup" element={<BrandSetup />} />
+            <Route path="/brand-setup/:brandId" element={<BrandSetup />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/generate" element={<ContentGenerator />} />
+            <Route path="/schedule" element={<Scheduler />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/integrations" element={<Integrations />} />
+          </Route>
+        </Routes>
+      </Router>
+      <VercelAnalytics />
+    </ErrorBoundary>
+  );
+}

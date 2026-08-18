@@ -1,0 +1,5 @@
+{
+  "name": "SocialVase",
+  "description": "A web app that reads a website or social media account to understand the brand and create content according to the brand tone, personality, and color.",
+  "requestFramePermissions": []
+}

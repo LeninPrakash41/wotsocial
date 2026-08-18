@@ -1,0 +1,141 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Information about a registered user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique user ID from Firebase Auth." },
+        "email": { "type": "string", "format": "email", "description": "User's email address." },
+        "displayName": { "type": "string", "description": "User's display name." },
+        "photoURL": { "type": "string", "description": "URL to the user's profile picture." },
+        "createdAt": { "type": "timestamp", "description": "When the user profile was created." }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "BrandProfile": {
+      "title": "Brand Profile",
+      "description": "Details about a brand, including guidelines and generated insights.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this brand." },
+        "name": { "type": "string", "description": "Name of the brand." },
+        "websiteUrl": { "type": "string", "description": "The brand's website URL." },
+        "socialUrls": { "type": "array", "items": { "type": "string" }, "description": "List of social media URLs." },
+        "guidelinesText": { "type": "string", "description": "Extracted or uploaded brand guidelines text." },
+        "brandTone": { "type": "string", "description": "AI-generated brand tone." },
+        "brandPersonality": { "type": "string", "description": "AI-generated brand personality." },
+        "industry": { "type": "string", "description": "The industry the business belongs to." },
+        "category": { "type": "string", "description": "The specific category of the business." },
+        "logoUrl": { "type": "string", "description": "URL or base64 data of the brand logo." },
+        "primaryColor": { "type": "string", "description": "Primary brand color (hex code)." },
+        "secondaryColor": { "type": "string", "description": "Secondary brand color (hex code)." },
+        "accentColor": { "type": "string", "description": "Accent brand color (hex code)." },
+        "brandColors": { "type": "array", "items": { "type": "string" }, "description": "AI-extracted brand colors (hex codes)." },
+        "automationSettings": {
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string", "enum": ["manual", "auto"], "description": "Whether AI posts automatically or waits for approval." },
+            "postsPerPeriod": { "type": "integer", "description": "Number of posts to make in the selected period." },
+            "periodUnit": { "type": "string", "enum": ["day", "week", "month"], "description": "The unit of time for the frequency (day, week, month)." }
+          }
+        },
+        "createdAt": { "type": "timestamp", "description": "When the brand profile was created." },
+        "updatedAt": { "type": "timestamp", "description": "When the brand profile was last updated." }
+      },
+      "required": ["userId", "name", "createdAt", "updatedAt"]
+    },
+    "ScheduledPost": {
+      "title": "Scheduled Post",
+      "description": "A piece of content scheduled to be posted.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who created the post." },
+        "brandId": { "type": "string", "description": "The ID of the brand this post belongs to." },
+        "content": { "type": "string", "description": "The text content of the post." },
+        "mediaUrl": { "type": "string", "description": "URL to the generated image or video." },
+        "mediaType": { "type": "string", "enum": ["image", "video", "none"], "description": "Type of media attached." },
+        "scheduledTime": { "type": "timestamp", "description": "When the post should be published." },
+        "status": { "type": "string", "enum": ["draft", "scheduled", "published", "failed"], "description": "Current status of the post." },
+        "platforms": { "type": "array", "items": { "type": "string" }, "description": "Platforms to post to (e.g., 'twitter', 'linkedin')." },
+        "likes": { "type": "integer", "description": "Number of likes received." },
+        "shares": { "type": "integer", "description": "Number of shares/retweets received." },
+        "comments": { "type": "integer", "description": "Number of comments received." },
+        "impressions": { "type": "integer", "description": "Number of times the post was viewed." },
+        "reach": { "type": "integer", "description": "Number of unique users who saw the post." },
+        "createdAt": { "type": "timestamp", "description": "When the post was created." },
+        "updatedAt": { "type": "timestamp", "description": "When the post was last updated." }
+      },
+      "required": ["userId", "brandId", "content", "status", "createdAt", "updatedAt"]
+    },
+    "AnalyticsInsight": {
+      "title": "Analytics Insight",
+      "description": "AI-generated insights and recommendations based on post performance.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user." },
+        "brandId": { "type": "string", "description": "The ID of the brand." },
+        "insightText": { "type": "string", "description": "The main insight summary." },
+        "recommendations": { "type": "array", "items": { "type": "string" }, "description": "Actionable recommendations." },
+        "topPerformingThemes": { "type": "array", "items": { "type": "string" }, "description": "Themes that performed best." },
+        "createdAt": { "type": "timestamp", "description": "When the insight was generated." }
+      },
+      "required": ["userId", "brandId", "insightText", "createdAt"]
+    },
+    "AudienceStats": {
+      "title": "Audience Stats",
+      "description": "Demographic data for a brand's audience on a specific platform.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user." },
+        "brandId": { "type": "string", "description": "The ID of the brand." },
+        "platform": { "type": "string", "description": "The social media platform." },
+        "ageGroups": { "type": "object", "description": "Age distribution (e.g., {'18-24': 20})." },
+        "gender": { "type": "object", "description": "Gender distribution (e.g., {'male': 45})." },
+        "locations": { "type": "object", "description": "Top locations (e.g., {'USA': 60})." },
+        "updatedAt": { "type": "timestamp", "description": "When the data was last updated." }
+      },
+      "required": ["userId", "brandId", "platform", "updatedAt"]
+    },
+    "SocialAccount": {
+      "title": "SocialAccount",
+      "description": "Stores OAuth tokens for linked social media accounts.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this account." },
+        "brandId": { "type": "string", "description": "Reference to the BrandProfile." },
+        "platform": { "type": "string", "enum": ["twitter", "linkedin", "instagram", "facebook"] },
+        "accessToken": { "type": "string", "description": "Encrypted access token." },
+        "refreshToken": { "type": "string", "description": "Encrypted refresh token." },
+        "expiresAt": { "type": "timestamp", "description": "When the token expires." }
+      },
+      "required": ["userId", "brandId", "platform", "accessToken"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profiles."
+    },
+    "/brands/{brandId}": {
+      "schema": { "$ref": "#/entities/BrandProfile" },
+      "description": "Stores brand profiles."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/ScheduledPost" },
+      "description": "Stores scheduled posts."
+    },
+    "/insights/{insightId}": {
+      "schema": { "$ref": "#/entities/AnalyticsInsight" },
+      "description": "Stores AI-generated analytics insights."
+    },
+    "/audience_stats/{statId}": {
+      "schema": { "$ref": "#/entities/AudienceStats" },
+      "description": "Stores audience demographic statistics."
+    },
+    "/social_accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/SocialAccount" },
+      "description": "Stores linked social media accounts."
+    }
+  }
+}

@@ -1,0 +1,195 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    function isRequestDocOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+    
+    function userIdUnchanged() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid;
+    }
+    
+    function userIdNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+    
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 100 &&
+             data.email is string && isValidEmail(data.email) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1000)) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidBrand(data) {
+      return hasOnlyAllowedFields(['userId', 'name', 'websiteUrl', 'socialUrls', 'guidelinesText', 'brandTone', 'brandPersonality', 'brandColors', 'automationSettings', 'clientInquiries', 'suggestedTopics', 'createdAt', 'updatedAt', 'industry', 'category', 'logoUrl', 'primaryColor', 'secondaryColor', 'accentColor']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             (!('websiteUrl' in data) || (data.websiteUrl is string && data.websiteUrl.size() <= 1000)) &&
+             (!('socialUrls' in data) || (data.socialUrls is list && data.socialUrls.size() <= 20)) &&
+             (!('guidelinesText' in data) || (data.guidelinesText is string && data.guidelinesText.size() <= 50000)) &&
+             (!('brandTone' in data) || (data.brandTone is string && data.brandTone.size() <= 1000)) &&
+             (!('brandPersonality' in data) || (data.brandPersonality is string && data.brandPersonality.size() <= 1000)) &&
+             (!('brandColors' in data) || (data.brandColors is list && data.brandColors.size() <= 20)) &&
+             (!('primaryColor' in data) || (data.primaryColor is string && data.primaryColor.size() <= 50)) &&
+             (!('secondaryColor' in data) || (data.secondaryColor is string && data.secondaryColor.size() <= 50)) &&
+             (!('accentColor' in data) || (data.accentColor is string && data.accentColor.size() <= 50)) &&
+             (!('automationSettings' in data) || (
+               data.automationSettings is map &&
+               data.automationSettings.mode in ['manual', 'auto'] &&
+               data.automationSettings.postsPerPeriod is int &&
+               data.automationSettings.postsPerPeriod > 0 &&
+               data.automationSettings.periodUnit in ['day', 'week', 'month']
+             )) &&
+             (!('clientInquiries' in data) || (data.clientInquiries is list && data.clientInquiries.size() <= 100)) &&
+             (!('suggestedTopics' in data) || (data.suggestedTopics is list && data.suggestedTopics.size() <= 100)) &&
+             (!('industry' in data) || (data.industry is string && data.industry.size() <= 200)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 200)) &&
+             (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 1000000)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidPost(data) {
+      return hasOnlyAllowedFields(['userId', 'brandId', 'content', 'mediaUrl', 'mediaType', 'scheduledTime', 'status', 'platforms', 'likes', 'shares', 'comments', 'impressions', 'reach', 'createdAt', 'updatedAt', 'isPlanned']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.brandId is string && data.brandId.size() > 0 && data.brandId.size() < 100 &&
+             data.content is string && data.content.size() <= 10000 &&
+             (!('mediaUrl' in data) || (data.mediaUrl is string && data.mediaUrl.size() <= 1000000)) &&
+             (!('mediaType' in data) || (data.mediaType in ['image', 'video', 'none'])) &&
+             (!('scheduledTime' in data) || data.scheduledTime is timestamp) &&
+             data.status in ['draft', 'scheduled', 'published', 'failed', 'suggested'] &&
+             (!('platforms' in data) || (data.platforms is list && data.platforms.size() <= 10)) &&
+             (!('likes' in data) || data.likes is int) &&
+             (!('shares' in data) || data.shares is int) &&
+             (!('comments' in data) || data.comments is int) &&
+             (!('impressions' in data) || data.impressions is int) &&
+             (!('reach' in data) || data.reach is int) &&
+             (!('isPlanned' in data) || data.isPlanned is bool) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidInsight(data) {
+      return hasOnlyAllowedFields(['userId', 'brandId', 'insightText', 'recommendations', 'topPerformingThemes', 'createdAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.brandId is string && data.brandId.size() > 0 && data.brandId.size() < 100 &&
+             data.insightText is string && data.insightText.size() <= 10000 &&
+             (!('recommendations' in data) || (data.recommendations is list && data.recommendations.size() <= 50)) &&
+             (!('topPerformingThemes' in data) || (data.topPerformingThemes is list && data.topPerformingThemes.size() <= 50)) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidAudienceStat(data) {
+      return hasOnlyAllowedFields(['userId', 'brandId', 'platform', 'ageGroups', 'gender', 'locations', 'updatedAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.brandId is string && data.brandId.size() > 0 && data.brandId.size() < 100 &&
+             data.platform is string &&
+             data.ageGroups is map &&
+             data.gender is map &&
+             data.locations is map &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidSocialAccount(data) {
+      return hasOnlyAllowedFields(['userId', 'brandId', 'platform', 'accessToken', 'refreshToken', 'expiresAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.brandId is string && data.brandId.size() > 0 && data.brandId.size() < 100 &&
+             data.platform in ['twitter', 'linkedin', 'instagram', 'facebook'] &&
+             data.accessToken is string && data.accessToken.size() > 0 && data.accessToken.size() <= 5000 &&
+             (!('refreshToken' in data) || (data.refreshToken is string && data.refreshToken.size() <= 5000)) &&
+             (!('expiresAt' in data) || data.expiresAt is timestamp);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && uidUnchanged();
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && uidNotModified() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(userId);
+    }
+
+    match /brands/{brandId} {
+      allow read: if isDocOwner();
+      allow create: if isRequestDocOwner() && isValidBrand(request.resource.data) && userIdUnchanged();
+      allow update: if isDocOwner() && isRequestDocOwner() && isValidBrand(request.resource.data) && userIdNotModified() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+
+    match /posts/{postId} {
+      allow read: if isDocOwner();
+      allow create: if isRequestDocOwner() && isValidPost(request.resource.data) && userIdUnchanged();
+      allow update: if isDocOwner() && isRequestDocOwner() && isValidPost(request.resource.data) && userIdNotModified() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+
+    match /insights/{insightId} {
+      allow read: if isDocOwner();
+      allow create: if isRequestDocOwner() && isValidInsight(request.resource.data) && userIdUnchanged();
+      allow update: if isDocOwner() && isRequestDocOwner() && isValidInsight(request.resource.data) && userIdNotModified() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+
+    match /audience_stats/{statId} {
+      allow read: if isDocOwner();
+      allow create: if isRequestDocOwner() && isValidAudienceStat(request.resource.data) && userIdUnchanged();
+      allow update: if isDocOwner() && isRequestDocOwner() && isValidAudienceStat(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /social_accounts/{accountId} {
+      allow read: if isDocOwner();
+      allow create: if isRequestDocOwner() && isValidSocialAccount(request.resource.data) && userIdUnchanged();
+      allow update: if isDocOwner() && isRequestDocOwner() && isValidSocialAccount(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+  }
+}
