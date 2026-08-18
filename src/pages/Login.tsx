@@ -55,8 +55,8 @@ export function Login() {
           </div>
           <span className="font-bold text-xl tracking-tight text-gray-900">WotSocial</span>
         </Link>
-        <span className="text-xs font-semibold px-3 py-1 bg-purple-50 text-purple-700 border border-purple-100 rounded-full flex items-center gap-1.5">
-          <Bot className="w-3.5 h-3.5" />
+        <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-800 border border-gray-200 rounded-full flex items-center gap-1.5">
+          <Bot className="w-3.5 h-3.5 text-gray-900" />
           Agentic Social Automation Platform
         </span>
       </header>
@@ -143,16 +143,16 @@ export function Login() {
             type="button"
             onClick={handleQuickAdminLogin}
             disabled={loading}
-            className="w-full py-3 bg-purple-50 text-purple-900 border border-purple-100 font-semibold rounded-xl hover:bg-purple-100 transition-all text-sm flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-200 font-semibold rounded-xl transition-all text-sm flex items-center justify-center gap-2"
           >
-            <ShieldCheck className="w-4 h-4 text-purple-700" />
+            <ShieldCheck className="w-4 h-4 text-gray-900" />
             Quick Admin Sign In (1-Click)
           </button>
 
           {/* Credentials Info Badge */}
-          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3.5 text-center text-xs text-gray-500 space-y-1">
-            <div className="font-semibold text-gray-700 flex items-center justify-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3.5 text-center text-xs text-gray-500 space-y-1">
+            <div className="font-semibold text-gray-800 flex items-center justify-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-gray-900" />
               Seeded Admin Credentials
             </div>
             <p>Email: <code className="bg-gray-200/60 px-1.5 py-0.5 rounded text-gray-800 font-mono text-[11px]">admin@wotsocial.com</code></p>

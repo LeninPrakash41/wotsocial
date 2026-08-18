@@ -145,7 +145,7 @@ export function Brands() {
                     localStorage.setItem('activeBrandId', brand.id);
                     navigate('/agents');
                   }}
-                  className="py-2 bg-purple-50 text-purple-900 text-xs font-semibold rounded-xl hover:bg-purple-900 hover:text-white transition-all border border-purple-100 flex items-center justify-center gap-1"
+                  className="py-2 bg-gray-100 text-gray-900 text-xs font-semibold rounded-xl hover:bg-black hover:text-white transition-all border border-gray-200 flex items-center justify-center gap-1"
                 >
                   <Bot className="w-3.5 h-3.5" />
                   AI Agents

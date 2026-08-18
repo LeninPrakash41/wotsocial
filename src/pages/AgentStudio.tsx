@@ -98,6 +98,21 @@ export function AgentStudio() {
       return;
     }
 
+    const geminiApiKey = (localStorage.getItem('gemini_api_key') || '').trim();
+    const claudeApiKey = (localStorage.getItem('claude_api_key') || '').trim();
+
+    if (provider === 'gemini' && !geminiApiKey) {
+      alert("Missing Gemini API Key: Please configure your Gemini API Key in Integrations before running the pipeline.");
+      navigate('/integrations');
+      return;
+    }
+
+    if (provider === 'claude' && !claudeApiKey) {
+      alert("Missing Claude API Key: Please configure your Anthropic Claude API Key in Integrations before running the pipeline.");
+      navigate('/integrations');
+      return;
+    }
+
     setRunning(true);
     setStepLogs([]);
     setPipelineResult(null);
@@ -122,7 +137,11 @@ export function AgentStudio() {
       setExpandedSection('posts');
     } catch (err: any) {
       console.error("Agent Pipeline Error:", err);
-      alert(`Agent Pipeline Error: ${err.message || String(err)}`);
+      const msg = err?.message || String(err);
+      alert(`Agent Pipeline Error: ${msg}`);
+      if (msg.includes("API Key missing") || msg.includes("API key") || msg.includes("Integrations")) {
+        navigate('/integrations');
+      }
     } finally {
       setRunning(false);
       setCurrentStep('');
@@ -209,8 +228,8 @@ export function AgentStudio() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Bot className="w-6 h-6 text-purple-600" />
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded">Autonomous AI Workforce</span>
+            <Bot className="w-6 h-6 text-gray-900" />
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-900 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded">Autonomous AI Workforce</span>
           </div>
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Agentic Workflow Studio</h1>
           <p className="text-gray-500 mt-1">Deploy specialized Gemini & Claude agents to automate site analysis, competitor tracking, audience profiling, and post generation.</p>
@@ -319,12 +338,19 @@ export function AgentStudio() {
         <div className="pt-2 flex justify-end">
           <button
             onClick={handleRunPipeline}
-            disabled={running || !customBrandName}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-black via-gray-900 to-purple-950 text-white font-medium rounded-xl hover:opacity-95 transition-all shadow-md disabled:opacity-50"
+            disabled={running}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50"
           >
-            {running ? <Loader2 className="w-5 h-5 animate-spin text-purple-400" /> : <Sparkles className="w-5 h-5 text-purple-400" />}
-            {running ? `Running ${currentStep}...` : 'Launch Multi-Agent Pipeline'}
+            {running ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 text-white" />}
+            {running ? 'Agents Executing Tasks...' : 'Launch Multi-Agent Pipeline'}
           </button>
+
+          {running && (
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 ml-4">
+              <Loader2 className="w-4 h-4 animate-spin text-gray-900" />
+              <span>{currentStep}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -332,11 +358,11 @@ export function AgentStudio() {
       {stepLogs.length > 0 && (
         <div className="bg-gray-900 text-gray-100 border border-gray-800 rounded-2xl p-6 shadow-md space-y-4">
           <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-purple-400">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-100">
               <Bot className="w-4 h-4" />
               Agent Work Log & Thought Pipeline
             </div>
-            {running && <span className="text-xs text-amber-400 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Processing agents...</span>}
+            {running && <span className="text-xs text-gray-400 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Processing agents...</span>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
@@ -358,8 +384,8 @@ export function AgentStudio() {
                   className={cn(
                     "p-3 rounded-xl border text-xs flex flex-col justify-between h-24 transition-all",
                     isDone ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-300" :
-                    isRunning ? "bg-purple-950/40 border-purple-600/60 text-purple-200 animate-pulse" :
-                    "bg-gray-800/50 border-gray-800 text-gray-500"
+                    isRunning ? "bg-gray-800 border-gray-700 text-white animate-pulse" :
+                    "bg-slate-900 border-slate-800 text-gray-400"
                   )}
                 >
                   <div className="font-bold text-[11px] tracking-tight">{i + 1}. {stepName.replace(' Agent', '')}</div>
@@ -367,7 +393,7 @@ export function AgentStudio() {
                     <span className="text-[10px]">
                       {isDone ? 'Completed' : isRunning ? 'Working...' : 'Pending'}
                     </span>
-                    {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : isRunning ? <Loader2 className="w-4 h-4 animate-spin text-purple-400" /> : <div className="w-2 h-2 rounded-full bg-gray-700" />}
+                    {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : isRunning ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <div className="w-2 h-2 rounded-full bg-gray-700" />}
                   </div>
                 </div>
               );
@@ -379,31 +405,19 @@ export function AgentStudio() {
       {/* Agent Results Accordion & Dashboard */}
       {pipelineResult && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 p-6 rounded-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50 border border-gray-200 p-6 rounded-2xl">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Multi-Agent Strategy Package Ready</h2>
-              <p className="text-sm text-gray-600 mt-1">Review the synthesized research from all 5 agents below, enrich your brand profile, or push posts to your scheduler.</p>
+              <h3 className="text-base font-semibold text-gray-900">Enrich Active Brand Profile</h3>
+              <p className="text-sm text-gray-500">Save extracted voice, personality traits, value props, and colors directly into your brand configuration.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {selectedBrandId && (
-                <button
-                  onClick={handleEnrichBrandProfile}
-                  disabled={savingToBrand}
-                  className="px-4 py-2.5 bg-white border border-gray-300 hover:border-black text-gray-800 text-xs font-semibold rounded-xl transition-all shadow-xs flex items-center gap-2"
-                >
-                  {savingToBrand ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4 text-emerald-600" />}
-                  {brandSavedSuccess ? 'Profile Enriched!' : 'Enrich Saved Brand Profile'}
-                </button>
-              )}
-              <button
-                onClick={handleSendPostsToScheduler}
-                disabled={schedulingPosts}
-                className="px-4 py-2.5 bg-black hover:bg-gray-800 text-white text-xs font-semibold rounded-xl transition-all shadow-xs flex items-center gap-2"
-              >
-                {schedulingPosts ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4 text-purple-300" />}
-                Push Posts to Scheduler
-              </button>
-            </div>
+            <button
+              onClick={handleEnrichBrandProfile}
+              disabled={savingToBrand}
+              className="px-5 py-2.5 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors shadow-xs text-sm shrink-0 flex items-center justify-center gap-2"
+            >
+              {savingToBrand ? <Loader2 className="w-4 h-4 animate-spin" /> : brandSavedSuccess ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <ShieldCheck className="w-4 h-4" />}
+              {savingToBrand ? 'Updating...' : brandSavedSuccess ? 'Brand Profile Updated!' : 'Save to Brand Profile'}
+            </button>
           </div>
 
           {/* Section 1: Site Analysis */}
@@ -413,7 +427,7 @@ export function AgentStudio() {
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <Search className="w-5 h-5 text-blue-600" />
+                <Search className="w-5 h-5 text-gray-900" />
                 <div>
                   <h3 className="font-semibold text-gray-900">1. Brand & Site Analysis Agent Results</h3>
                   <p className="text-xs text-gray-500">Value proposition, voice, personality, and visual tone</p>
@@ -439,7 +453,7 @@ export function AgentStudio() {
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Key Product/Service Offerings</h4>
                   <div className="flex flex-wrap gap-2">
                     {pipelineResult.siteAnalysis.keyOfferings.map((o, i) => (
-                      <span key={i} className="px-3 py-1 bg-blue-50 text-blue-800 rounded-lg font-medium text-xs border border-blue-100">{o}</span>
+                      <span key={i} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg font-medium text-xs border border-gray-200">{o}</span>
                     ))}
                   </div>
                 </div>
@@ -448,7 +462,7 @@ export function AgentStudio() {
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Primary Content Hooks</h4>
                   <ul className="space-y-1 text-gray-700">
                     {pipelineResult.siteAnalysis.primaryHooks.map((h, i) => (
-                      <li key={i} className="flex items-center gap-2"><ArrowRight className="w-3.5 h-3.5 text-blue-500 shrink-0" /> {h}</li>
+                      <li key={i} className="flex items-center gap-2"><ArrowRight className="w-3.5 h-3.5 text-gray-500 shrink-0" /> {h}</li>
                     ))}
                   </ul>
                 </div>
@@ -463,7 +477,7 @@ export function AgentStudio() {
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <Target className="w-5 h-5 text-amber-600" />
+                <Target className="w-5 h-5 text-gray-900" />
                 <div>
                   <h3 className="font-semibold text-gray-900">2. Competitor & Market Analysis Agent Results</h3>
                   <p className="text-xs text-gray-500">Market positioning, competitor strategies, and content gaps</p>
@@ -478,7 +492,7 @@ export function AgentStudio() {
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Identified Top Competitors</h4>
                   <div className="flex flex-wrap gap-2">
                     {pipelineResult.competitorAnalysis.topCompetitors.map((c, i) => (
-                      <span key={i} className="px-3 py-1 bg-amber-50 text-amber-900 rounded-lg font-medium text-xs border border-amber-200">{c}</span>
+                      <span key={i} className="px-3 py-1 bg-gray-100 text-gray-900 rounded-lg font-medium text-xs border border-gray-200">{c}</span>
                     ))}
                   </div>
                 </div>
@@ -488,7 +502,7 @@ export function AgentStudio() {
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Content Gaps & Opportunities</h4>
                     <ul className="space-y-1 text-gray-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
                       {pipelineResult.competitorAnalysis.contentGapsAndOpportunities.map((g, i) => (
-                        <li key={i} className="flex items-start gap-2"><Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" /> {g}</li>
+                        <li key={i} className="flex items-start gap-2"><Sparkles className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {g}</li>
                       ))}
                     </ul>
                   </div>
@@ -508,7 +522,7 @@ export function AgentStudio() {
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-emerald-600" />
+                <Users className="w-5 h-5 text-gray-900" />
                 <div>
                   <h3 className="font-semibold text-gray-900">3. Target Audience Profiling Agent Results</h3>
                   <p className="text-xs text-gray-500">Ideal Customer Profile (ICP), pain points, and desires</p>
@@ -529,7 +543,7 @@ export function AgentStudio() {
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Core Audience Pain Points</h4>
                     <ul className="space-y-1.5 text-gray-700">
                       {pipelineResult.audienceProfile.painPoints.map((p, i) => (
-                        <li key={i} className="flex items-start gap-2 bg-red-50/60 text-red-900 p-2 rounded-lg text-xs font-medium"><AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" /> {p}</li>
+                        <li key={i} className="flex items-start gap-2 bg-gray-50 text-gray-900 p-2 rounded-lg text-xs font-medium"><AlertTriangle className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {p}</li>
                       ))}
                     </ul>
                   </div>
@@ -537,7 +551,7 @@ export function AgentStudio() {
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Key Desires & Transformation Goals</h4>
                     <ul className="space-y-1.5 text-gray-700">
                       {pipelineResult.audienceProfile.desiresAndGoals.map((d, i) => (
-                        <li key={i} className="flex items-start gap-2 bg-emerald-50/60 text-emerald-900 p-2 rounded-lg text-xs font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> {d}</li>
+                        <li key={i} className="flex items-start gap-2 bg-gray-50 text-gray-900 p-2 rounded-lg text-xs font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {d}</li>
                       ))}
                     </ul>
                   </div>
@@ -553,21 +567,19 @@ export function AgentStudio() {
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <Layers className="w-5 h-5 text-purple-600" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">4. Marketing Strategy & Content Pillars Agent Results</h3>
-                  <p className="text-xs text-gray-500">Content pillars, posting cadence, and campaign concepts</p>
-                </div>
+                <Layers className="w-5 h-5 text-gray-900" />
+                <h3 className="font-semibold text-gray-900">4. Marketing Strategy & Content Pillars Agent Results</h3>
               </div>
               {expandedSection === 'strategy' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
             </button>
 
             {expandedSection === 'strategy' && (
               <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
-                <div className="grid md:grid-cols-3 gap-4">
+                <h3 className="text-lg font-semibold text-gray-900">Recommended Strategic Content Pillars</h3>
+                <div className="grid md:grid-cols-2 gap-4">
                   {pipelineResult.marketingStrategy.contentPillars.map((pillar, i) => (
-                    <div key={i} className="p-4 rounded-xl border border-purple-100 bg-purple-50/40 space-y-2">
-                      <div className="font-semibold text-purple-950 text-sm">{pillar.title}</div>
+                    <div key={i} className="p-4 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                      <div className="font-semibold text-gray-900 text-sm">{pillar.title}</div>
                       <p className="text-xs text-gray-600 leading-relaxed">{pillar.description}</p>
                       <div className="pt-2">
                         <div className="text-[10px] font-bold text-gray-400 uppercase">Topics:</div>
@@ -607,60 +619,74 @@ export function AgentStudio() {
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
             <button
               onClick={() => setExpandedSection(expandedSection === 'posts' ? null : 'posts')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-purple-900 to-black text-white text-left"
+              className="w-full px-6 py-4 flex items-center justify-between bg-black text-white text-left"
             >
               <div className="flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-purple-300" />
+                <Sparkles className="w-5 h-5 text-white" />
                 <div>
-                  <h3 className="font-semibold text-white">5. Generated Multi-Platform Post Packages</h3>
-                  <p className="text-xs text-purple-200">{pipelineResult.postPackages.length} complete posts ready for publishing</p>
+                  <h3 className="font-semibold text-base">Generated Multi-Platform Post Packages</h3>
+                  <p className="text-xs text-gray-300">{pipelineResult.postPackages.length} complete posts ready for publishing</p>
                 </div>
               </div>
-              {expandedSection === 'posts' ? <ChevronUp className="w-5 h-5 text-purple-200" /> : <ChevronDown className="w-5 h-5 text-purple-200" />}
+              {expandedSection === 'posts' ? <ChevronUp className="w-5 h-5 text-gray-300" /> : <ChevronDown className="w-5 h-5 text-gray-300" />}
             </button>
 
             {expandedSection === 'posts' && (
               <div className="p-6 border-t border-gray-100 space-y-8">
-                {pipelineResult.postPackages.map((pkg, i) => (
-                  <div key={i} className="border border-gray-200 rounded-2xl p-6 space-y-4 bg-gray-50/50 shadow-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">{i + 1}</span>
-                        <h4 className="font-bold text-gray-900">{pkg.topic}</h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Agent Post Generation Output</span>
+                  <button
+                    onClick={handleSendPostsToScheduler}
+                    disabled={schedulingPosts}
+                    className="px-4 py-2 bg-black text-white text-xs font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2"
+                  >
+                    {schedulingPosts ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4 text-white" />}
+                    {schedulingPosts ? 'Scheduling...' : 'Send All Posts to Scheduler'}
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {pipelineResult.postPackages.map((pkg, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-2xl p-6 bg-gray-50/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">{idx + 1}</span>
+                          <h4 className="font-bold text-gray-900">{pkg.topic}</h4>
+                        </div>
+                        <span className="text-xs font-medium bg-gray-200 text-gray-800 px-2.5 py-0.5 rounded-full w-fit">Pillar: {pkg.contentPillar}</span>
                       </div>
-                      <span className="text-xs font-medium bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full w-fit">Pillar: {pkg.contentPillar}</span>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* LinkedIn Version */}
+                        <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2">
+                          <div className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
+                            LinkedIn Version
+                          </div>
+                          <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{pkg.linkedinPost}</p>
+                        </div>
+
+                        {/* Twitter Version */}
+                        <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2">
+                          <div className="text-xs font-bold text-sky-600 flex items-center gap-1.5">
+                            Twitter / X Version
+                          </div>
+                          <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{pkg.twitterPost}</p>
+                        </div>
+                      </div>
+
+                      {/* Visual Media Prompt */}
+                      {pkg.visualPrompt && (
+                        <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl space-y-1">
+                          <div className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                            Suggested Visual Prompt (for Imagen 3 / Veo AI):
+                          </div>
+                          <p className="text-xs text-amber-950 font-mono">{pkg.visualPrompt}</p>
+                        </div>
+                      )}
                     </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {/* LinkedIn Version */}
-                      <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2">
-                        <div className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
-                          LinkedIn Version
-                        </div>
-                        <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{pkg.linkedinPost}</p>
-                      </div>
-
-                      {/* Twitter Version */}
-                      <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2">
-                        <div className="text-xs font-bold text-sky-600 flex items-center gap-1.5">
-                          Twitter / X Version
-                        </div>
-                        <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{pkg.twitterPost}</p>
-                      </div>
-                    </div>
-
-                    {/* Visual Media Prompt */}
-                    {pkg.visualPrompt && (
-                      <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl space-y-1">
-                        <div className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                          Suggested Visual Prompt (for Imagen 3 / Veo AI):
-                        </div>
-                        <p className="text-xs text-amber-950 font-mono">{pkg.visualPrompt}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -718,7 +744,7 @@ export function AgentStudio() {
                         <span className="font-bold text-gray-400 uppercase text-[10px]">Meta Ads Manager Interest Categories:</span>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {pipelineResult.adCampaign.metaAd.metaTargeting.interests.map((int, i) => (
-                            <span key={i} className="bg-purple-50 text-purple-900 text-[10px] font-semibold px-2.5 py-0.5 rounded border border-purple-200">{int}</span>
+                            <span key={i} className="bg-gray-100 text-gray-900 text-[10px] font-semibold px-2.5 py-0.5 rounded border border-gray-200">{int}</span>
                           ))}
                         </div>
                       </div>

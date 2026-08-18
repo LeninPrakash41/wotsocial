@@ -541,7 +541,7 @@ export function ContentGenerator() {
                         <span className="font-bold text-gray-400 uppercase text-[10px]">Meta Ads Manager Interest Targeting:</span>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {generatedAdCampaign.metaAd.metaTargeting.interests.map((int, i) => (
-                            <span key={i} className="bg-purple-50 text-purple-800 text-[10px] font-medium px-2 py-0.5 rounded border border-purple-100">{int}</span>
+                            <span key={i} className="bg-gray-100 text-gray-800 text-[10px] font-medium px-2 py-0.5 rounded border border-gray-200">{int}</span>
                           ))}
                         </div>
                       </div>

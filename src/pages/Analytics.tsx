@@ -211,7 +211,7 @@ export function Analytics() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Reach', value: totalReach.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Impressions', value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Impressions', value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-gray-900', bg: 'bg-gray-100' },
           { label: 'Engagement', value: totalEngagement.toLocaleString(), icon: ThumbsUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Avg. Likes', value: posts.length ? Math.round(totalLikes / posts.length).toLocaleString() : 0, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
         ].map((stat, i) => (

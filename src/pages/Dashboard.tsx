@@ -118,20 +118,20 @@ export function Dashboard() {
 
           {/* Quick Actions */}
           <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <Link to="/agents" className="bg-gradient-to-br from-purple-900 to-black text-white rounded-2xl p-6 shadow-sm hover:opacity-95 transition-all group col-span-full">
+            <Link to="/agents" className="bg-black text-white rounded-2xl p-6 shadow-sm hover:bg-gray-900 transition-all group col-span-full border border-gray-800">
               <div className="flex items-center gap-4 md:gap-6">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 rounded-xl flex items-center justify-center text-purple-300 shrink-0">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 rounded-xl flex items-center justify-center text-white shrink-0">
                   <Bot className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">Multi-Agent AI</span>
-                    <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-white/15 text-gray-200 px-2 py-0.5 rounded border border-white/10">Multi-Agent AI</span>
+                    <Sparkles className="w-3.5 h-3.5 text-gray-300" />
                   </div>
                   <h3 className="text-lg font-semibold text-white">Agentic Workflow Studio</h3>
-                  <p className="text-sm text-purple-200">Run end-to-end automated site analysis, competitor tracking, audience profiling, and post generation with Gemini & Claude.</p>
+                  <p className="text-sm text-gray-300">Run end-to-end automated site analysis, competitor tracking, audience profiling, and post generation with Gemini & Claude.</p>
                 </div>
-                <ArrowRight className="w-5 h-5 ml-auto text-purple-300 group-hover:translate-x-1 transition-transform hidden sm:block" />
+                <ArrowRight className="w-5 h-5 ml-auto text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-transform hidden sm:block" />
               </div>
             </Link>
 
