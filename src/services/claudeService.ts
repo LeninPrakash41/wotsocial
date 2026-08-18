@@ -1,3 +1,5 @@
+import { safeParseJSON } from "./jsonParser";
+
 export const getClaudeApiKey = (): string => {
   return (localStorage.getItem('claude_api_key') || '').trim();
 };
@@ -58,14 +60,5 @@ export const generateClaudeContent = async (params: ClaudeMessageParams): Promis
 export const generateClaudeJSON = async <T>(params: ClaudeMessageParams): Promise<T> => {
   const jsonPrompt = `${params.userPrompt}\n\nIMPORTANT: Return ONLY a valid JSON object matching the requested schema. Do NOT wrap in markdown code blocks or add explanatory text outside the JSON.`;
   const rawText = await generateClaudeContent({ ...params, userPrompt: jsonPrompt });
-  
-  const jsonMatch = rawText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-  const cleanJson = jsonMatch ? jsonMatch[0] : rawText;
-  
-  try {
-    return JSON.parse(cleanJson) as T;
-  } catch (err) {
-    console.error("Failed to parse JSON from Claude response:", rawText);
-    throw new Error("Failed to parse JSON response from Claude.");
-  }
+  return safeParseJSON<T>(rawText);
 };

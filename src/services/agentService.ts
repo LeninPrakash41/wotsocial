@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { generateClaudeJSON, getClaudeApiKey } from "./claudeService";
 import { generatePaidAdCampaign, PaidAdCampaignPackage } from "./adService";
+import { safeParseJSON } from "./jsonParser";
 
 export type AIProvider = 'gemini' | 'claude';
 export type AIModel = 'gemini-3-flash' | 'gemini-3.1-pro' | 'claude-3-5-sonnet' | 'claude-3-opus';
@@ -184,10 +185,7 @@ async function runLLMTask<T>(params: {
   });
 
   const text = response.text || '{}';
-  const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-  const cleanJson = jsonMatch ? jsonMatch[0] : '{}';
-
-  return JSON.parse(cleanJson) as T;
+  return safeParseJSON<T>(text);
 }
 
 // Internal search context helper using Gemini Search
