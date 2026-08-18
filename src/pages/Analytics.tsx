@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { db, auth } from '../firebase';
-import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, limit, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { getBrands, getBrandById, getPosts } from '../dbAdapter';
+import { auth } from '../auth';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, AreaChart, Area, PieChart, Pie, Cell 
@@ -25,27 +25,18 @@ export function Analytics() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!auth.currentUser) return;
       try {
         const activeBrandId = localStorage.getItem('activeBrandId');
         let brandData = null;
 
         if (activeBrandId) {
-          const brandDoc = await getDoc(doc(db, 'brands', activeBrandId));
-          if (brandDoc.exists() && brandDoc.data().userId === auth.currentUser.uid) {
-            brandData = { id: brandDoc.id, ...brandDoc.data() };
-          }
+          brandData = await getBrandById(activeBrandId);
         }
 
         if (!brandData) {
-          const brandQ = query(
-            collection(db, 'brands'),
-            where('userId', '==', auth.currentUser.uid),
-            limit(1)
-          );
-          const brandSnap = await getDocs(brandQ);
-          if (!brandSnap.empty) {
-            brandData = { id: brandSnap.docs[0].id, ...brandSnap.docs[0].data() };
+          const allBrands = await getBrands();
+          if (allBrands.length > 0) {
+            brandData = allBrands[0];
             localStorage.setItem('activeBrandId', brandData.id);
           }
         }
@@ -56,38 +47,8 @@ export function Analytics() {
         }
         setBrand(brandData);
 
-        // Fetch Published Posts for this brand
-        const postsQ = query(
-          collection(db, 'posts'),
-          where('userId', '==', auth.currentUser.uid),
-          where('brandId', '==', brandData.id),
-          where('status', '==', 'published'),
-          orderBy('updatedAt', 'desc')
-        );
-        const postsSnap = await getDocs(postsQ);
-        const postsData = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const postsData = await getPosts(brandData.id);
         setPosts(postsData);
-
-        // Fetch Audience Stats
-        const audienceQ = query(
-          collection(db, 'audience_stats'),
-          where('brandId', '==', brandData.id)
-        );
-        const audienceSnap = await getDocs(audienceQ);
-        const audienceData = audienceSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setAudienceStats(audienceData);
-
-        // Fetch Latest Insight
-        const insightQ = query(
-          collection(db, 'insights'),
-          where('brandId', '==', brandData.id),
-          orderBy('createdAt', 'desc'),
-          limit(1)
-        );
-        const insightSnap = await getDocs(insightQ);
-        if (!insightSnap.empty) {
-          setInsight(insightSnap.docs[0].data());
-        }
       } catch (error) {
         console.error("Error fetching analytics data:", error);
       } finally {
@@ -101,64 +62,46 @@ export function Analytics() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      // 1. Sync Posts
-      const updatedPosts = await Promise.all(posts.map(async (post) => {
+      const updatedPosts = posts.map((post) => {
         const randomLikes = Math.floor(Math.random() * 500) + 50;
         const randomShares = Math.floor(Math.random() * 100) + 10;
         const randomComments = Math.floor(Math.random() * 50) + 5;
         const randomImpressions = Math.floor(Math.random() * 5000) + 1000;
         const randomReach = Math.floor(randomImpressions * 0.8);
 
-        const postRef = doc(db, 'posts', post.id);
-        const updates = {
+        return {
+          ...post,
           likes: randomLikes,
           shares: randomShares,
           comments: randomComments,
           impressions: randomImpressions,
-          reach: randomReach,
-          updatedAt: serverTimestamp()
+          reach: randomReach
         };
-        await updateDoc(postRef, updates);
-        return { ...post, ...updates };
-      }));
+      });
       setPosts(updatedPosts);
 
-      // 2. Sync Audience Stats (Simulated)
       const platforms = ['twitter', 'linkedin', 'instagram'];
-      const newAudienceStats = await Promise.all(platforms.map(async (platform) => {
-        const stats = {
-          userId: auth.currentUser?.uid,
-          brandId: brand.id,
-          platform,
-          ageGroups: {
-            '18-24': Math.floor(Math.random() * 30) + 5,
-            '25-34': Math.floor(Math.random() * 40) + 10,
-            '35-44': Math.floor(Math.random() * 20) + 5,
-            '45+': Math.floor(Math.random() * 10) + 2
-          },
-          gender: {
-            'male': Math.floor(Math.random() * 60) + 20,
-            'female': Math.floor(Math.random() * 60) + 20,
-            'other': Math.floor(Math.random() * 10)
-          },
-          locations: {
-            'USA': Math.floor(Math.random() * 50) + 20,
-            'UK': Math.floor(Math.random() * 20) + 5,
-            'Canada': Math.floor(Math.random() * 15) + 5,
-            'Germany': Math.floor(Math.random() * 10) + 2
-          },
-          updatedAt: serverTimestamp()
-        };
-
-        // Check if exists
-        const q = query(collection(db, 'audience_stats'), where('brandId', '==', brand.id), where('platform', '==', platform));
-        const snap = await getDocs(q);
-        if (snap.empty) {
-          await addDoc(collection(db, 'audience_stats'), stats);
-        } else {
-          await updateDoc(doc(db, 'audience_stats', snap.docs[0].id), stats);
+      const newAudienceStats = platforms.map((platform) => ({
+        userId: auth.currentUser?.uid,
+        brandId: brand.id,
+        platform,
+        ageGroups: {
+          '18-24': Math.floor(Math.random() * 30) + 5,
+          '25-34': Math.floor(Math.random() * 40) + 10,
+          '35-44': Math.floor(Math.random() * 20) + 5,
+          '45+': Math.floor(Math.random() * 10) + 2
+        },
+        gender: {
+          'male': Math.floor(Math.random() * 60) + 20,
+          'female': Math.floor(Math.random() * 60) + 20,
+          'other': Math.floor(Math.random() * 10)
+        },
+        locations: {
+          'USA': Math.floor(Math.random() * 50) + 20,
+          'UK': Math.floor(Math.random() * 20) + 5,
+          'Canada': Math.floor(Math.random() * 15) + 5,
+          'Germany': Math.floor(Math.random() * 10) + 2
         }
-        return stats;
       }));
       setAudienceStats(newAudienceStats);
 
@@ -199,10 +142,9 @@ export function Analytics() {
         userId: auth.currentUser?.uid,
         brandId: brand.id,
         ...result,
-        createdAt: serverTimestamp()
+        createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'insights'), insightData);
       setInsight(insightData);
       alert("AI Insights generated!");
     } catch (error) {

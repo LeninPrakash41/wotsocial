@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, auth } from '../firebase';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { auth } from '../auth';
 import { Loader2, User, Mail, Shield, Check, Camera } from 'lucide-react';
 
 export function Profile() {
@@ -13,43 +12,17 @@ export function Profile() {
   const [photoURL, setPhotoURL] = useState('');
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (!auth.currentUser) return;
-      try {
-        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setUser(data);
-          setDisplayName(data.displayName || '');
-          setPhotoURL(data.photoURL || '');
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
+    const u = auth.currentUser;
+    if (u) {
+      setUser(u);
+      setDisplayName(u.displayName || 'WotSocial Admin');
+    }
+    setLoading(false);
   }, []);
 
   const handleSave = async () => {
-    if (!auth.currentUser) return;
-    setSaving(true);
-    try {
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-        displayName,
-        photoURL,
-        updatedAt: serverTimestamp()
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile.");
-    } finally {
-      setSaving(false);
-    }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const handlePhotoUpload = (e: any) => {

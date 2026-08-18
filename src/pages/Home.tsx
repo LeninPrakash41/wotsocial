@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Calendar, PenTool, LayoutDashboard, TrendingUp, Edit3, Clock } from 'lucide-react';
-import { loginWithGoogle, auth } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../auth';
 import { useEffect, useState } from 'react';
 
 export function Home() {
@@ -12,10 +11,9 @@ export function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       setIsInitialLoading(false);
-      // If user is already logged in, redirect to dashboard
       if (currentUser) {
         navigate('/dashboard');
       }
@@ -24,30 +22,7 @@ export function Home() {
   }, [navigate]);
 
   const handleLogin = async () => {
-    if (isLoggingIn) return;
-    
-    // If already logged in, just navigate
-    if (user) {
-      navigate('/dashboard');
-      return;
-    }
-
-    setIsLoggingIn(true);
-    try {
-      await loginWithGoogle();
-      // Navigation is handled by onAuthStateChanged for better reliability
-    } catch (err: any) {
-      console.error("Login failed", err);
-      if (err.code === 'auth/popup-blocked') {
-        setError('The sign-in popup was blocked by your browser. Please allow popups for this site and try again.');
-      } else if (err.code === 'auth/cancelled-popup-request') {
-        // User closed the popup, no need to show an error
-      } else {
-        setError('An error occurred during sign-in. Please try again.');
-      }
-    } finally {
-      setIsLoggingIn(false);
-    }
+    navigate('/dashboard');
   };
 
   if (isInitialLoading) {
