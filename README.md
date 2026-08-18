@@ -38,7 +38,7 @@ WotSocial is an open-source, AI-driven content creation and social media managem
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/lenin1411/wotsocial.git
+git clone https://github.com/LeninPrakash41/wotsocial.git
 cd wotsocial
 ```
 
