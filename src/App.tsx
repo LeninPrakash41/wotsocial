@@ -19,6 +19,7 @@ import { Analytics } from './pages/Analytics';
 
 import { Integrations } from './pages/Integrations';
 import { AgentStudio } from './pages/AgentStudio';
+import { Login } from './pages/Login';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
           <Route
             element={
               <ProtectedRoute>

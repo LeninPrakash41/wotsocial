@@ -22,12 +22,11 @@ class AuthManager {
       try {
         this.currentUserState = JSON.parse(saved);
       } catch {
-        this.currentUserState = DEFAULT_ADMIN_USER;
+        this.currentUserState = null;
       }
     } else {
-      // Default to seeded admin user
-      this.currentUserState = DEFAULT_ADMIN_USER;
-      localStorage.setItem('wotsocial_user', JSON.stringify(DEFAULT_ADMIN_USER));
+      // Require sign-in by default
+      this.currentUserState = null;
     }
   }
 
@@ -44,22 +43,33 @@ class AuthManager {
   }
 
   async login(email: string, password_hash: string): Promise<User> {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: password_hash })
-    });
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: password_hash })
+      });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || 'Authentication failed');
+      if (response.ok) {
+        const data = await response.json();
+        this.currentUserState = data.user;
+        localStorage.setItem('wotsocial_user', JSON.stringify(data.user));
+        this.listeners.forEach(l => l(data.user));
+        return data.user;
+      }
+    } catch (err) {
+      console.warn("API login failed, checking default admin credentials...", err);
     }
 
-    const data = await response.json();
-    this.currentUserState = data.user;
-    localStorage.setItem('wotsocial_user', JSON.stringify(data.user));
-    this.listeners.forEach(l => l(data.user));
-    return data.user;
+    // Fallback for default admin account
+    if (email.trim().toLowerCase() === 'admin@wotsocial.com' && password_hash === 'Admin@123456') {
+      this.currentUserState = DEFAULT_ADMIN_USER;
+      localStorage.setItem('wotsocial_user', JSON.stringify(DEFAULT_ADMIN_USER));
+      this.listeners.forEach(l => l(DEFAULT_ADMIN_USER));
+      return DEFAULT_ADMIN_USER;
+    }
+
+    throw new Error('Invalid email or password.');
   }
 
   logout() {
