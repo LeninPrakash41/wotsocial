@@ -18,6 +18,7 @@ import { Scheduler } from './pages/Scheduler';
 import { Analytics } from './pages/Analytics';
 
 import { Integrations } from './pages/Integrations';
+import { AgentStudio } from './pages/AgentStudio';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/agents" element={<AgentStudio />} />
             <Route path="/brands" element={<Brands />} />
             <Route path="/brand-setup" element={<BrandSetup />} />
             <Route path="/brand-setup/:brandId" element={<BrandSetup />} />

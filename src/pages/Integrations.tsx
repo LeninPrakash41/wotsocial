@@ -3,6 +3,7 @@ import { Save, Key, Shield, AlertCircle, Share2, Instagram, Facebook, Twitter, L
 
 export function Integrations() {
   const [geminiKey, setGeminiKey] = useState('');
+  const [claudeKey, setClaudeKey] = useState('');
   const [twitterApiKey, setTwitterApiKey] = useState('');
   const [twitterApiSecret, setTwitterApiSecret] = useState('');
   const [linkedinToken, setLinkedinToken] = useState('');
@@ -13,6 +14,9 @@ export function Integrations() {
   useEffect(() => {
     const key = localStorage.getItem('gemini_api_key');
     if (key) setGeminiKey(key);
+
+    const cKey = localStorage.getItem('claude_api_key');
+    if (cKey) setClaudeKey(cKey);
 
     const twKey = localStorage.getItem('twitter_api_key');
     if (twKey) setTwitterApiKey(twKey);
@@ -40,6 +44,7 @@ export function Integrations() {
     }
 
     saveItem('gemini_api_key', geminiKey);
+    saveItem('claude_api_key', claudeKey);
     saveItem('twitter_api_key', twitterApiKey);
     saveItem('twitter_api_secret', twitterApiSecret);
     saveItem('linkedin_access_token', linkedinToken);
@@ -90,7 +95,22 @@ export function Integrations() {
             />
             <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
-              Required for AI content generation, planning, and insights. Get your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Google AI Studio</a>.
+              Required for Gemini AI content generation, search, and video features. Get key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Google AI Studio</a>.
+            </p>
+          </div>
+
+          <div className="space-y-2 max-w-2xl pt-4 border-t border-gray-100">
+            <label className="text-sm font-medium text-gray-700">Anthropic Claude API Key</label>
+            <input 
+              type="password" 
+              value={claudeKey}
+              onChange={(e) => setClaudeKey(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+              placeholder="sk-ant-api03-..."
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              Used for Claude 3.5 Sonnet & Claude 3 Opus agent steps. Get key from <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Anthropic Console</a>.
             </p>
           </div>
         </div>
