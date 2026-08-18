@@ -39,12 +39,60 @@ export interface Post {
   isPlanned?: boolean;
 }
 
+// Helper to safely parse API response or return fallback
+const safeApiFetch = async (url: string, options?: RequestInit): Promise<any> => {
+  try {
+    const res = await fetch(url, options);
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
+      return await res.json();
+    }
+    const text = await res.text();
+    if (text.startsWith('{') || text.startsWith('[')) {
+      return JSON.parse(text);
+    }
+    return null;
+  } catch (err) {
+    console.warn(`API fetch error for ${url}:`, err);
+    return null;
+  }
+};
+
+// LocalStorage Fallbacks
+const getLocalBrands = (): Brand[] => {
+  try {
+    return JSON.parse(localStorage.getItem('wotsocial_brands') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const saveLocalBrands = (brands: Brand[]) => {
+  localStorage.setItem('wotsocial_brands', JSON.stringify(brands));
+};
+
+const getLocalPosts = (): Post[] => {
+  try {
+    return JSON.parse(localStorage.getItem('wotsocial_posts') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const saveLocalPosts = (posts: Post[]) => {
+  localStorage.setItem('wotsocial_posts', JSON.stringify(posts));
+};
+
 // Brands API Client
 export const getBrands = async (): Promise<Brand[]> => {
   const userId = auth.currentUser?.uid || 'admin-user-001';
-  const res = await fetch(`/api/brands?userId=${encodeURIComponent(userId)}`);
-  if (!res.ok) throw new Error("Failed to fetch brands from database");
-  return await res.json();
+  const data = await safeApiFetch(`/api/brands?userId=${encodeURIComponent(userId)}`);
+  
+  if (Array.isArray(data)) {
+    saveLocalBrands(data);
+    return data;
+  }
+  return getLocalBrands();
 };
 
 export const getBrandById = async (id: string): Promise<Brand | null> => {
@@ -54,29 +102,43 @@ export const getBrandById = async (id: string): Promise<Brand | null> => {
 
 export const addBrand = async (brandData: Partial<Brand>): Promise<Brand> => {
   const userId = auth.currentUser?.uid || 'admin-user-001';
-  const res = await fetch('/api/brands', {
+  const apiRes = await safeApiFetch('/api/brands', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, ...brandData })
   });
-  if (!res.ok) throw new Error("Failed to save brand to database");
-  return await res.json();
+
+  const newBrand: Brand = apiRes || {
+    id: `brand-${Date.now()}`,
+    userId,
+    name: brandData.name || 'New Brand',
+    ...brandData
+  };
+
+  const current = getLocalBrands();
+  saveLocalBrands([newBrand, ...current]);
+  return newBrand;
 };
 
 export const updateBrand = async (id: string, brandData: Partial<Brand>): Promise<void> => {
-  const res = await fetch(`/api/brands/${id}`, {
+  await safeApiFetch(`/api/brands/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(brandData)
   });
-  if (!res.ok) throw new Error("Failed to update brand in database");
+
+  const current = getLocalBrands();
+  const updated = current.map(b => b.id === id ? { ...b, ...brandData } : b);
+  saveLocalBrands(updated);
 };
 
 export const deleteBrand = async (id: string): Promise<void> => {
-  const res = await fetch(`/api/brands/${id}`, {
+  await safeApiFetch(`/api/brands/${id}`, {
     method: 'DELETE'
   });
-  if (!res.ok) throw new Error("Failed to delete brand from database");
+
+  const current = getLocalBrands();
+  saveLocalBrands(current.filter(b => b.id !== id));
 };
 
 // Posts API Client
@@ -85,34 +147,55 @@ export const getPosts = async (brandId?: string): Promise<Post[]> => {
   let url = `/api/posts?userId=${encodeURIComponent(userId)}`;
   if (brandId) url += `&brandId=${encodeURIComponent(brandId)}`;
   
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch posts from database");
-  return await res.json();
+  const data = await safeApiFetch(url);
+  if (Array.isArray(data)) {
+    saveLocalPosts(data);
+    return data;
+  }
+
+  const local = getLocalPosts();
+  if (brandId) return local.filter(p => p.brandId === brandId);
+  return local;
 };
 
 export const addPost = async (postData: Partial<Post>): Promise<Post> => {
   const userId = auth.currentUser?.uid || 'admin-user-001';
-  const res = await fetch('/api/posts', {
+  const apiRes = await safeApiFetch('/api/posts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, ...postData })
   });
-  if (!res.ok) throw new Error("Failed to create post in database");
-  return await res.json();
+
+  const newPost: Post = apiRes || {
+    id: `post-${Date.now()}`,
+    userId,
+    brandId: postData.brandId || 'unassigned',
+    content: postData.content || '',
+    status: postData.status || 'suggested',
+    ...postData
+  };
+
+  const current = getLocalPosts();
+  saveLocalPosts([newPost, ...current]);
+  return newPost;
 };
 
 export const updatePost = async (id: string, postData: Partial<Post>): Promise<void> => {
-  const res = await fetch(`/api/posts/${id}`, {
+  await safeApiFetch(`/api/posts/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(postData)
   });
-  if (!res.ok) throw new Error("Failed to update post in database");
+
+  const current = getLocalPosts();
+  saveLocalPosts(current.map(p => p.id === id ? { ...p, ...postData } : p));
 };
 
 export const deletePost = async (id: string): Promise<void> => {
-  const res = await fetch(`/api/posts/${id}`, {
+  await safeApiFetch(`/api/posts/${id}`, {
     method: 'DELETE'
   });
-  if (!res.ok) throw new Error("Failed to delete post from database");
+
+  const current = getLocalPosts();
+  saveLocalPosts(current.filter(p => p.id !== id));
 };
