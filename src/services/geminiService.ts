@@ -23,6 +23,8 @@ export const fetchSuggestions = async (brandData: any, query?: string) => {
   - Brand Tone: ${brandData.brandTone || 'N/A'}
   - Brand Personality: ${brandData.brandPersonality || 'N/A'}
   - Guidelines/Mission: ${brandData.guidelinesText?.substring(0, 500) || 'N/A'}
+  ${brandData.agentResearchData?.audienceProfile?.primaryICP ? `- Target ICP: ${brandData.agentResearchData.audienceProfile.primaryICP}` : ''}
+  ${brandData.agentResearchData?.competitorAnalysis?.recommendedDifferentiation ? `- Differentiation: ${brandData.agentResearchData.competitorAnalysis.recommendedDifferentiation}` : ''}
   
   For each topic, provide:
   1. A catchy title.
@@ -67,6 +69,8 @@ export const planCalendar = async (days: number, brand: any) => {
   - Tone: ${brand.brandTone}
   - Personality: ${brand.brandPersonality}
   - Guidelines: ${brand.guidelinesText?.substring(0, 500) || 'N/A'}
+  ${brand.agentResearchData?.marketingStrategy?.contentPillars ? `- Content Pillars: ${brand.agentResearchData.marketingStrategy.contentPillars.map((p: any) => p.title).join(', ')}` : ''}
+  ${brand.agentResearchData?.audienceProfile?.painPoints ? `- Audience Pain Points: ${brand.agentResearchData.audienceProfile.painPoints.join(', ')}` : ''}
   
   Instructions:
   1. Create a cohesive narrative across the ${days} days.
@@ -121,6 +125,10 @@ export const generateContent = async (params: {
   - Category: ${brand.category || 'N/A'}
   - Tone: ${brand.brandTone || 'Professional but approachable'}
   - Personality: ${brand.brandPersonality || 'Helpful and innovative'}
+  ${brand.agentResearchData?.siteAnalysis?.valueProposition ? `- Core Value Prop: ${brand.agentResearchData.siteAnalysis.valueProposition}` : ''}
+  ${brand.agentResearchData?.audienceProfile?.primaryICP ? `- Target Audience ICP: ${brand.agentResearchData.audienceProfile.primaryICP}` : ''}
+  ${brand.agentResearchData?.audienceProfile?.painPoints ? `- Audience Pain Points: ${brand.agentResearchData.audienceProfile.painPoints.join(', ')}` : ''}
+  ${brand.agentResearchData?.competitorAnalysis?.recommendedDifferentiation ? `- Differentiation Strategy: ${brand.agentResearchData.competitorAnalysis.recommendedDifferentiation}` : ''}
   
   CRITICAL INSTRUCTIONS:
   1. DO NOT use markdown formatting like asterisks (**) for bolding. Use plain text only.

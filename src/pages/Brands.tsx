@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { Plus, Globe, Settings, Trash2, ExternalLink, Briefcase } from 'lucide-react';
+import { Plus, Globe, Settings, Trash2, ExternalLink, Briefcase, Bot } from 'lucide-react';
 
 export function Brands() {
   const navigate = useNavigate();
@@ -148,15 +148,27 @@ export function Brands() {
                 )}
               </div>
 
-              <button
-                onClick={() => {
-                  localStorage.setItem('activeBrandId', brand.id);
-                  navigate('/dashboard');
-                }}
-                className="w-full py-2.5 bg-gray-50 text-gray-900 text-sm font-medium rounded-xl hover:bg-black hover:text-white transition-all border border-gray-100"
-              >
-                Switch to Brand
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    localStorage.setItem('activeBrandId', brand.id);
+                    navigate('/agents');
+                  }}
+                  className="py-2 bg-purple-50 text-purple-900 text-xs font-semibold rounded-xl hover:bg-purple-900 hover:text-white transition-all border border-purple-100 flex items-center justify-center gap-1"
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  AI Agents
+                </button>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('activeBrandId', brand.id);
+                    navigate('/dashboard');
+                  }}
+                  className="py-2 bg-gray-50 text-gray-900 text-xs font-medium rounded-xl hover:bg-black hover:text-white transition-all border border-gray-100"
+                >
+                  Dashboard
+                </button>
+              </div>
             </div>
           ))}
         </div>

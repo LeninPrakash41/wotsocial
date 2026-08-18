@@ -177,6 +177,7 @@ export function BrandSetup() {
       if (logoUrl) brandData.logoUrl = logoUrl;
       if (analysisResult?.brandTone) brandData.brandTone = analysisResult?.brandTone;
       if (analysisResult?.brandPersonality) brandData.brandPersonality = analysisResult?.brandPersonality;
+      if (brand?.agentResearchData) brandData.agentResearchData = brand.agentResearchData;
 
       if (brand) {
         try {

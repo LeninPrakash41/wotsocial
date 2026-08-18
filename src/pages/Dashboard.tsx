@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Calendar, PenTool, Settings, BarChart3, TrendingUp } from 'lucide-react';
+import { ArrowRight, Calendar, PenTool, Settings, BarChart3, TrendingUp, Bot, Sparkles } from 'lucide-react';
 
 export function Dashboard() {
   const [brand, setBrand] = useState<any>(null);
@@ -127,6 +127,23 @@ export function Dashboard() {
 
           {/* Quick Actions */}
           <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Link to="/agents" className="bg-gradient-to-br from-purple-900 to-black text-white rounded-2xl p-6 shadow-sm hover:opacity-95 transition-all group col-span-full">
+              <div className="flex items-center gap-4 md:gap-6">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 rounded-xl flex items-center justify-center text-purple-300 shrink-0">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">Multi-Agent AI</span>
+                    <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Agentic Workflow Studio</h3>
+                  <p className="text-sm text-purple-200">Run end-to-end automated site analysis, competitor tracking, audience profiling, and post generation with Gemini & Claude.</p>
+                </div>
+                <ArrowRight className="w-5 h-5 ml-auto text-purple-300 group-hover:translate-x-1 transition-transform hidden sm:block" />
+              </div>
+            </Link>
+
             <Link to="/generate" className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:border-black/20 transition-colors group">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-black group-hover:text-white transition-colors">
                 <TrendingUp className="w-5 h-5 md:w-6 md:h-6" />
