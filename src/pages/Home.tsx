@@ -64,9 +64,9 @@ export function Home() {
       <header className="px-6 py-4 flex items-center justify-between border-b border-black/10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">S</span>
+            <span className="text-white font-bold text-lg">W</span>
           </div>
-          <span className="font-bold text-xl tracking-tight">SocialVase</span>
+          <span className="font-bold text-xl tracking-tight">WotSocial</span>
         </div>
         <nav className="flex items-center gap-4">
           {user ? (
@@ -105,7 +105,7 @@ export function Home() {
               <span className="text-gray-500">AI social team.</span>
             </h1>
             <p className="text-lg text-gray-600 max-w-md leading-relaxed">
-              SocialVase reads your website, understands your brand guidelines, and generates humanized, relatable content to organically grow your audience.
+              WotSocial reads your website, understands your brand guidelines, and generates humanized, relatable content to organically grow your audience.
             </p>
             <div className="flex items-center gap-4">
               {user ? (
@@ -208,7 +208,7 @@ export function Home() {
             <div className="order-1 md:order-2 space-y-6">
               <h2 className="text-4xl font-semibold tracking-tight">Create at the speed of thought.</h2>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Stop staring at a blank page. SocialVase uses advanced AI to generate high-quality text, stunning images, and cinematic videos that perfectly match your brand's unique voice and aesthetic.
+                Stop staring at a blank page. WotSocial uses advanced AI to generate high-quality text, stunning images, and cinematic videos that perfectly match your brand's unique voice and aesthetic.
               </p>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3 text-gray-700">
@@ -290,7 +290,7 @@ export function Home() {
             </div>
             <h3 className="text-lg font-semibold mb-2">Real-time Trends</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              SocialVase tracks Google Search trends in your industry. Instantly generate grounded, timely content that joins the global conversation.
+              WotSocial tracks Google Search trends in your industry. Instantly generate grounded, timely content that joins the global conversation.
             </p>
           </div>
           <div className="bg-white p-8 rounded-2xl border border-black/5 shadow-sm">
@@ -308,7 +308,7 @@ export function Home() {
             </div>
             <h3 className="text-lg font-semibold mb-2">Granular Scheduling</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Set your exact posting frequency—per day, week, or month. SocialVase suggests or auto-posts content based on your specific needs.
+              Set your exact posting frequency—per day, week, or month. WotSocial suggests or auto-posts content based on your specific needs.
             </p>
           </div>
           <div className="bg-white p-8 rounded-2xl border border-black/5 shadow-sm">

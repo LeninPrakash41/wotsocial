@@ -65,7 +65,7 @@ export function Integrations() {
           <div>
             <h2 className="text-xl font-semibold">Security First (Bring Your Own Key)</h2>
             <p className="text-gray-500 text-sm mt-1">
-              SocialVase does not store your credentials on our servers. Your API keys and tokens never leave your local device and are only sent directly to the APIs when taking actions on your behalf.
+              WotSocial does not store your credentials on our servers. Your API keys and tokens never leave your local device and are only sent directly to the APIs when taking actions on your behalf.
             </p>
           </div>
         </div>

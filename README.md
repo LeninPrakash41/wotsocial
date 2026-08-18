@@ -1,8 +1,8 @@
-# SocialVase: AI-Powered Content Creation & Social Media Management for the Modern Creator
+# WotSocial: AI-Powered Content Creation & Social Media Management for the Modern Creator
 
-![SocialVase Hero](https://via.placeholder.com/1200x600?text=SocialVase+Hero+Image) <!-- Replace with your actual hero image -->
+![WotSocial Hero](https://via.placeholder.com/1200x600?text=WotSocial+Hero+Image) <!-- Replace with your actual hero image -->
 
-SocialVase is an open-source, AI-driven content creation and social media management platform. It analyzes your brand's unique tone, personality, and visual identity to automatically generate, schedule, and optimize content for Twitter, LinkedIn, Facebook, and Instagram.
+WotSocial is an open-source, AI-driven content creation and social media management platform. It analyzes your brand's unique tone, personality, and visual identity to automatically generate, schedule, and optimize content for Twitter, LinkedIn, Facebook, and Instagram.
 
 ## ✨ Core Pillars & Features
 
@@ -38,8 +38,8 @@ SocialVase is an open-source, AI-driven content creation and social media manage
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/yourusername/socialvase.git
-cd socialvase
+git clone https://github.com/lenin1411/wotsocial.git
+cd wotsocial
 ```
 
 **2. Install dependencies**
@@ -62,7 +62,7 @@ Open `http://localhost:3000` (or the port shown in your terminal), navigate to t
 
 ## 🚀 Deployment & Automated Posting (Vercel)
 
-SocialVase uses Vercel Cron to automatically publish your scheduled posts in the background without needing a dedicated 24/7 backend. Because cron jobs run on the server, you need to provide your API keys to Vercel via Environment Variables.
+WotSocial uses Vercel Cron to automatically publish your scheduled posts in the background without needing a dedicated 24/7 backend. Because cron jobs run on the server, you need to provide your API keys to Vercel via Environment Variables.
 
 **1. Deploy to Vercel:**
 Click "Deploy to Vercel" or link your GitHub repository. Vercel will automatically detect the Vite app and Serverless functions inside the `api/` directory.
@@ -101,7 +101,7 @@ Don't know where to start? Look for issues tagged `good first issue` in our issu
 
 ## ⚖️ Governance
 
-Read our [GOVERNANCE.md](./GOVERNANCE.md) to understand the roles, decision-making processes, and community standards of the SocialVase project.
+Read our [GOVERNANCE.md](./GOVERNANCE.md) to understand the roles, decision-making processes, and community standards of the WotSocial project.
 
 ---
 

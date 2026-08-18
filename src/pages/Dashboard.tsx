@@ -68,7 +68,7 @@ export function Dashboard() {
           </div>
           <h2 className="text-lg md:text-xl font-semibold mb-2">Setup Your Brand</h2>
           <p className="text-sm md:text-base text-gray-500 max-w-md mx-auto mb-8">
-            Before we can generate content, SocialVase needs to understand your brand's tone, personality, and guidelines.
+            Before we can generate content, WotSocial needs to understand your brand's tone, personality, and guidelines.
           </p>
           <Link
             to="/brand-setup"

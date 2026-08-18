@@ -1,6 +1,6 @@
-# Contributing to SocialVase
+# Contributing to WotSocial
 
-First off, thank you for considering contributing to SocialVase! 🎉 This project thrives on community feedback and contributions. Every contribution, big or small, helps make this platform better for modern creators.
+First off, thank you for considering contributing to WotSocial! 🎉 This project thrives on community feedback and contributions. Every contribution, big or small, helps make this platform better for modern creators.
 
 ## 🤝 How Can I Contribute?
 

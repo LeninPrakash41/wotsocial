@@ -669,8 +669,8 @@ export function ContentGenerator() {
                 </div>
                 <p className="text-[10px] text-gray-400 mt-1">
                   {brand.automationSettings?.mode === 'auto' 
-                    ? `SocialVase is set to automatically post ${brand.automationSettings?.postsPerPeriod} time(s) per ${brand.automationSettings?.periodUnit}.` 
-                    : `SocialVase will suggest ${brand.automationSettings?.postsPerPeriod} post(s) per ${brand.automationSettings?.periodUnit} for your approval.`}
+                    ? `WotSocial is set to automatically post ${brand.automationSettings?.postsPerPeriod} time(s) per ${brand.automationSettings?.periodUnit}.` 
+                    : `WotSocial will suggest ${brand.automationSettings?.postsPerPeriod} post(s) per ${brand.automationSettings?.periodUnit} for your approval.`}
                 </p>
               </div>
             </div>

@@ -36,9 +36,9 @@ export function Layout() {
       <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
         <Link to="/dashboard" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">S</span>
+            <span className="text-white font-bold text-lg">W</span>
           </div>
-          <span className="font-bold text-lg tracking-tight">SocialVase</span>
+          <span className="font-bold text-lg tracking-tight">WotSocial</span>
         </Link>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -75,14 +75,14 @@ export function Layout() {
             isDesktopCollapsed && "md:justify-center md:w-full"
           )}>
             <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-lg">S</span>
+              <span className="text-white font-bold text-lg">W</span>
             </div>
             <span className={cn(
               "font-bold text-xl tracking-tight transition-opacity duration-300",
               isDesktopCollapsed ? "md:hidden" : "md:block",
               "block" // always block on mobile
             )}>
-              SocialVase
+              WotSocial
             </span>
           </Link>
           

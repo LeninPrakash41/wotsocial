@@ -1,15 +1,15 @@
 # Project Governance
 
-This document outlines the governance model for the SocialVase project to ensure its ongoing sustainability and a healthy community environment.
+This document outlines the governance model for the WotSocial project to ensure its ongoing sustainability and a healthy community environment.
 
 ## 🤝 Project Philosophy
 
-SocialVase is fundamentally committed to empowering creators. We strive for transparency, collaboration, and a welcoming environment for all contributors.
+WotSocial is fundamentally committed to empowering creators. We strive for transparency, collaboration, and a welcoming environment for all contributors.
 
 ## 👥 Roles and Responsibilities
 
 ### Users
-Anyone who uses SocialVase is a User. Users are encouraged to:
+Anyone who uses WotSocial is a User. Users are encouraged to:
 - Participate in discussions.
 - Report bugs with reproducible steps.
 - Suggest features or improvements.

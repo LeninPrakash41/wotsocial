@@ -261,7 +261,7 @@ export function BrandSetup() {
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
             {brand ? `Edit ${brand.name}` : 'Create New Brand'}
           </h1>
-          <p className="text-gray-500 mt-1">Define your brand so SocialVase can generate accurate content.</p>
+          <p className="text-gray-500 mt-1">Define your brand so WotSocial can generate accurate content.</p>
         </div>
       </header>
 
@@ -332,7 +332,7 @@ export function BrandSetup() {
         {/* Automation Settings */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold border-b border-gray-100 pb-2">AI Automation</h2>
-          <p className="text-sm text-gray-500">Choose how SocialVase should handle content generation and posting.</p>
+          <p className="text-sm text-gray-500">Choose how WotSocial should handle content generation and posting.</p>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Posting Mode</label>
@@ -380,7 +380,7 @@ export function BrandSetup() {
                 </select>
               </div>
               <p className="text-xs text-gray-400">
-                SocialVase will {automationMode === 'auto' ? 'automatically post' : 'suggest'} {postsPerPeriod} content piece(s) every {periodUnit}.
+                WotSocial will {automationMode === 'auto' ? 'automatically post' : 'suggest'} {postsPerPeriod} content piece(s) every {periodUnit}.
               </p>
             </div>
           </div>
@@ -391,7 +391,7 @@ export function BrandSetup() {
           <h2 className="text-lg font-semibold border-b border-gray-100 pb-2">Connected Accounts</h2>
           <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
             <p className="text-sm text-blue-800 mb-3">
-              SocialVase is now open-source. For enhanced security, you bring your own API keys to post content directly on social platforms.
+              WotSocial is now open-source. For enhanced security, you bring your own API keys to post content directly on social platforms.
             </p>
             <button
               onClick={() => navigate('/integrations')}
