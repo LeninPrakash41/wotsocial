@@ -929,7 +929,8 @@ export function ContentGenerator() {
             </div>
           )}
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 }

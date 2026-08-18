@@ -54,7 +54,7 @@ export function AgentStudio() {
           where('userId', '==', auth.currentUser.uid)
         );
         const snapshot = await getDocs(q);
-        const brandList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const brandList = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
         setBrands(brandList);
 
         const activeId = localStorage.getItem('activeBrandId') || brandList[0]?.id || '';
