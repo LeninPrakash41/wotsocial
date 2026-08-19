@@ -396,18 +396,42 @@ export function BrandStrategy() {
           {/* Tab 4: Content Pillars & Blueprint */}
           {activeTab === 'pillars' && (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-amber-500" />
-                  Strategic Content Pillars & Blueprint
-                </h3>
-                <p className="text-xs text-gray-500">Core content pillars, campaign themes, and hashtag strategies formulated by Agent 4.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-amber-500" />
+                    Strategic Content Pillars & Blueprint
+                  </h3>
+                  <p className="text-xs text-gray-500">Core content pillars, campaign themes, and hashtag strategies formulated by Agent 4.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    const pillarTitle = research.marketingStrategy?.contentPillars?.[0]?.title || 'Content Pillar';
+                    localStorage.setItem('draftTopic', `Content Pillar Strategy: ${pillarTitle}`);
+                    navigate('/generate');
+                  }}
+                  className="px-3.5 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 text-nowrap"
+                >
+                  <PenTool className="w-3.5 h-3.5 text-amber-400" />
+                  Generate Posts for Pillar
+                </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 {(research.marketingStrategy?.contentPillars || []).map((pillar: any, i: number) => (
-                  <div key={i} className="p-5 rounded-2xl border border-gray-200 bg-gray-50 space-y-2">
-                    <div className="font-bold text-gray-900 text-sm">{pillar.title}</div>
+                  <div key={i} className="p-5 rounded-2xl border border-gray-200 bg-gray-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-gray-900 text-sm">{pillar.title}</div>
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('draftTopic', `Content Pillar: ${pillar.title} - ${pillar.description}`);
+                          navigate('/generate');
+                        }}
+                        className="px-2.5 py-1 bg-white hover:bg-black hover:text-white text-gray-800 text-[11px] font-bold rounded-lg border border-gray-200 transition-all flex items-center gap-1 shrink-0 text-nowrap"
+                      >
+                        <PenTool className="w-3 h-3 text-amber-500" /> Use Pillar
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-600 leading-relaxed">{pillar.description}</p>
                     <div className="pt-2 border-t border-gray-200">
                       <div className="text-[10px] font-bold text-gray-400 uppercase">Example Topics:</div>

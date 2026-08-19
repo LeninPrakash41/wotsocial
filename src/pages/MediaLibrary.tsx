@@ -45,6 +45,8 @@ export function MediaLibrary() {
       };
       reader.readAsDataURL(file);
     });
+
+    e.target.value = '';
   };
 
   const handleDelete = (id: string, title: string) => {

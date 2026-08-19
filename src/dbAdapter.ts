@@ -81,7 +81,15 @@ export const addMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>): Medi
   };
 
   const updated = [newAsset, ...existing];
-  localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.warn("Storage quota limit reached when saving media asset:", e);
+    // Keep top 10 items to stay within browser storage limits
+    try {
+      localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated.slice(0, 10)));
+    } catch (err) {}
+  }
   return newAsset;
 };
 

@@ -103,6 +103,15 @@ export function ContentGenerator() {
       setTopic(draft);
       localStorage.removeItem('draftTopic');
     }
+
+    const draftMediaUrl = localStorage.getItem('draftMediaUrl');
+    const draftMediaType = localStorage.getItem('draftMediaType') as any;
+    if (draftMediaUrl) {
+      setGeneratedMediaUrl(draftMediaUrl);
+      if (draftMediaType) setMediaType(draftMediaType);
+      localStorage.removeItem('draftMediaUrl');
+      localStorage.removeItem('draftMediaType');
+    }
   }, []);
 
   useEffect(() => {
