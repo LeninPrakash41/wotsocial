@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getBrands, deleteBrand } from '../dbAdapter';
 import { auth } from '../auth';
-import { Plus, Globe, Settings, Trash2, ExternalLink, Briefcase, Bot } from 'lucide-react';
+import { Plus, Globe, Settings, Trash2, ExternalLink, Briefcase, Bot, Layers } from 'lucide-react';
 
 export function Brands() {
   const navigate = useNavigate();
@@ -139,23 +139,34 @@ export function Brands() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => {
+                    localStorage.setItem('activeBrandId', brand.id);
+                    navigate(`/brand-strategy/${brand.id}`);
+                  }}
+                  className="py-2 bg-black text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1 shadow-sm"
+                  title="View saved AI brand positioning, competitor research, and content pillars"
+                >
+                  <Layers className="w-3.5 h-3.5 text-amber-400" />
+                  Strategy Hub
+                </button>
                 <button
                   onClick={() => {
                     localStorage.setItem('activeBrandId', brand.id);
                     navigate('/agents');
                   }}
-                  className="py-2 bg-gray-100 text-gray-900 text-xs font-semibold rounded-xl hover:bg-black hover:text-white transition-all border border-gray-200 flex items-center justify-center gap-1"
+                  className="py-2 bg-gray-100 text-gray-900 text-xs font-semibold rounded-xl hover:bg-gray-200 transition-all border border-gray-200 flex items-center justify-center gap-1"
                 >
                   <Bot className="w-3.5 h-3.5" />
-                  AI Agents
+                  AI Studio
                 </button>
                 <button
                   onClick={() => {
                     localStorage.setItem('activeBrandId', brand.id);
                     navigate('/dashboard');
                   }}
-                  className="py-2 bg-gray-50 text-gray-900 text-xs font-medium rounded-xl hover:bg-black hover:text-white transition-all border border-gray-100"
+                  className="py-2 bg-gray-50 text-gray-900 text-xs font-medium rounded-xl hover:bg-gray-100 transition-all border border-gray-200"
                 >
                   Dashboard
                 </button>

@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../auth';
-import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot, Layers } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useState, useEffect } from 'react';
 import { BrandSelector } from './BrandSelector';
@@ -20,6 +20,7 @@ export function Layout() {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Agent Studio', path: '/agents', icon: Bot },
     { name: 'Brands', path: '/brands', icon: Briefcase },
+    { name: 'Brand Strategy Hub', path: '/brand-strategy', icon: Layers },
     { name: 'Content Generator', path: '/generate', icon: PenTool },
     { name: 'Scheduler', path: '/schedule', icon: Calendar },
     { name: 'Analytics', path: '/analytics', icon: BarChart3 },

@@ -19,6 +19,7 @@ import { Analytics } from './pages/Analytics';
 
 import { Integrations } from './pages/Integrations';
 import { AgentStudio } from './pages/AgentStudio';
+import { BrandStrategy } from './pages/BrandStrategy';
 import { Login } from './pages/Login';
 
 export default function App() {
@@ -38,6 +39,8 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/agents" element={<AgentStudio />} />
             <Route path="/brands" element={<Brands />} />
+            <Route path="/brand-strategy" element={<BrandStrategy />} />
+            <Route path="/brand-strategy/:brandId" element={<BrandStrategy />} />
             <Route path="/brand-setup" element={<BrandSetup />} />
             <Route path="/brand-setup/:brandId" element={<BrandSetup />} />
             <Route path="/profile" element={<Profile />} />
