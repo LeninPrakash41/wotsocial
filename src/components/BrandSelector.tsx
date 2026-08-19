@@ -45,6 +45,7 @@ export function BrandSelector({ activeBrandId, onBrandChange, className = '' }: 
   const handleSelect = (brand: Brand) => {
     setSelectedBrand(brand);
     localStorage.setItem('activeBrandId', brand.id);
+    window.dispatchEvent(new CustomEvent('activeBrandChanged', { detail: brand }));
     setIsOpen(false);
     if (onBrandChange) {
       onBrandChange(brand);
