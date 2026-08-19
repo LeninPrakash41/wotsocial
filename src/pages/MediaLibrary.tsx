@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMediaAssets, addMediaAsset, deleteMediaAsset, MediaAsset, getBrands, Brand } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
+import { saveDraftMedia } from '../services/mediaStorage';
 import { 
   Folder, Image as ImageIcon, Video, Upload, Trash2, PenTool, Search, Copy, Check, Calendar, Film, Sparkles, ExternalLink 
 } from 'lucide-react';
@@ -188,9 +189,8 @@ export function MediaLibrary() {
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => {
-                      localStorage.setItem('draftMediaUrl', asset.url);
-                      localStorage.setItem('draftMediaType', asset.type);
+                    onClick={async () => {
+                      await saveDraftMedia(asset.url, asset.type);
                       navigate('/generate');
                     }}
                     className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg hover:bg-gray-800 transition-all flex items-center gap-1 shrink-0 text-nowrap"

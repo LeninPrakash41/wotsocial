@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getBrands, getBrandById, addPost, Brand, saveTrendToVault, toLocalDatetimeString, parseLocalDatetimeString } from '../dbAdapter';
+import { getDraftMedia } from '../services/mediaStorage';
 import { auth } from '../auth';
 import { BrandSelector } from '../components/BrandSelector';
 import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook, Megaphone, Download, ExternalLink, Tag, Bookmark } from 'lucide-react';
@@ -104,14 +105,15 @@ export function ContentGenerator() {
       localStorage.removeItem('draftTopic');
     }
 
-    const draftMediaUrl = localStorage.getItem('draftMediaUrl');
-    const draftMediaType = localStorage.getItem('draftMediaType') as any;
-    if (draftMediaUrl) {
-      setGeneratedMediaUrl(draftMediaUrl);
-      if (draftMediaType) setMediaType(draftMediaType);
-      localStorage.removeItem('draftMediaUrl');
-      localStorage.removeItem('draftMediaType');
-    }
+    const checkDraftMedia = async () => {
+      const media = await getDraftMedia();
+      if (media && media.url) {
+        setGeneratedMediaUrl(media.url);
+        setMediaType(media.type as any || 'image');
+      }
+    };
+
+    checkDraftMedia();
   }, []);
 
   useEffect(() => {
@@ -384,7 +386,7 @@ export function ContentGenerator() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8 max-w-7xl mx-auto w-full pb-16 font-sans">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content Studio</h1>
