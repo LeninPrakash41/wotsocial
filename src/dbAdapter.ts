@@ -39,6 +39,70 @@ export interface Post {
   isPlanned?: boolean;
 }
 
+export interface SavedTrend {
+  id: string;
+  brandId?: string;
+  title: string;
+  description: string;
+  type: 'trend' | 'news' | 'holiday' | 'topic';
+  category?: string;
+  savedAt: string;
+}
+
+const SAVED_TRENDS_KEY = 'wot_saved_trends_v1';
+
+export const getSavedTrends = (): SavedTrend[] => {
+  try {
+    const raw = localStorage.getItem(SAVED_TRENDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Error reading saved trends:", e);
+    return [];
+  }
+};
+
+export const saveTrendToVault = (trend: Omit<SavedTrend, 'id' | 'savedAt'>): SavedTrend => {
+  const existing = getSavedTrends();
+  const duplicate = existing.find(t => t.title.toLowerCase() === trend.title.toLowerCase());
+  if (duplicate) return duplicate;
+
+  const newTrend: SavedTrend = {
+    ...trend,
+    id: 'trend_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    savedAt: new Date().toISOString()
+  };
+
+  const updated = [newTrend, ...existing];
+  localStorage.setItem(SAVED_TRENDS_KEY, JSON.stringify(updated));
+  return newTrend;
+};
+
+export const removeSavedTrend = (id: string): void => {
+  const existing = getSavedTrends();
+  const updated = existing.filter(t => t.id !== id);
+  localStorage.setItem(SAVED_TRENDS_KEY, JSON.stringify(updated));
+};
+
+// Date Sync Helpers (Preserves local datetime-local selection)
+export const toLocalDatetimeString = (date: Date): string => {
+  const pad = (num: number) => String(num).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+export const parseLocalDatetimeString = (dtStr: string): Date => {
+  if (!dtStr) return new Date();
+  const [datePart, timePart] = dtStr.split('T');
+  if (!datePart) return new Date(dtStr);
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes] = (timePart || '10:00').split(':').map(Number);
+  return new Date(year, month - 1, day, hours || 10, minutes || 0);
+};
+
 // Helper to safely parse API response or return fallback
 const safeApiFetch = async (url: string, options?: RequestInit): Promise<any> => {
   try {

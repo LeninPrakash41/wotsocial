@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { getBrands, getBrandById, addPost, Brand } from '../dbAdapter';
+import { getBrands, getBrandById, addPost, Brand, saveTrendToVault, toLocalDatetimeString, parseLocalDatetimeString } from '../dbAdapter';
 import { auth } from '../auth';
 import { BrandSelector } from '../components/BrandSelector';
-import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook, Megaphone, Download, ExternalLink, Tag } from 'lucide-react';
+import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook, Megaphone, Download, ExternalLink, Tag, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import * as geminiService from '../services/geminiService';
@@ -46,7 +46,7 @@ export function ContentGenerator() {
     const date = new Date();
     date.setDate(date.getDate() + 1);
     date.setHours(10, 0, 0, 0);
-    return date.toISOString().slice(0, 16);
+    return toLocalDatetimeString(date);
   });
   const [planning, setPlanning] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -97,6 +97,12 @@ export function ContentGenerator() {
     };
 
     fetchBrand();
+
+    const draft = localStorage.getItem('draftTopic');
+    if (draft) {
+      setTopic(draft);
+      localStorage.removeItem('draftTopic');
+    }
   }, []);
 
   useEffect(() => {
@@ -284,7 +290,7 @@ export function ContentGenerator() {
     
     setScheduling(true);
     try {
-      const scheduleTime = new Date(scheduledDate);
+      const scheduleTime = parseLocalDatetimeString(scheduledDate);
       const status = targetStatus || (brand.automationSettings?.mode === 'auto' ? 'scheduled' : 'suggested');
 
       await addPost({
@@ -651,31 +657,51 @@ export function ContentGenerator() {
             ))
           ) : suggestions.length > 0 ? (
             suggestions.map((s, i) => (
-              <button
+              <div
                 key={i}
                 onClick={() => {
                   setTopic(s.title);
                   handleGenerate(s.title, true);
                 }}
-                className="group relative bg-white border border-gray-200 rounded-xl p-4 text-left hover:border-black transition-all shadow-sm flex flex-col h-full"
+                className="group relative bg-white border border-gray-200 rounded-xl p-4 text-left hover:border-black transition-all shadow-sm flex flex-col h-full cursor-pointer"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  {s.type === 'trend' || s.type === 'news' ? (
-                    <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
-                  ) : (
-                    <PartyPopper className="w-3.5 h-3.5 text-orange-500" />
-                  )}
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                    {s.type}
-                  </span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    {s.type === 'trend' || s.type === 'news' ? (
+                      <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+                    ) : (
+                      <PartyPopper className="w-3.5 h-3.5 text-orange-500" />
+                    )}
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      {s.type}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveTrendToVault({
+                        title: s.title,
+                        description: s.description,
+                        type: s.type || 'trend',
+                        brandId: brand?.id
+                      });
+                      alert(`Saved "${s.title}" to your Saved Trends Vault!`);
+                    }}
+                    className="p-1 rounded text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-colors"
+                    title="Bookmark / Save Trend to Vault"
+                  >
+                    <Bookmark className="w-4 h-4" />
+                  </button>
                 </div>
                 <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mb-1">{s.title}</h3>
                 <p className="text-[11px] text-gray-500 line-clamp-3 flex-1">{s.description}</p>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-[9px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Use Trend</span>
+                  <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Use Trend</span>
                   <PenTool className="w-3 h-3 text-gray-300 group-hover:text-black transition-colors" />
                 </div>
-              </button>
+              </div>
             ))
           ) : (
             <div className="col-span-full py-8 text-center text-gray-400 text-sm italic">
