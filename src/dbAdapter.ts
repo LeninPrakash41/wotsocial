@@ -1,4 +1,5 @@
 import { auth } from './auth';
+import { saveMediaAssetToIDB, loadMediaAssetsFromIDB, deleteMediaAssetFromIDB } from './services/mediaStorage';
 
 export interface Brand {
   id: string;
@@ -61,15 +62,27 @@ export interface MediaAsset {
 
 const SAVED_TRENDS_KEY = 'wot_saved_trends_v1';
 const MEDIA_ASSETS_KEY = 'wot_media_assets_v1';
+let localMediaCache: MediaAsset[] = [];
 
 export const getMediaAssets = (): MediaAsset[] => {
+  if (localMediaCache.length > 0) return localMediaCache;
   try {
     const raw = localStorage.getItem(MEDIA_ASSETS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    localMediaCache = parsed;
+    return parsed;
   } catch (e) {
-    console.error("Error reading media assets:", e);
-    return [];
+    return localMediaCache;
   }
+};
+
+export const getMediaAssetsAsync = async (): Promise<MediaAsset[]> => {
+  const fromIDB = await loadMediaAssetsFromIDB();
+  if (fromIDB && fromIDB.length > 0) {
+    localMediaCache = fromIDB;
+    return fromIDB;
+  }
+  return getMediaAssets();
 };
 
 export const addMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>): MediaAsset => {
@@ -81,22 +94,36 @@ export const addMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>): Medi
   };
 
   const updated = [newAsset, ...existing];
+  localMediaCache = updated;
+
+  // Persist full asset to IndexedDB (No 5MB Quota limit!)
+  saveMediaAssetToIDB(newAsset).catch(err => console.error("IDB save error:", err));
+
+  // Store lightweight metadata in localStorage
   try {
-    localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.warn("Storage quota limit reached when saving media asset:", e);
-    // Keep top 10 items to stay within browser storage limits
-    try {
-      localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated.slice(0, 10)));
-    } catch (err) {}
-  }
+    const lightAssets = updated.slice(0, 15).map(a => ({
+      ...a,
+      url: a.url.length > 500 ? a.url.slice(0, 500) : a.url
+    }));
+    localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(lightAssets));
+  } catch (e) {}
+
   return newAsset;
 };
 
 export const deleteMediaAsset = (id: string): void => {
   const existing = getMediaAssets();
   const updated = existing.filter(m => m.id !== id);
-  localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated));
+  localMediaCache = updated;
+  deleteMediaAssetFromIDB(id).catch(e => {});
+
+  try {
+    const lightAssets = updated.slice(0, 15).map(a => ({
+      ...a,
+      url: a.url.length > 500 ? a.url.slice(0, 500) : a.url
+    }));
+    localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(lightAssets));
+  } catch (e) {}
 };
 
 export const getSavedTrends = (): SavedTrend[] => {

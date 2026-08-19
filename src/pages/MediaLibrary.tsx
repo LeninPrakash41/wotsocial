@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMediaAssets, addMediaAsset, deleteMediaAsset, MediaAsset, getBrands, Brand } from '../dbAdapter';
+import { getMediaAssets, getMediaAssetsAsync, addMediaAsset, deleteMediaAsset, MediaAsset, getBrands, Brand } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
 import { saveDraftMedia } from '../services/mediaStorage';
 import { 
@@ -16,8 +16,8 @@ export function MediaLibrary() {
   const [selectedBrandId, setSelectedBrandId] = useState<string>(localStorage.getItem('activeBrandId') || '');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const loadAssets = () => {
-    const list = getMediaAssets();
+  const loadAssets = async () => {
+    const list = await getMediaAssetsAsync();
     setAssets(list);
   };
 

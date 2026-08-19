@@ -1,10 +1,11 @@
 // IndexedDB & S3 Media Storage Service to bypass 5MB LocalStorage Quota Limits
 
-const DB_NAME = 'WotSocialMediaDB_v1';
-const STORE_NAME = 'media_drafts';
+const DB_NAME = 'WotSocialMediaDB_v2';
+const DRAFTS_STORE = 'media_drafts';
+const ASSETS_STORE = 'media_assets';
 
-// Global In-Memory Fallback Cache
-const memoryCache: Record<string, string> = {};
+// Global In-Memory Cache for Instant Synchronous Access
+let globalDraftCache: { url: string; type: string } | null = null;
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -12,11 +13,14 @@ function openDB(): Promise<IDBDatabase> {
       reject(new Error("IndexedDB not supported"));
       return;
     }
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(DB_NAME, 2);
     request.onupgradeneeded = (event: any) => {
       const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+      if (!db.objectStoreNames.contains(DRAFTS_STORE)) {
+        db.createObjectStore(DRAFTS_STORE);
+      }
+      if (!db.objectStoreNames.contains(ASSETS_STORE)) {
+        db.createObjectStore(ASSETS_STORE, { keyPath: 'id' });
       }
     };
     request.onsuccess = (event: any) => resolve(event.target.result);
@@ -24,56 +28,45 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+// 1. Draft Media Pre-loading (Bypasses Quota & Synchronous Handshake)
 export const saveDraftMedia = async (url: string, type: string): Promise<void> => {
-  // 1. Always set memory cache first for immediate synchronous access
-  memoryCache['draftMediaUrl'] = url;
-  memoryCache['draftMediaType'] = type;
-
-  // 2. Try SessionStorage if small enough
+  globalDraftCache = { url, type };
   try {
-    sessionStorage.setItem('draftMediaUrl', url.slice(0, 1000)); // Truncate if base64 to avoid quota error
-    sessionStorage.setItem('draftMediaType', type);
-  } catch (e) {
-    console.warn("SessionStorage quota limit reached:", e);
-  }
+    sessionStorage.setItem('wot_draft_url_preview', url.slice(0, 500));
+    sessionStorage.setItem('wot_draft_type_preview', type);
+  } catch (e) {}
 
-  // 3. Store full URL in IndexedDB (supports 500MB+)
   try {
     const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    store.put({ url, type, timestamp: Date.now() }, 'currentDraft');
+    const tx = db.transaction(DRAFTS_STORE, 'readwrite');
+    tx.objectStore(DRAFTS_STORE).put({ url, type, timestamp: Date.now() }, 'currentDraft');
   } catch (err) {
-    console.warn("IndexedDB storage fallback to memory cache:", err);
+    console.warn("IndexedDB draft save fallback:", err);
   }
 };
 
 export const getDraftMedia = async (): Promise<{ url: string; type: string } | null> => {
-  // 1. Check memory cache first
-  if (memoryCache['draftMediaUrl']) {
-    const url = memoryCache['draftMediaUrl'];
-    const type = memoryCache['draftMediaType'] || 'image';
-    delete memoryCache['draftMediaUrl'];
-    delete memoryCache['draftMediaType'];
-    return { url, type };
+  if (globalDraftCache) {
+    const res = { ...globalDraftCache };
+    globalDraftCache = null;
+    return res;
   }
 
-  // 2. Check IndexedDB
   try {
     const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(DRAFTS_STORE, 'readonly');
+    const store = tx.objectStore(DRAFTS_STORE);
     const request = store.get('currentDraft');
 
     return new Promise((resolve) => {
       request.onsuccess = () => {
         if (request.result && request.result.url) {
-          // Clear after reading
+          const res = { url: request.result.url, type: request.result.type };
           try {
-            const delTx = db.transaction(STORE_NAME, 'readwrite');
-            delTx.objectStore(STORE_NAME).delete('currentDraft');
+            const delTx = db.transaction(DRAFTS_STORE, 'readwrite');
+            delTx.objectStore(DRAFTS_STORE).delete('currentDraft');
           } catch (e) {}
-          resolve({ url: request.result.url, type: request.result.type });
+          resolve(res);
         } else {
           resolve(null);
         }
@@ -83,4 +76,41 @@ export const getDraftMedia = async (): Promise<{ url: string; type: string } | n
   } catch (e) {
     return null;
   }
+};
+
+// 2. High-Capacity Media Asset Storage (Supports 500MB+ Base64/Videos)
+export const saveMediaAssetToIDB = async (asset: any): Promise<void> => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(ASSETS_STORE, 'readwrite');
+    tx.objectStore(ASSETS_STORE).put(asset);
+  } catch (err) {
+    console.error("Failed to save media asset to IndexedDB:", err);
+  }
+};
+
+export const loadMediaAssetsFromIDB = async (): Promise<any[]> => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(ASSETS_STORE, 'readonly');
+    const store = tx.objectStore(ASSETS_STORE);
+    const request = store.getAll();
+
+    return new Promise((resolve) => {
+      request.onsuccess = () => {
+        resolve(request.result || []);
+      };
+      request.onerror = () => resolve([]);
+    });
+  } catch (e) {
+    return [];
+  }
+};
+
+export const deleteMediaAssetFromIDB = async (id: string): Promise<void> => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(ASSETS_STORE, 'readwrite');
+    tx.objectStore(ASSETS_STORE).delete(id);
+  } catch (e) {}
 };
