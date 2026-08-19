@@ -8,7 +8,7 @@ import {
 } from 'date-fns';
 import { 
   Calendar as CalendarIcon, Clock, Trash2, Image as ImageIcon, Video, 
-  Type as TypeIcon, CheckCircle2, Send, Eye, ChevronLeft, ChevronRight, LayoutGrid, List, Plus
+  Type as TypeIcon, CheckCircle2, Send, Eye, ChevronLeft, ChevronRight, LayoutGrid, List, Plus, Search, Filter
 } from 'lucide-react';
 import { publishPostToPlatforms } from '../services/socialPostingService';
 import { PostPreviewModal } from '../components/PostPreviewModal';
@@ -25,6 +25,12 @@ export function Scheduler() {
   // View Mode & Navigation
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
   
   // Preview Modal State
   const [previewPost, setPreviewPost] = useState<any | null>(null);
@@ -85,6 +91,30 @@ export function Scheduler() {
     }
   };
 
+  // Filter Posts
+  const filteredPosts = posts.filter(post => {
+    const contentMatch = (post.content || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const platformMatch = platformFilter === 'all' || (post.platforms || []).includes(platformFilter);
+    const statusMatch = statusFilter === 'all' || post.status === statusFilter;
+    
+    let dateMatch = true;
+    if (dateFilter !== 'all') {
+      const pDate = getSafeDate(post.scheduledTime || post.scheduled_time || post.created_at);
+      const now = new Date();
+      if (dateFilter === 'today') {
+        dateMatch = isSameDay(pDate, now);
+      } else if (dateFilter === 'week') {
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        dateMatch = pDate >= weekStart && pDate <= weekEnd;
+      } else if (dateFilter === 'month') {
+        dateMatch = isSameMonth(pDate, now);
+      }
+    }
+
+    return contentMatch && platformMatch && statusMatch && dateMatch;
+  });
+
   // Calendar Grid Calculations
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -121,7 +151,7 @@ export function Scheduler() {
               }`}
             >
               <List className="w-3.5 h-3.5" />
-              List View ({posts.length})
+              List View ({filteredPosts.length})
             </button>
           </div>
 
@@ -134,6 +164,61 @@ export function Scheduler() {
           />
         </div>
       </header>
+
+      {/* Search & Custom Filter Bar */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="relative w-full md:w-72">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search scheduled posts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none"
+          >
+            <option value="all">All Statuses ({posts.length})</option>
+            <option value="scheduled">Scheduled ({posts.filter(p => p.status === 'scheduled').length})</option>
+            <option value="suggested">Awaiting Approval ({posts.filter(p => p.status === 'suggested').length})</option>
+            <option value="published">Published ({posts.filter(p => p.status === 'published').length})</option>
+          </select>
+
+          {/* Platform Filter */}
+          <select
+            value={platformFilter}
+            onChange={(e) => setPlatformFilter(e.target.value)}
+            className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none"
+          >
+            <option value="all">All Platforms</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="twitter">X / Twitter</option>
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+            <option value="email">Email</option>
+            <option value="youtube">YouTube</option>
+          </select>
+
+          {/* Date Range Filter */}
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+          </select>
+        </div>
+      </div>
 
       {/* Main Content Area */}
       {viewMode === 'calendar' ? (
@@ -236,22 +321,27 @@ export function Scheduler() {
       ) : (
         /* List View */
         <div className="space-y-4">
-          {posts.length === 0 ? (
+          {filteredPosts.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CalendarIcon className="w-8 h-8 text-gray-400" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">No Posts Found</h2>
-              <p className="text-gray-500 max-w-md mx-auto mb-6">Create posts in Content Studio or run your Agent Workforce to generate posts.</p>
+              <h2 className="text-xl font-semibold mb-2">No Posts Match Filter</h2>
+              <p className="text-gray-500 max-w-md mx-auto mb-6">Try clearing your search query or changing your status/platform/date filters.</p>
               <button
-                onClick={() => navigate('/create')}
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                  setPlatformFilter('all');
+                  setDateFilter('all');
+                }}
                 className="px-5 py-2.5 bg-black text-white font-semibold rounded-xl text-xs hover:bg-gray-800 transition-all inline-flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" /> Go to Content Studio
+                Clear All Filters
               </button>
             </div>
           ) : (
-            posts.map((post) => (
+            filteredPosts.map((post) => (
               <div key={post.id} className={`bg-white border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 transition-all ${post.status === 'suggested' ? 'border-amber-200 bg-amber-50/10' : 'border-gray-200'}`}>
                 {/* Media Preview */}
                 <div className="w-full md:w-48 h-48 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">

@@ -21,6 +21,7 @@ import { Integrations } from './pages/Integrations';
 import { AgentStudio } from './pages/AgentStudio';
 import { BrandStrategy } from './pages/BrandStrategy';
 import { TrendsVault } from './pages/TrendsVault';
+import { VideoStudio } from './pages/VideoStudio';
 import { Login } from './pages/Login';
 
 export default function App() {
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/brand-strategy" element={<BrandStrategy />} />
             <Route path="/brand-strategy/:brandId" element={<BrandStrategy />} />
             <Route path="/trends-vault" element={<TrendsVault />} />
+            <Route path="/video-studio" element={<VideoStudio />} />
             <Route path="/brand-setup" element={<BrandSetup />} />
             <Route path="/brand-setup/:brandId" element={<BrandSetup />} />
             <Route path="/profile" element={<Profile />} />

@@ -279,10 +279,10 @@ export function BrandSetup() {
                   type="button"
                   onClick={handleCrawlVoice}
                   disabled={analyzing || !name}
-                  className="text-xs font-semibold text-black bg-gray-100 border border-gray-200 hover:bg-gray-200 px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50"
+                  className="text-xs font-semibold text-black bg-gray-100 border border-gray-200 hover:bg-gray-200 px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 shrink-0 text-nowrap"
                 >
                   {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-gray-900" />}
-                  {analyzing ? 'Crawling Website Voice...' : 'AI Crawl Website & Extract Brand Voice'}
+                  {analyzing ? 'Crawling Voice...' : 'AI Crawl Brand Voice'}
                 </button>
               </div>
               <div className="relative">

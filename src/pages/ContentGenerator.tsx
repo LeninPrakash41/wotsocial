@@ -474,10 +474,10 @@ export function ContentGenerator() {
             <button
               onClick={handleRunRepurposer}
               disabled={repurposing || !repurposerSourceText}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-semibold rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50 text-sm"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50 text-xs shrink-0 text-nowrap"
             >
-              {repurposing ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Repeat className="w-5 h-5 text-sky-400" />}
-              {repurposing ? 'Repurposing into 6 Channel Formats...' : 'Generate 1-to-Many Asset Package'}
+              {repurposing ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Repeat className="w-4 h-4 text-sky-400" />}
+              {repurposing ? 'Repurposing 5 Channels...' : 'Generate Asset Package'}
             </button>
           </div>
 
@@ -495,10 +495,10 @@ export function ContentGenerator() {
                   type="button"
                   onClick={handleScheduleRepurposedPackage}
                   disabled={scheduling}
-                  className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 shrink-0"
+                  className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 shrink-0 text-nowrap"
                 >
                   {scheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5 text-amber-400" />}
-                  {scheduling ? 'Scheduling Assets...' : 'Send All 5 Assets to Calendar Grid'}
+                  {scheduling ? 'Scheduling...' : 'Schedule Package (5 Posts)'}
                 </button>
               </div>
 
