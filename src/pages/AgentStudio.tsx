@@ -610,18 +610,18 @@ export function AgentStudio() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Core Value Proposition</h4>
-                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-xl border border-gray-100">{pipelineResult.siteAnalysis.valueProposition}</p>
+                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-xl border border-gray-100">{pipelineResult?.siteAnalysis?.valueProposition || 'N/A'}</p>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Brand Voice & Personality</h4>
-                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-xl border border-gray-100">{pipelineResult.siteAnalysis.brandVoice}</p>
+                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-xl border border-gray-100">{pipelineResult?.siteAnalysis?.brandVoice || 'N/A'}</p>
                   </div>
                 </div>
 
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Key Product/Service Offerings</h4>
                   <div className="flex flex-wrap gap-2">
-                    {pipelineResult.siteAnalysis.keyOfferings.map((o, i) => (
+                    {(pipelineResult?.siteAnalysis?.keyOfferings || []).map((o, i) => (
                       <span key={i} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg font-medium text-xs border border-gray-200">{o}</span>
                     ))}
                   </div>
@@ -630,7 +630,7 @@ export function AgentStudio() {
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Primary Content Hooks</h4>
                   <ul className="space-y-1 text-gray-700">
-                    {pipelineResult.siteAnalysis.primaryHooks.map((h, i) => (
+                    {(pipelineResult?.siteAnalysis?.primaryHooks || []).map((h, i) => (
                       <li key={i} className="flex items-center gap-2"><ArrowRight className="w-3.5 h-3.5 text-gray-500 shrink-0" /> {h}</li>
                     ))}
                   </ul>
@@ -655,12 +655,12 @@ export function AgentStudio() {
               {expandedSection === 'competitor' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
             </button>
 
-            {expandedSection === 'competitor' && (
+            {expandedSection === 'competitor' && pipelineResult?.competitorAnalysis && (
               <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Identified Top Competitors</h4>
                   <div className="flex flex-wrap gap-2">
-                    {pipelineResult.competitorAnalysis.topCompetitors.map((c, i) => (
+                    {(pipelineResult?.competitorAnalysis?.topCompetitors || []).map((c, i) => (
                       <span key={i} className="px-3 py-1 bg-gray-100 text-gray-900 rounded-lg font-medium text-xs border border-gray-200">{c}</span>
                     ))}
                   </div>
@@ -670,14 +670,14 @@ export function AgentStudio() {
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Content Gaps & Opportunities</h4>
                     <ul className="space-y-1 text-gray-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
-                      {pipelineResult.competitorAnalysis.contentGapsAndOpportunities.map((g, i) => (
+                      {(pipelineResult?.competitorAnalysis?.contentGapsAndOpportunities || []).map((g, i) => (
                         <li key={i} className="flex items-start gap-2"><Sparkles className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {g}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Recommended Differentiation Angle</h4>
-                    <p className="font-medium text-gray-900 bg-gray-50 p-3.5 rounded-xl border border-gray-100">{pipelineResult.competitorAnalysis.recommendedDifferentiation}</p>
+                    <p className="font-medium text-gray-900 bg-gray-50 p-3.5 rounded-xl border border-gray-100">{pipelineResult?.competitorAnalysis?.recommendedDifferentiation || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -700,18 +700,18 @@ export function AgentStudio() {
               {expandedSection === 'audience' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
             </button>
 
-            {expandedSection === 'audience' && (
+            {expandedSection === 'audience' && pipelineResult?.audienceProfile && (
               <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Primary Ideal Customer Profile (ICP)</h4>
-                  <p className="font-medium text-gray-900 bg-gray-50 p-3.5 rounded-xl border border-gray-100">{pipelineResult.audienceProfile.primaryICP}</p>
+                  <p className="font-medium text-gray-900 bg-gray-50 p-3.5 rounded-xl border border-gray-100">{pipelineResult?.audienceProfile?.primaryICP || 'N/A'}</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Core Audience Pain Points</h4>
                     <ul className="space-y-1.5 text-gray-700">
-                      {pipelineResult.audienceProfile.painPoints.map((p, i) => (
+                      {(pipelineResult?.audienceProfile?.painPoints || []).map((p, i) => (
                         <li key={i} className="flex items-start gap-2 bg-gray-50 text-gray-900 p-2 rounded-lg text-xs font-medium"><AlertTriangle className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {p}</li>
                       ))}
                     </ul>
@@ -719,7 +719,7 @@ export function AgentStudio() {
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Key Desires & Transformation Goals</h4>
                     <ul className="space-y-1.5 text-gray-700">
-                      {pipelineResult.audienceProfile.desiresAndGoals.map((d, i) => (
+                      {(pipelineResult?.audienceProfile?.desiresAndGoals || []).map((d, i) => (
                         <li key={i} className="flex items-start gap-2 bg-gray-50 text-gray-900 p-2 rounded-lg text-xs font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {d}</li>
                       ))}
                     </ul>
@@ -742,18 +742,18 @@ export function AgentStudio() {
               {expandedSection === 'strategy' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
             </button>
 
-            {expandedSection === 'strategy' && (
+            {expandedSection === 'strategy' && pipelineResult?.marketingStrategy && (
               <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
                 <h3 className="text-lg font-semibold text-gray-900">Recommended Strategic Content Pillars</h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {pipelineResult.marketingStrategy.contentPillars.map((pillar, i) => (
+                  {(pipelineResult?.marketingStrategy?.contentPillars || []).map((pillar, i) => (
                     <div key={i} className="p-4 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
                       <div className="font-semibold text-gray-900 text-sm">{pillar.title}</div>
                       <p className="text-xs text-gray-600 leading-relaxed">{pillar.description}</p>
                       <div className="pt-2">
                         <div className="text-[10px] font-bold text-gray-400 uppercase">Topics:</div>
                         <ul className="text-xs text-gray-700 space-y-1 mt-1">
-                          {pillar.exampleTopics.map((t, idx) => (
+                          {(pillar.exampleTopics || []).map((t, idx) => (
                             <li key={idx}>• {t}</li>
                           ))}
                         </ul>
@@ -766,7 +766,7 @@ export function AgentStudio() {
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Campaign Concepts</h4>
                     <ul className="space-y-1 text-xs font-medium text-gray-800">
-                      {pipelineResult.marketingStrategy.campaignConcepts.map((c, i) => (
+                      {(pipelineResult?.marketingStrategy?.campaignConcepts || []).map((c, i) => (
                         <li key={i} className="p-2 bg-gray-50 rounded-lg border border-gray-100">{c}</li>
                       ))}
                     </ul>
@@ -774,7 +774,7 @@ export function AgentStudio() {
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Hashtag & CTA Strategy</h4>
                     <div className="flex flex-wrap gap-1.5 mb-3">
-                      {pipelineResult.marketingStrategy.hashtagStrategy.map((h, i) => (
+                      {(pipelineResult?.marketingStrategy?.hashtagStrategy || []).map((h, i) => (
                         <span key={i} className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{h}</span>
                       ))}
                     </div>
@@ -794,7 +794,7 @@ export function AgentStudio() {
                 <Sparkles className="w-5 h-5 text-white" />
                 <div>
                   <h3 className="font-semibold text-base">Generated Multi-Platform Post Packages</h3>
-                  <p className="text-xs text-gray-300">{pipelineResult.postPackages.length} complete posts ready for publishing</p>
+                  <p className="text-xs text-gray-300">{pipelineResult?.postPackages?.length || 0} complete posts ready for publishing</p>
                 </div>
               </div>
               {expandedSection === 'posts' ? <ChevronUp className="w-5 h-5 text-gray-300" /> : <ChevronDown className="w-5 h-5 text-gray-300" />}
@@ -815,7 +815,7 @@ export function AgentStudio() {
                 </div>
 
                 <div className="space-y-6">
-                  {pipelineResult.postPackages.map((pkg, idx) => (
+                  {(pipelineResult?.postPackages || []).map((pkg, idx) => (
                     <div key={idx} className="border border-gray-200 rounded-2xl p-6 bg-gray-50/50 space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
