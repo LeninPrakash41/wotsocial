@@ -3,6 +3,7 @@ import { auth } from '../auth';
 import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useState, useEffect } from 'react';
+import { BrandSelector } from './BrandSelector';
 
 export function Layout() {
   const navigate = useNavigate();
@@ -149,11 +150,24 @@ export function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-4 md:p-8 max-w-6xl mx-auto">
-          <Outlet />
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Navbar */}
+        <header className="h-16 bg-white border-b border-gray-200 px-4 md:px-8 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 hidden sm:inline">Active Brand Workspace</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <BrandSelector />
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto p-4 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

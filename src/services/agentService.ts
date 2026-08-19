@@ -441,16 +441,22 @@ export const runEndToEndAgentPipeline = async (params: {
   onProgress?.('Post Generation Agent', 'completed', postPackages);
 
   // Step 6: Paid Ad Specialist Agent
-  onProgress?.('Paid Ad Specialist Agent', 'running');
-  const adCampaign = await generatePaidAdCampaign({
-    productOrOffer: siteAnalysis.keyOfferings[0] || siteAnalysis.valueProposition,
-    brand: { name: params.brandName, industry: params.industry, brandTone: siteAnalysis.brandVoice },
-    targetObjective: 'Conversions',
-    destinationUrl: params.websiteUrl || 'https://example.com',
-    provider: params.provider,
-    model: params.model
-  });
-  onProgress?.('Paid Ad Specialist Agent', 'completed', adCampaign);
+  let adCampaign: PaidAdCampaignPackage | undefined = undefined;
+  try {
+    onProgress?.('Paid Ad Specialist Agent', 'running');
+    adCampaign = await generatePaidAdCampaign({
+      productOrOffer: siteAnalysis.keyOfferings[0] || siteAnalysis.valueProposition,
+      brand: { name: params.brandName, industry: params.industry, brandTone: siteAnalysis.brandVoice },
+      targetObjective: 'Conversions',
+      destinationUrl: params.websiteUrl || 'https://example.com',
+      provider: params.provider,
+      model: params.model
+    });
+    onProgress?.('Paid Ad Specialist Agent', 'completed', adCampaign);
+  } catch (adErr) {
+    console.warn("Paid Ad Specialist Agent warning (non-fatal):", adErr);
+    onProgress?.('Paid Ad Specialist Agent', 'completed', null);
+  }
 
   return {
     siteAnalysis,

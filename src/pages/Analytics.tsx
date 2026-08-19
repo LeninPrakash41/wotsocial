@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getBrands, getBrandById, getPosts } from '../dbAdapter';
 import { auth } from '../auth';
+import { BrandSelector } from '../components/BrandSelector';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, AreaChart, Area, PieChart, Pie, Cell 
@@ -184,10 +185,19 @@ export function Analytics() {
     <div className="space-y-8 max-w-6xl">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Performance Analytics</h1>
-          <p className="text-gray-500 mt-1">Track how your brand is growing across social platforms.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Analytics & Insights</h1>
+          <p className="text-gray-500 mt-1">Track audience engagement, growth metrics, and AI performance reports across all connected channels.</p>
         </div>
         <div className="flex items-center gap-3">
+          <BrandSelector
+            activeBrandId={brand?.id}
+            onBrandChange={async (selectedBrand) => {
+              setBrand(selectedBrand);
+              localStorage.setItem('activeBrandId', selectedBrand.id);
+              const postsData = await getPosts(selectedBrand.id);
+              setPosts(postsData);
+            }}
+          />
           <button
             onClick={handleSync}
             disabled={syncing}

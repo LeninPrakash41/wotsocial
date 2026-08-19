@@ -160,19 +160,42 @@ export const getPosts = async (brandId?: string): Promise<Post[]> => {
 
 export const addPost = async (postData: Partial<Post>): Promise<Post> => {
   const userId = auth.currentUser?.uid || 'admin-user-001';
+  let schedISO: string | null = null;
+
+  if (postData.scheduledTime) {
+    if (typeof postData.scheduledTime === 'string') {
+      schedISO = postData.scheduledTime;
+    } else if (typeof (postData.scheduledTime as any).toDate === 'function') {
+      schedISO = (postData.scheduledTime as any).toDate().toISOString();
+    } else {
+      const d = new Date(postData.scheduledTime as any);
+      schedISO = !isNaN(d.getTime()) ? d.toISOString() : new Date().toISOString();
+    }
+  }
+
+  const payload = {
+    userId,
+    ...postData,
+    scheduledTime: schedISO
+  };
+
   const apiRes = await safeApiFetch('/api/posts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, ...postData })
+    body: JSON.stringify(payload)
   });
 
-  const newPost: Post = apiRes || {
+  const newPost: Post = (apiRes && apiRes.id) ? {
+    ...apiRes,
+    scheduledTime: apiRes.scheduledTime ? { toDate: () => new Date(apiRes.scheduledTime) } : null
+  } : {
     id: `post-${Date.now()}`,
     userId,
     brandId: postData.brandId || 'unassigned',
     content: postData.content || '',
     status: postData.status || 'suggested',
-    ...postData
+    ...postData,
+    scheduledTime: schedISO ? { toDate: () => new Date(schedISO!) } : null
   };
 
   const current = getLocalPosts();
@@ -181,10 +204,26 @@ export const addPost = async (postData: Partial<Post>): Promise<Post> => {
 };
 
 export const updatePost = async (id: string, postData: Partial<Post>): Promise<void> => {
+  let schedISO: string | null = null;
+
+  if (postData.scheduledTime) {
+    if (typeof postData.scheduledTime === 'string') {
+      schedISO = postData.scheduledTime;
+    } else if (typeof (postData.scheduledTime as any).toDate === 'function') {
+      schedISO = (postData.scheduledTime as any).toDate().toISOString();
+    } else {
+      const d = new Date(postData.scheduledTime as any);
+      schedISO = !isNaN(d.getTime()) ? d.toISOString() : new Date().toISOString();
+    }
+  }
+
   await safeApiFetch(`/api/posts/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(postData)
+    body: JSON.stringify({
+      ...postData,
+      scheduledTime: schedISO
+    })
   });
 
   const current = getLocalPosts();

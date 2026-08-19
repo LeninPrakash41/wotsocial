@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getPosts, updatePost, deletePost } from '../dbAdapter';
+import { getPosts, updatePost, deletePost, Brand } from '../dbAdapter';
 import { auth } from '../auth';
+import { BrandSelector } from '../components/BrandSelector';
 import { format } from 'date-fns';
 import { Calendar, Clock, Trash2, Image as ImageIcon, Video, Type as TypeIcon, CheckCircle2, Send } from 'lucide-react';
 import { publishPostToPlatforms } from '../services/socialPostingService';
@@ -11,21 +12,23 @@ export function Scheduler() {
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const activeBrandId = localStorage.getItem('activeBrandId') || undefined;
-        const postsData = await getPosts(activeBrandId);
-        setPosts(postsData);
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [selectedBrandId, setSelectedBrandId] = useState<string>(localStorage.getItem('activeBrandId') || '');
 
-    fetchPosts();
-  }, []);
+  const loadBrandPosts = async (brandId?: string) => {
+    setLoading(true);
+    try {
+      const postsData = await getPosts(brandId || undefined);
+      setPosts(postsData);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBrandPosts(selectedBrandId);
+  }, [selectedBrandId]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
@@ -65,14 +68,23 @@ export function Scheduler() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content Schedule</h1>
-          <p className="text-gray-500 mt-1">Manage your upcoming social media posts.</p>
+          <p className="text-gray-500 mt-1">Review, approve, and manage scheduled posts across all your connected platforms.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">
-          <Calendar className="w-4 h-4" />
-          {posts.filter(p => p.status === 'scheduled').length} Posts Scheduled
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">
+            <Calendar className="w-4 h-4" />
+            {posts.filter(p => p.status === 'scheduled').length} Scheduled
+          </div>
+          <BrandSelector
+            activeBrandId={selectedBrandId}
+            onBrandChange={(brand) => {
+              setSelectedBrandId(brand.id);
+              localStorage.setItem('activeBrandId', brand.id);
+            }}
+          />
         </div>
       </header>
 

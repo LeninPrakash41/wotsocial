@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getBrands, getBrandById, addPost } from '../dbAdapter';
+import { getBrands, getBrandById, addPost, Brand } from '../dbAdapter';
 import { auth } from '../auth';
+import { BrandSelector } from '../components/BrandSelector';
 import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook, Megaphone, Download, ExternalLink, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -287,14 +288,24 @@ export function ContentGenerator() {
   }
 
   return (
-    <div className="space-y-8 max-w-6xl">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-8 max-w-5xl">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content & Campaign Studio</h1>
-          <p className="text-gray-500 mt-1">Generate organic social posts or high-converting paid ad campaigns (Meta & Google Ads).</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content Studio</h1>
+          <p className="text-gray-500 mt-1">Generate multi-platform posts, images, videos, and PPC ad campaigns for your brand.</p>
         </div>
-
-        {/* Mode Switcher */}
+        <div className="flex items-center gap-3">
+          <BrandSelector 
+            activeBrandId={brand?.id} 
+            onBrandChange={(selected) => {
+              setBrand(selected);
+              localStorage.setItem('activeBrandId', selected.id);
+            }} 
+          />
+        </div>
+      </header>
+      
+      {/* Mode Switcher */}
         <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
           <button
             onClick={() => setGeneratorType('organic')}
@@ -321,7 +332,6 @@ export function ContentGenerator() {
             Paid Ad Campaigns
           </button>
         </div>
-      </header>
 
       {/* Suggestions Section */}
       <div className="space-y-4">

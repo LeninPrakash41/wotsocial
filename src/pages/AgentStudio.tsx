@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getBrands, updateBrand, addPost } from '../dbAdapter';
+import { getBrands, updateBrand, addPost, Brand } from '../dbAdapter';
 import { auth } from '../auth';
+import { BrandSelector } from '../components/BrandSelector';
 import { Loader2, Bot, Sparkles, Target, Users, Search, ShieldCheck, ArrowRight, CheckCircle2, RefreshCw, Send, AlertTriangle, Layers, Calendar, ChevronDown, ChevronUp, Megaphone, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -60,6 +61,9 @@ export function AgentStudio() {
             setCustomBrandName(found.name || '');
             setCustomWebsiteUrl(found.websiteUrl || '');
             setCustomGuidelines(found.guidelinesText || '');
+            if (found.agentResearchData) {
+              setPipelineResult(found.agentResearchData);
+            }
           }
         }
       } catch (err) {
@@ -71,15 +75,17 @@ export function AgentStudio() {
     fetchUserBrands();
   }, []);
 
-  const handleSelectBrand = (brandId: string) => {
-    setSelectedBrandId(brandId);
-    localStorage.setItem('activeBrandId', brandId);
-    const b = brands.find(item => item.id === brandId);
-    if (b) {
-      setActiveBrand(b);
-      setCustomBrandName(b.name || '');
-      setCustomWebsiteUrl(b.websiteUrl || '');
-      setCustomGuidelines(b.guidelinesText || '');
+  const handleSelectBrand = (b: Brand) => {
+    setSelectedBrandId(b.id);
+    localStorage.setItem('activeBrandId', b.id);
+    setActiveBrand(b);
+    setCustomBrandName(b.name || '');
+    setCustomWebsiteUrl(b.websiteUrl || '');
+    setCustomGuidelines(b.guidelinesText || '');
+    if (b.agentResearchData) {
+      setPipelineResult(b.agentResearchData);
+    } else {
+      setPipelineResult(null);
     }
   };
 
@@ -135,6 +141,17 @@ export function AgentStudio() {
 
       setPipelineResult(result);
       setExpandedSection('posts');
+
+      // Auto-persist research results to database
+      if (selectedBrandId) {
+        try {
+          await updateBrand(selectedBrandId, {
+            agentResearchData: result
+          });
+        } catch (saveErr) {
+          console.warn("Auto-saving agent research data failed:", saveErr);
+        }
+      }
     } catch (err: any) {
       console.error("Agent Pipeline Error:", err);
       const msg = err?.message || String(err);
@@ -191,17 +208,18 @@ export function AgentStudio() {
     setSchedulingPosts(true);
 
     try {
+      const targetBrandId = selectedBrandId || activeBrand?.id || 'unassigned';
       const batch = pipelineResult.postPackages.map(async (pkg, idx) => {
         const schedTime = new Date();
         schedTime.setDate(schedTime.getDate() + (idx + 1));
         schedTime.setHours(10, 0, 0, 0);
 
         return await addPost({
-          brandId: selectedBrandId || 'unassigned',
+          brandId: targetBrandId,
           content: `${pkg.linkedinPost || pkg.twitterPost}\n\n${pkg.hashtags.join(' ')}`,
           mediaUrl: '',
           mediaType: pkg.suggestedMediaType || 'image',
-          scheduledTime: { toDate: () => schedTime } as any,
+          scheduledTime: schedTime as any,
           status: 'suggested',
           platforms: ['linkedin', 'twitter'],
           visualPrompt: pkg.visualPrompt,
@@ -212,9 +230,9 @@ export function AgentStudio() {
       await Promise.all(batch);
       alert(`Successfully sent ${pipelineResult.postPackages.length} agentic posts to the Scheduler!`);
       navigate('/schedule');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error scheduling agent posts:", err);
-      alert("Failed to schedule agent posts.");
+      alert(`Failed to schedule agent posts: ${err?.message || String(err)}`);
     } finally {
       setSchedulingPosts(false);
     }
@@ -235,8 +253,9 @@ export function AgentStudio() {
           <p className="text-gray-500 mt-1">Deploy specialized Gemini & Claude agents to automate site analysis, competitor tracking, audience profiling, and post generation.</p>
         </div>
 
-        {/* Model & Provider Switcher */}
         <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-200 shadow-xs">
+          <BrandSelector activeBrandId={selectedBrandId} onBrandChange={handleSelectBrand} />
+
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Provider</label>
             <select

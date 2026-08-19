@@ -171,6 +171,29 @@ router.delete('/brands/:id', async (req: Request, res: Response) => {
   }
 });
 
+const parseSafeISOString = (val: any): string | null => {
+  if (!val) return null;
+  try {
+    if (typeof val === 'string') {
+      const d = new Date(val);
+      return !isNaN(d.getTime()) ? d.toISOString() : new Date().toISOString();
+    }
+    if (typeof val === 'number') {
+      const d = new Date(val);
+      return !isNaN(d.getTime()) ? d.toISOString() : new Date().toISOString();
+    }
+    if (typeof val === 'object') {
+      if (val.seconds) return new Date(val.seconds * 1000).toISOString();
+      if (val.iso) return new Date(val.iso).toISOString();
+      if (val.date) return new Date(val.date).toISOString();
+    }
+    const d = new Date(val);
+    return !isNaN(d.getTime()) ? d.toISOString() : new Date().toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+};
+
 // 3. Posts Endpoints
 router.get('/posts', async (req: Request, res: Response) => {
   try {
@@ -212,6 +235,7 @@ router.post('/posts', async (req: Request, res: Response) => {
     const data = req.body;
     const id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     const userId = data.userId || 'admin-user-001';
+    const scheduledISO = parseSafeISOString(data.scheduledTime);
 
     await queryDb(
       `INSERT INTO posts (
@@ -221,10 +245,10 @@ router.post('/posts', async (req: Request, res: Response) => {
         id,
         userId,
         data.brandId || 'unassigned',
-        data.content,
+        data.content || '',
         data.mediaUrl || '',
         data.mediaType || 'none',
-        data.scheduledTime ? new Date(data.scheduledTime).toISOString() : null,
+        scheduledISO,
         data.status || 'suggested',
         JSON.stringify(data.platforms || ['twitter', 'linkedin']),
         data.visualPrompt || '',
@@ -232,9 +256,10 @@ router.post('/posts', async (req: Request, res: Response) => {
       ]
     );
 
-    res.json({ id, ...data });
+    res.json({ id, ...data, scheduledTime: scheduledISO });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error("POST /api/posts error:", err);
+    res.status(500).json({ error: err.message || "Failed to create post" });
   }
 });
 
@@ -242,6 +267,7 @@ router.put('/posts/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const data = req.body;
+    const scheduledISO = parseSafeISOString(data.scheduledTime);
 
     await queryDb(
       `UPDATE posts SET 
@@ -253,14 +279,15 @@ router.put('/posts/:id', async (req: Request, res: Response) => {
       [
         data.content,
         data.status,
-        data.scheduledTime ? new Date(data.scheduledTime).toISOString() : null,
+        scheduledISO,
         id
       ]
     );
 
-    res.json({ success: true, id });
+    res.json({ success: true, id, scheduledTime: scheduledISO });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error(`PUT /api/posts/${req.params.id} error:`, err);
+    res.status(500).json({ error: err.message || "Failed to update post" });
   }
 });
 
