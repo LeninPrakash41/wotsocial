@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getPosts, updatePost, deletePost, Brand } from '../dbAdapter';
+import { getPosts, updatePost, deletePost, Brand, getSafeDate } from '../dbAdapter';
 import { auth } from '../auth';
 import { BrandSelector } from '../components/BrandSelector';
 import { format } from 'date-fns';
@@ -119,7 +119,7 @@ export function Scheduler() {
                   <div className="flex items-center gap-3">
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
                       <Clock className="w-3.5 h-3.5" />
-                      {post.scheduledTime ? format(post.scheduledTime.toDate(), "MMM d, yyyy 'at' h:mm a") : 'Unscheduled'}
+                      {post.scheduledTime ? format(getSafeDate(post.scheduledTime), "MMM d, yyyy 'at' h:mm a") : 'Unscheduled'}
                     </div>
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md uppercase tracking-wider ${
                       post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 

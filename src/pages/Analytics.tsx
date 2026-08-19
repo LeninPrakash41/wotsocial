@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getBrands, getBrandById, getPosts } from '../dbAdapter';
+import { getBrands, getBrandById, getPosts, getSafeDate } from '../dbAdapter';
 import { auth } from '../auth';
 import { BrandSelector } from '../components/BrandSelector';
 import { 
@@ -166,7 +166,7 @@ export function Analytics() {
   const totalEngagement = posts.reduce((sum, p) => sum + (p.likes || 0) + (p.shares || 0) + (p.comments || 0), 0);
 
   const chartData = posts.slice().reverse().map(p => ({
-    name: format(p.updatedAt?.toDate() || new Date(), 'MMM d'),
+    name: format(getSafeDate(p.updatedAt || p.created_at || p.scheduledTime), 'MMM d'),
     likes: p.likes || 0,
     impressions: p.impressions || 0,
     engagement: (p.likes || 0) + (p.shares || 0) + (p.comments || 0)

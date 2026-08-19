@@ -142,20 +142,70 @@ export const deleteBrand = async (id: string): Promise<void> => {
 };
 
 // Posts API Client
+export const getSafeDate = (val: any): Date => {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (typeof val === 'string' || typeof val === 'number') {
+    const d = new Date(val);
+    return !isNaN(d.getTime()) ? d : new Date();
+  }
+  if (typeof val === 'object') {
+    if (typeof val.toDate === 'function') {
+      try {
+        const d = val.toDate();
+        if (d instanceof Date && !isNaN(d.getTime())) return d;
+      } catch (e) {}
+    }
+    if (val.seconds) {
+      return new Date(val.seconds * 1000);
+    }
+    if (val.iso) {
+      const d = new Date(val.iso);
+      return !isNaN(d.getTime()) ? d : new Date();
+    }
+  }
+  const d = new Date(val);
+  return !isNaN(d.getTime()) ? d : new Date();
+};
+
 export const getPosts = async (brandId?: string): Promise<Post[]> => {
   const userId = auth.currentUser?.uid || 'admin-user-001';
   let url = `/api/posts?userId=${encodeURIComponent(userId)}`;
-  if (brandId) url += `&brandId=${encodeURIComponent(brandId)}`;
-  
-  const data = await safeApiFetch(url);
-  if (Array.isArray(data)) {
-    saveLocalPosts(data);
-    return data;
+  if (brandId) {
+    url += `&brandId=${encodeURIComponent(brandId)}`;
   }
 
+  const posts = await safeApiFetch(url);
+  if (Array.isArray(posts) && posts.length > 0) {
+    const normalized = posts.map(p => {
+      const d = getSafeDate(p.scheduledTime || p.scheduled_time);
+      return {
+        ...p,
+        scheduledTime: {
+          toDate: () => d,
+          toString: () => d.toISOString(),
+          toISOString: () => d.toISOString(),
+          getTime: () => d.getTime()
+        }
+      };
+    });
+    saveLocalPosts(normalized);
+    return normalized;
+  }
+  
   const local = getLocalPosts();
-  if (brandId) return local.filter(p => p.brandId === brandId);
-  return local;
+  return (brandId ? local.filter(p => p.brandId === brandId) : local).map(p => {
+    const d = getSafeDate(p.scheduledTime);
+    return {
+      ...p,
+      scheduledTime: {
+        toDate: () => d,
+        toString: () => d.toISOString(),
+        toISOString: () => d.toISOString(),
+        getTime: () => d.getTime()
+      }
+    };
+  });
 };
 
 export const addPost = async (postData: Partial<Post>): Promise<Post> => {
