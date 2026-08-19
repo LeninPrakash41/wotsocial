@@ -134,6 +134,27 @@ export function BrandStrategy() {
         </div>
       )}
 
+      {/* How To Use Guidance Banner */}
+      <div className="bg-gradient-to-r from-blue-900 via-black to-purple-900 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <h3 className="font-bold text-sm text-white">How to Use Your AI Strategy Hub</h3>
+          </div>
+          <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
+            Every insight below is connected to your content pipeline. Click <span className="text-amber-300 font-bold">"Use Insight in Studio"</span> on any persona, competitor gap, or content pillar to auto-generate social posts, paid ad campaigns, or video scripts tailored to this brand strategy.
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate('/generate')}
+          className="px-4 py-2 bg-white text-black font-bold text-xs rounded-xl hover:bg-gray-100 transition-all flex items-center gap-1.5 shrink-0 text-nowrap"
+        >
+          <PenTool className="w-3.5 h-3.5" />
+          Open Content Studio
+        </button>
+      </div>
+
       {/* Strategy Hub Main Tabs */}
       {!research ? (
         <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm space-y-4">
@@ -196,12 +217,24 @@ export function BrandStrategy() {
           {/* Tab 1: Core Messaging & Voice */}
           {activeTab === 'site' && (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-blue-500" />
-                  Site Analysis & Core Brand Positioning
-                </h3>
-                <p className="text-xs text-gray-500">Key value propositions, voice tone, and high-performing content hooks extracted by Agent 1.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-blue-500" />
+                    Site Analysis & Core Brand Positioning
+                  </h3>
+                  <p className="text-xs text-gray-500">Key value propositions, voice tone, and high-performing content hooks extracted by Agent 1.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('draftTopic', `Core Positioning: ${research.siteAnalysis?.valueProposition || brand?.name}`);
+                    navigate('/generate');
+                  }}
+                  className="px-3.5 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 text-nowrap"
+                >
+                  <PenTool className="w-3.5 h-3.5 text-amber-400" />
+                  Generate Post with Voice
+                </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -248,12 +281,24 @@ export function BrandStrategy() {
           {/* Tab 2: Competitor Intelligence & Market Gaps */}
           {activeTab === 'competitors' && (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Target className="w-5 h-5 text-emerald-500" />
-                  Competitor Intelligence & Market Gaps
-                </h3>
-                <p className="text-xs text-gray-500">Industry rivals, underserved market angles, and differentiation strategies mapped by Agent 2.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-emerald-500" />
+                    Competitor Intelligence & Market Gaps
+                  </h3>
+                  <p className="text-xs text-gray-500">Industry rivals, underserved market angles, and differentiation strategies mapped by Agent 2.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('draftTopic', `Market Gap Strategy: ${research.competitorAnalysis?.recommendedDifferentiation || 'Competitor Gap'}`);
+                    navigate('/generate');
+                  }}
+                  className="px-3.5 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 text-nowrap"
+                >
+                  <PenTool className="w-3.5 h-3.5 text-emerald-400" />
+                  Target Market Gap
+                </button>
               </div>
 
               <div className="space-y-2">
@@ -293,12 +338,24 @@ export function BrandStrategy() {
           {/* Tab 3: Target Audience & ICP */}
           {activeTab === 'audience' && (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-purple-500" />
-                  Target Audience Profiling & ICP
-                </h3>
-                <p className="text-xs text-gray-500">Demographic personas, core friction points, and customer transformation goals profiled by Agent 3.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-purple-500" />
+                    Target Audience Profiling & ICP
+                  </h3>
+                  <p className="text-xs text-gray-500">Demographic personas, core friction points, and customer transformation goals profiled by Agent 3.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('draftTopic', `Audience Persona Campaign: ${research.audienceProfile?.primaryICP || 'Target Audience'}`);
+                    navigate('/generate');
+                  }}
+                  className="px-3.5 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0 text-nowrap"
+                >
+                  <PenTool className="w-3.5 h-3.5 text-purple-400" />
+                  Generate Persona Campaign
+                </button>
               </div>
 
               <div className="space-y-1.5">

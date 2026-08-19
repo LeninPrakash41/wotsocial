@@ -32,6 +32,10 @@ export function Scheduler() {
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  
   // Preview Modal State
   const [previewPost, setPreviewPost] = useState<any | null>(null);
 
@@ -341,153 +345,189 @@ export function Scheduler() {
               </button>
             </div>
           ) : (
-            filteredPosts.map((post) => (
-              <div key={post.id} className={`bg-white border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 transition-all ${post.status === 'suggested' ? 'border-amber-200 bg-amber-50/10' : 'border-gray-200'}`}>
-                {/* Media Preview */}
-                <div className="w-full md:w-48 h-48 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                  {post.mediaType === 'image' && post.mediaUrl ? (
-                    <img src={post.mediaUrl} alt="Post preview" className="w-full h-full object-cover" />
-                  ) : post.mediaType === 'video' && post.mediaUrl ? (
-                    <video src={post.mediaUrl} className="w-full h-full object-cover" />
-                  ) : (
-                    <TypeIcon className="w-12 h-12 text-gray-300" />
-                  )}
-                </div>
+            <>
+              {filteredPosts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((post) => (
+                <div key={post.id} className={`bg-white border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 transition-all ${post.status === 'suggested' ? 'border-amber-200 bg-amber-50/10' : 'border-gray-200'}`}>
+                  {/* Media Preview */}
+                  <div className="w-full md:w-48 h-48 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                    {post.mediaType === 'image' && post.mediaUrl ? (
+                      <img src={post.mediaUrl} alt="Post preview" className="w-full h-full object-cover" />
+                    ) : post.mediaType === 'video' && post.mediaUrl ? (
+                      <video src={post.mediaUrl} className="w-full h-full object-cover" />
+                    ) : (
+                      <TypeIcon className="w-12 h-12 text-gray-300" />
+                    )}
+                  </div>
 
-                {/* Content Details */}
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
-                          <Clock className="w-3.5 h-3.5" />
-                          {post.scheduledTime ? format(getSafeDate(post.scheduledTime), "MMM d, yyyy 'at' h:mm a") : 'Unscheduled'}
+                  {/* Content Details */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+                            <Clock className="w-3.5 h-3.5" />
+                            {post.scheduledTime ? format(getSafeDate(post.scheduledTime), "MMM d, yyyy 'at' h:mm a") : 'Unscheduled'}
+                          </div>
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md uppercase tracking-wider ${
+                            post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 
+                            post.status === 'scheduled' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {post.status}
+                          </div>
                         </div>
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md uppercase tracking-wider ${
-                          post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 
-                          post.status === 'scheduled' ? 'bg-green-100 text-green-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {post.status}
+
+                        <div className="flex items-center gap-2">
+                          {/* Live Platform Preview Button */}
+                          <button
+                            onClick={() => setPreviewPost(post)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-medium rounded-lg transition-colors"
+                            title="Preview how this post looks on LinkedIn, Twitter, IG, Facebook"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-blue-600" />
+                            Preview Post
+                          </button>
+
+                          {post.status === 'suggested' && (
+                            <button
+                              onClick={() => handleApprove(post.id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black hover:bg-gray-800 text-white text-xs font-medium rounded-lg transition-colors"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              Approve
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              try {
+                                const results = await publishPostToPlatforms({
+                                  content: post.content,
+                                  mediaUrl: post.mediaUrl,
+                                  platforms: post.platforms || ['twitter', 'linkedin']
+                                });
+                                const summary = results.map(r => `${r.platform}: ${r.message}`).join('\n');
+                                alert(`Publishing Results:\n\n${summary}`);
+                                setPosts(posts.map(p => p.id === post.id ? { ...p, status: 'published' } : p));
+                              } catch (err: any) {
+                                alert(`Publishing failed: ${err.message || String(err)}`);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            Publish Now
+                          </button>
+                          <button
+                            onClick={() => handleDelete(post.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Post"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {/* Live Platform Preview Button */}
-                        <button
-                          onClick={() => setPreviewPost(post)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-medium rounded-lg transition-colors"
-                          title="Preview how this post looks on LinkedIn, Twitter, IG, Facebook"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-gray-600" />
-                          Preview Card
-                        </button>
-
-                        {editingPostId === post.id ? (
-                          <>
-                            <button 
+                      {editingPostId === post.id ? (
+                        <div className="space-y-3">
+                          <textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none"
+                            rows={4}
+                          />
+                          <div className="flex gap-2">
+                            <button
                               onClick={() => handleUpdate(post.id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors"
+                              className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg hover:bg-gray-800"
                             >
-                              Save
+                              Save Changes
                             </button>
-                            <button 
+                            <button
                               onClick={() => setEditingPostId(null)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                              className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-lg"
                             >
                               Cancel
                             </button>
-                          </>
-                        ) : (
-                          <>
-                            <button 
-                              onClick={() => {
-                                setEditingPostId(post.id);
-                                setEditingContent(post.content);
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                              Edit
-                            </button>
-
-                            {post.status === 'suggested' && (
-                              <button 
-                                onClick={() => handleApprove(post.id)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                Approve & Schedule
-                              </button>
-                            )}
-
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const results = await publishPostToPlatforms({
-                                    content: post.content,
-                                    mediaUrl: post.mediaUrl,
-                                    platforms: post.platforms || ['twitter', 'linkedin']
-                                  });
-                                  const summary = results.map(r => `${r.platform}: ${r.message}`).join('\n');
-                                  alert(`Publish Results:\n\n${summary}`);
-                                  await updatePost(post.id, { status: 'published' });
-                                  setPosts(posts.map(p => p.id === post.id ? { ...p, status: 'published' } : p));
-                                } catch (err: any) {
-                                  alert(`Failed to publish: ${err.message || String(err)}`);
-                                }
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                              title="Publish directly to connected social accounts"
-                            >
-                              <Send className="w-3.5 h-3.5" />
-                              Publish Now
-                            </button>
-                          </>
-                        )}
-
-                        <button 
-                          onClick={() => handleDelete(post.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          </div>
+                        </div>
+                      ) : (
+                        <p 
+                          onClick={() => { setEditingPostId(post.id); setEditingContent(post.content); }}
+                          className="text-sm text-gray-800 whitespace-pre-wrap cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+                          title="Click to edit text"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                          {post.content}
+                        </p>
+                      )}
                     </div>
 
-                    {editingPostId === post.id ? (
-                      <textarea
-                        value={editingContent}
-                        onChange={(e) => setEditingContent(e.target.value)}
-                        rows={4}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all resize-none mb-4 font-sans"
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap flex-1 line-clamp-4 leading-relaxed font-sans">
-                        {post.content}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Platforms:</span>
-                      <div className="flex gap-2">
-                        {(post.platforms || ['linkedin', 'twitter']).map((platform: string) => (
-                          <span key={platform} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md capitalize font-semibold">
-                            {platform}
-                          </span>
-                        ))}
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Platforms:</span>
+                        <div className="flex gap-2">
+                          {(post.platforms || ['linkedin', 'twitter']).map((platform: string) => (
+                            <span key={platform} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md capitalize font-semibold">
+                              {platform}
+                            </span>
+                          ))}
+                        </div>
                       </div>
+                      {post.status === 'suggested' && (
+                        <span className="text-[10px] font-medium text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                          Awaiting Approval
+                        </span>
+                      )}
                     </div>
-                    {post.status === 'suggested' && (
-                      <span className="text-[10px] font-medium text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
-                        Awaiting Approval
-                      </span>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+
+              {/* List View Pagination Controls */}
+              {filteredPosts.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+                  <div className="text-xs text-gray-500">
+                    Showing <span className="font-bold text-gray-900">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-bold text-gray-900">{Math.min(currentPage * itemsPerPage, filteredPosts.length)}</span> of <span className="font-bold text-gray-900">{filteredPosts.length}</span> scheduled posts
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span>Per page:</span>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                        className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 outline-none text-xs font-bold"
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
+                        title="Previous Page"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+
+                      <span className="text-xs font-bold text-gray-800 px-2">Page {currentPage} of {Math.max(1, Math.ceil(filteredPosts.length / itemsPerPage))}</span>
+
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredPosts.length / itemsPerPage), p + 1))}
+                        disabled={currentPage === Math.ceil(filteredPosts.length / itemsPerPage)}
+                        className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
+                        title="Next Page"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

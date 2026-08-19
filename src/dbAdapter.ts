@@ -49,7 +49,47 @@ export interface SavedTrend {
   savedAt: string;
 }
 
+export interface MediaAsset {
+  id: string;
+  brandId?: string;
+  title: string;
+  url: string;
+  type: 'image' | 'video';
+  source?: 'upload' | 'ai-generated';
+  createdAt: string;
+}
+
 const SAVED_TRENDS_KEY = 'wot_saved_trends_v1';
+const MEDIA_ASSETS_KEY = 'wot_media_assets_v1';
+
+export const getMediaAssets = (): MediaAsset[] => {
+  try {
+    const raw = localStorage.getItem(MEDIA_ASSETS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Error reading media assets:", e);
+    return [];
+  }
+};
+
+export const addMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>): MediaAsset => {
+  const existing = getMediaAssets();
+  const newAsset: MediaAsset = {
+    ...asset,
+    id: 'media_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    createdAt: new Date().toISOString()
+  };
+
+  const updated = [newAsset, ...existing];
+  localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated));
+  return newAsset;
+};
+
+export const deleteMediaAsset = (id: string): void => {
+  const existing = getMediaAssets();
+  const updated = existing.filter(m => m.id !== id);
+  localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(updated));
+};
 
 export const getSavedTrends = (): SavedTrend[] => {
   try {
