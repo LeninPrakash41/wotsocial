@@ -279,19 +279,70 @@ export function ContentGenerator() {
     }
   };
 
-  const handleSchedule = async () => {
-    if (!generatedContent) return;
+  const handleSchedule = async (targetStatus?: 'scheduled' | 'suggested') => {
+    if (!generatedContent || !brand) return;
     
     setScheduling(true);
     try {
       const scheduleTime = new Date(scheduledDate);
-      const status = brand.automationSettings?.mode === 'auto' ? 'scheduled' : 'suggested';
+      const status = targetStatus || (brand.automationSettings?.mode === 'auto' ? 'scheduled' : 'suggested');
 
-      alert(status === 'scheduled' ? "Post scheduled successfully!" : "Post saved as suggestion for approval.");
+      await addPost({
+        brandId: brand.id,
+        content: generatedContent,
+        mediaUrl: generatedMediaUrl || undefined,
+        mediaType: mediaType,
+        platforms: selectedPlatforms,
+        status: status,
+        scheduledTime: scheduleTime.toISOString(),
+        userId: auth.currentUser?.uid || 'admin-user-001'
+      });
+
+      alert(status === 'scheduled' ? "Post scheduled successfully and added to Calendar!" : "Post saved as suggestion for approval and added to Calendar!");
       navigate('/schedule');
     } catch (error) {
       console.error("Scheduling failed:", error);
       alert("Failed to schedule post: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  const handleScheduleRepurposedPackage = async () => {
+    if (!repurposedPackage || !brand) return;
+
+    setScheduling(true);
+    try {
+      const baseDate = new Date();
+      const assets = [
+        { content: repurposedPackage.linkedinPost, platforms: ['linkedin'], offsetDays: 1, title: 'LinkedIn Post' },
+        { content: repurposedPackage.twitterThread.join('\n\n'), platforms: ['twitter'], offsetDays: 2, title: 'X 5-Tweet Thread' },
+        { content: `${repurposedPackage.instagramPackage.caption}\n\nVisual Carousel Layout:\n${repurposedPackage.instagramPackage.carouselSlides.map(s => `Slide ${s.slideNumber}: ${s.slideTitle} - ${s.slideBody}`).join('\n')}`, platforms: ['instagram'], offsetDays: 3, title: 'IG Carousel' },
+        { content: `Subject: ${repurposedPackage.emailNewsletter.subjectLine}\n\n${repurposedPackage.emailNewsletter.bodyMarkdown}`, platforms: ['email'], offsetDays: 4, title: 'Newsletter Digest' },
+        { content: `YouTube Short / TikTok Script:\nHook: ${repurposedPackage.videoScript.hook}\nBody: ${repurposedPackage.videoScript.scriptBody}\nCTA: ${repurposedPackage.videoScript.callToAction}`, platforms: ['youtube'], offsetDays: 5, title: 'Short Video Script' },
+      ];
+
+      const batch = assets.map(async (asset) => {
+        const sched = new Date(baseDate);
+        sched.setDate(sched.getDate() + asset.offsetDays);
+        sched.setHours(10, 0, 0, 0);
+
+        return await addPost({
+          brandId: brand.id,
+          content: asset.content,
+          platforms: asset.platforms,
+          status: 'suggested',
+          scheduledTime: sched.toISOString(),
+          userId: auth.currentUser?.uid || 'admin-user-001'
+        });
+      });
+
+      await Promise.all(batch);
+      alert("All 5 repurposed asset posts have been saved & scheduled into your Calendar Grid!");
+      navigate('/schedule');
+    } catch (err: any) {
+      console.error("Failed to schedule repurposed package:", err);
+      alert(`Failed to schedule repurposed assets: ${err?.message || String(err)}`);
     } finally {
       setScheduling(false);
     }
@@ -426,9 +477,23 @@ export function ContentGenerator() {
 
           {repurposedPackage && (
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-                <h3 className="font-bold text-gray-900 text-sm">Repurposed Asset Package: {repurposedPackage.title}</h3>
-                <span className="text-xs font-semibold bg-sky-100 text-sky-800 px-2.5 py-0.5 rounded-full">Source: {repurposedPackage.sourceType}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-4">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                    Repurposed Asset Package: {repurposedPackage.title}
+                    <span className="text-xs font-semibold bg-sky-100 text-sky-800 px-2.5 py-0.5 rounded-full">Source: {repurposedPackage.sourceType}</span>
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">5 multi-platform posts generated from your source article.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleScheduleRepurposedPackage}
+                  disabled={scheduling}
+                  className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 shrink-0"
+                >
+                  {scheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5 text-amber-400" />}
+                  {scheduling ? 'Scheduling Assets...' : 'Send All 5 Assets to Calendar Grid'}
+                </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -501,51 +566,82 @@ export function ContentGenerator() {
         </div>
       )}
 
-      {/* Suggestions Section */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            Trending Topics & Insights
-          </h2>
-          <div className="flex items-center gap-2">
+      {/* Suggestions & Trend Discovery Section */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              AI Trend Discovery Engine & Quick Topics
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Discover viral industry trends, seasonal news hooks, and high-performing audience topics tailored to {brand?.name || 'your brand'}. Click any topic or chip to auto-generate content packages ready for approval & calendar grid publishing.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <div className="relative">
               <input 
                 type="text"
-                placeholder="Search trends (e.g. AI, Fashion)..."
+                placeholder="Search trends (e.g. AI, Growth)..."
                 value={trendSearchQuery}
                 onChange={(e) => setTrendSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchSuggestions(brand, trendSearchQuery)}
-                className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none w-48 sm:w-64"
+                className="pl-8 pr-3 py-2 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-black outline-none w-56 sm:w-72"
               />
-              <TrendingUp className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <TrendingUp className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
             <button 
               onClick={() => fetchSuggestions(brand, trendSearchQuery)}
               disabled={fetchingSuggestions}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
+              className="px-4 py-2 bg-black text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
-              <RefreshCw className={cn("w-3 h-3", fetchingSuggestions && "animate-spin")} />
-              {trendSearchQuery ? 'Search' : 'Refresh'}
+              <RefreshCw className={cn("w-3.5 h-3.5", fetchingSuggestions && "animate-spin")} />
+              {trendSearchQuery ? 'Search Trends' : 'Refresh Suggestions'}
             </button>
             <div className="h-6 w-px bg-gray-200 mx-1"></div>
             <button 
               onClick={() => handlePlanCalendar(7)}
               disabled={planning}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1 shadow-sm"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm"
             >
-              {planning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Calendar className="w-3 h-3" />}
-              Plan Week
+              {planning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5" />}
+              Plan Week (7d)
             </button>
             <button 
               onClick={() => handlePlanCalendar(30)}
               disabled={planning}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1 shadow-sm"
+              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm"
             >
-              {planning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Calendar className="w-3 h-3" />}
-              Plan Month
+              {planning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5" />}
+              Plan Month (30d)
             </button>
           </div>
+        </div>
+
+        {/* Quick Search Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Quick Search:</span>
+          {[
+            '#AI & Future Trends',
+            '#Growth & Viral Hacks',
+            '#SaaS & Productivity',
+            '#Customer Success',
+            '#Industry Insights',
+            '#Seasonal Offers'
+          ].map((chip) => (
+            <button
+              key={chip}
+              onClick={() => {
+                const cleanQuery = chip.replace('#', '');
+                setTrendSearchQuery(cleanQuery);
+                fetchSuggestions(brand, cleanQuery);
+              }}
+              className="px-3 py-1 bg-gray-100 hover:bg-black hover:text-white text-gray-700 text-xs font-semibold rounded-full border border-gray-200 transition-all shrink-0"
+            >
+              {chip}
+            </button>
+          ))}
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

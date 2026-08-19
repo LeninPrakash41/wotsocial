@@ -31,7 +31,7 @@ export interface Post {
   content: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'none';
-  scheduledTime?: { toDate: () => Date } | null;
+  scheduledTime?: any;
   status: 'suggested' | 'scheduled' | 'published' | 'failed';
   platforms?: string[];
   visualPrompt?: string;
