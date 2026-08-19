@@ -9,6 +9,8 @@ import * as geminiService from '../services/geminiService';
 import { generateOpenArtVideo, generateOpenArtImage, generateSeedanceVideo } from '../services/mediaService';
 import { publishPostToPlatforms } from '../services/socialPostingService';
 import { generatePaidAdCampaign, downloadGoogleAdsEditorCSV, PaidAdCampaignPackage } from '../services/adService';
+import { repurposeContentToMultiChannel, RepurposedMultiChannelPackage } from '../services/repurposerService';
+import { Layers, FileText, Share2, Repeat, MessageCircle } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -51,12 +53,18 @@ export function ContentGenerator() {
   const [fetchingSuggestions, setFetchingSuggestions] = useState(false);
   const [trendSearchQuery, setTrendSearchQuery] = useState('');
   
-  // Paid Ads State
-  const [generatorType, setGeneratorType] = useState<'organic' | 'ads'>('organic');
+  // Mode Switcher State
+  const [generatorType, setGeneratorType] = useState<'organic' | 'ads' | 'repurpose'>('organic');
   const [adObjective, setAdObjective] = useState('Conversions');
   const [adDestinationUrl, setAdDestinationUrl] = useState('');
   const [generatingAds, setGeneratingAds] = useState(false);
   const [generatedAdCampaign, setGeneratedAdCampaign] = useState<PaidAdCampaignPackage | null>(null);
+
+  // 1-to-Many Repurposer State
+  const [repurposerSourceText, setRepurposerSourceText] = useState('');
+  const [repurposerSourceType, setRepurposerSourceType] = useState<'blog' | 'url' | 'document' | 'topic'>('blog');
+  const [repurposing, setRepurposing] = useState(false);
+  const [repurposedPackage, setRepurposedPackage] = useState<RepurposedMultiChannelPackage | null>(null);
   
   const navigate = useNavigate();
 
@@ -152,6 +160,28 @@ export function ContentGenerator() {
       alert(error.message || "Failed to plan calendar. Please try again.");
     } finally {
       setPlanning(false);
+    }
+  };
+
+  const handleRunRepurposer = async () => {
+    if (!repurposerSourceText) {
+      alert("Please enter a URL, blog text, or document snippet to repurpose.");
+      return;
+    }
+    setRepurposing(true);
+    try {
+      const res = await repurposeContentToMultiChannel({
+        inputText: repurposerSourceText,
+        inputType: repurposerSourceType,
+        brand,
+        provider: 'gemini'
+      });
+      setRepurposedPackage(res);
+    } catch (err: any) {
+      console.error("Repurposer Error:", err);
+      alert(`Repurposer Error: ${err?.message || String(err)}`);
+    } finally {
+      setRepurposing(false);
     }
   };
 
@@ -306,32 +336,170 @@ export function ContentGenerator() {
       </header>
       
       {/* Mode Switcher */}
-        <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
-          <button
-            onClick={() => setGeneratorType('organic')}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
-              generatorType === 'organic'
-                ? "bg-white text-black shadow-xs"
-                : "text-gray-500 hover:text-gray-900"
-            )}
-          >
-            <PenTool className="w-3.5 h-3.5" />
-            Organic Posts
-          </button>
-          <button
-            onClick={() => setGeneratorType('ads')}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
-              generatorType === 'ads'
-                ? "bg-black text-white shadow-xs"
-                : "text-gray-500 hover:text-gray-900"
-            )}
-          >
-            <Megaphone className="w-3.5 h-3.5 text-amber-400" />
-            Paid Ad Campaigns
-          </button>
+      <div className="flex flex-wrap bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
+        <button
+          onClick={() => setGeneratorType('organic')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
+            generatorType === 'organic'
+              ? "bg-white text-black shadow-xs font-bold"
+              : "text-gray-500 hover:text-gray-900"
+          )}
+        >
+          <PenTool className="w-3.5 h-3.5" />
+          Organic Posts
+        </button>
+        <button
+          onClick={() => setGeneratorType('repurpose')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
+            generatorType === 'repurpose'
+              ? "bg-black text-white shadow-xs font-bold"
+              : "text-gray-500 hover:text-gray-900"
+          )}
+        >
+          <Repeat className="w-3.5 h-3.5 text-sky-400" />
+          1-to-Many Repurposer (Blaze AI)
+        </button>
+        <button
+          onClick={() => setGeneratorType('ads')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
+            generatorType === 'ads'
+              ? "bg-black text-white shadow-xs font-bold"
+              : "text-gray-500 hover:text-gray-900"
+          )}
+        >
+          <Megaphone className="w-3.5 h-3.5 text-amber-400" />
+          Paid Ad Campaigns
+        </button>
+      </div>
+
+      {/* 1-to-Many Repurposer Studio */}
+      {generatorType === 'repurpose' && (
+        <div className="space-y-6">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <Repeat className="w-5 h-5 text-sky-500" />
+                  1-to-Many Multi-Channel Content Repurposer
+                </h2>
+                <p className="text-xs text-gray-500">Transform any single blog post, document, URL, or topic into 6 distinct platform assets (LinkedIn, X Thread, IG Carousel, Newsletter, Short Video Script, Meta Ad).</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">Source Type:</span>
+                <select
+                  value={repurposerSourceType}
+                  onChange={(e) => setRepurposerSourceType(e.target.value as any)}
+                  className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none"
+                >
+                  <option value="blog">Long-Form Blog / Article</option>
+                  <option value="url">Website URL</option>
+                  <option value="document">PDF / Document Text</option>
+                  <option value="topic">Topic / Concept Brief</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-700">Source Content or URL *</label>
+              <textarea
+                rows={5}
+                value={repurposerSourceText}
+                onChange={(e) => setRepurposerSourceText(e.target.value)}
+                placeholder={repurposerSourceType === 'url' ? "https://example.com/blog-post" : "Paste your article, document text, or key points here..."}
+                className="w-full p-3.5 border border-gray-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-black font-mono leading-relaxed"
+              />
+            </div>
+
+            <button
+              onClick={handleRunRepurposer}
+              disabled={repurposing || !repurposerSourceText}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-semibold rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50 text-sm"
+            >
+              {repurposing ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Repeat className="w-5 h-5 text-sky-400" />}
+              {repurposing ? 'Repurposing into 6 Channel Formats...' : 'Generate 1-to-Many Asset Package'}
+            </button>
+          </div>
+
+          {repurposedPackage && (
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h3 className="font-bold text-gray-900 text-sm">Repurposed Asset Package: {repurposedPackage.title}</h3>
+                <span className="text-xs font-semibold bg-sky-100 text-sky-800 px-2.5 py-0.5 rounded-full">Source: {repurposedPackage.sourceType}</span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 1. LinkedIn Post */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-700 flex items-center gap-1.5"><Linkedin className="w-4 h-4" /> 1. LinkedIn Post</span>
+                  </div>
+                  <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">{repurposedPackage.linkedinPost}</p>
+                </div>
+
+                {/* 2. Twitter Thread */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
+                  <span className="text-xs font-bold text-sky-600 flex items-center gap-1.5"><Twitter className="w-4 h-4" /> 2. X / Twitter 5-Tweet Thread</span>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {repurposedPackage.twitterThread.map((tweet, i) => (
+                      <p key={i} className="text-xs text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{tweet}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Instagram Caption + Carousel */}
+              <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-4">
+                <span className="text-xs font-bold text-pink-600 flex items-center gap-1.5"><Instagram className="w-4 h-4" /> 3. Instagram Caption & 5-Slide Visual Carousel Outline</span>
+                <p className="text-xs text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100 whitespace-pre-wrap">{repurposedPackage.instagramPackage.caption}</p>
+                
+                <div>
+                  <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">5-Slide Carousel Layout</h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    {repurposedPackage.instagramPackage.carouselSlides.map((slide, i) => (
+                      <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1 text-xs">
+                        <div className="font-bold text-gray-900 flex items-center justify-between">
+                          <span>Slide {slide.slideNumber}</span>
+                          {i === 0 && <span className="text-[9px] bg-pink-100 text-pink-700 px-1 rounded">Hook</span>}
+                          {i === 4 && <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">CTA</span>}
+                        </div>
+                        <p className="font-semibold text-gray-800 text-[11px]">{slide.slideTitle}</p>
+                        <p className="text-gray-600 text-[10px] line-clamp-3">{slide.slideBody}</p>
+                        <div className="pt-1 text-[9px] font-mono text-gray-400 border-t border-gray-200 truncate">Graphic: {slide.visualPrompt}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 4. Email Newsletter Digest */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
+                  <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5"><FileText className="w-4 h-4" /> 4. Email Newsletter Digest</span>
+                  <div className="text-xs space-y-1">
+                    <p className="font-semibold text-gray-900">Subject: {repurposedPackage.emailNewsletter.subjectLine}</p>
+                    <p className="text-gray-500 text-[11px]">Preview: {repurposedPackage.emailNewsletter.previewText}</p>
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 whitespace-pre-wrap font-mono text-[11px] text-gray-800 max-h-48 overflow-y-auto">{repurposedPackage.emailNewsletter.bodyMarkdown}</div>
+                  </div>
+                </div>
+
+                {/* 5. Video Script */}
+                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
+                  <span className="text-xs font-bold text-purple-700 flex items-center gap-1.5"><Video className="w-4 h-4" /> 5. YouTube Short / TikTok Script (60s)</span>
+                  <div className="text-xs space-y-2">
+                    <p className="font-semibold text-gray-900">Hook (0-3s): {repurposedPackage.videoScript.hook}</p>
+                    <p className="text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100 whitespace-pre-wrap">{repurposedPackage.videoScript.scriptBody}</p>
+                    <p className="font-semibold text-purple-700 text-[11px]">CTA: {repurposedPackage.videoScript.callToAction}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      )}
 
       {/* Suggestions Section */}
       <div className="space-y-4">

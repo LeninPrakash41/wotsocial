@@ -15,7 +15,8 @@ import {
   runMarketingStrategyAgent,
   runPostGenerationAgent
 } from '../services/agentService';
-import { downloadGoogleAdsEditorCSV } from '../services/adService';
+import { generatePaidAdCampaign, downloadGoogleAdsEditorCSV } from '../services/adService';
+import { crawlAndExtractBrandVoice } from '../services/brandVoiceCrawler';
 import { cn } from '../lib/utils';
 
 export function AgentStudio() {
@@ -86,6 +87,118 @@ export function AgentStudio() {
       setPipelineResult(b.agentResearchData);
     } else {
       setPipelineResult(null);
+    }
+  };
+
+  // Individual agent statuses & voice crawler state
+  const [agentStatuses, setAgentStatuses] = useState<Record<string, { status: 'idle' | 'running' | 'completed' | 'failed'; error?: string }>>({});
+  const [crawlingVoice, setCrawlingVoice] = useState(false);
+
+  const handleCrawlBrandVoice = async () => {
+    const brandName = customBrandName || activeBrand?.name;
+    if (!brandName) {
+      alert("Please specify a Brand Name to crawl.");
+      return;
+    }
+    setCrawlingVoice(true);
+    try {
+      const voiceProfile = await crawlAndExtractBrandVoice({
+        brandName,
+        websiteUrl: customWebsiteUrl,
+        provider
+      });
+      setCustomGuidelines(voiceProfile.guidelinesText);
+      alert(`AI Brand Voice Crawled Successfully!\n\nTone: ${voiceProfile.brandTone}\nTarget ICP: ${voiceProfile.targetICP}`);
+      if (selectedBrandId) {
+        await updateBrand(selectedBrandId, {
+          brandTone: voiceProfile.brandTone,
+          brandPersonality: voiceProfile.brandPersonality,
+          guidelinesText: voiceProfile.guidelinesText
+        });
+      }
+    } catch (err: any) {
+      console.error("Error crawling brand voice:", err);
+      alert(`Brand Voice Crawl Error: ${err?.message || String(err)}`);
+    } finally {
+      setCrawlingVoice(false);
+    }
+  };
+
+  const handleRunSingleAgent = async (agentKey: 'site' | 'competitor' | 'audience' | 'strategy' | 'posts' | 'ads') => {
+    const brandName = customBrandName || activeBrand?.name;
+    if (!brandName) {
+      alert("Please specify a Brand Name to run the agent.");
+      return;
+    }
+
+    const geminiApiKey = (localStorage.getItem('gemini_api_key') || '').trim();
+    const claudeApiKey = (localStorage.getItem('claude_api_key') || '').trim();
+
+    if (provider === 'gemini' && !geminiApiKey) {
+      alert("Missing Gemini API Key: Please configure your Gemini API Key in Integrations before running.");
+      navigate('/integrations');
+      return;
+    }
+
+    if (provider === 'claude' && !claudeApiKey) {
+      alert("Missing Claude API Key: Please configure your Anthropic Claude API Key in Integrations before running.");
+      navigate('/integrations');
+      return;
+    }
+
+    setAgentStatuses(prev => ({ ...prev, [agentKey]: { status: 'running' } }));
+    setExpandedSection(agentKey);
+
+    try {
+      let currentResult: any = pipelineResult || {
+        siteAnalysis: null,
+        competitorAnalysis: null,
+        audienceProfile: null,
+        marketingStrategy: null,
+        postPackages: [],
+        adCampaign: undefined
+      };
+
+      if (agentKey === 'site') {
+        const site = await runSiteAnalysisAgent({ brandName, websiteUrl: customWebsiteUrl, guidelinesText: customGuidelines, provider, model });
+        currentResult = { ...currentResult, siteAnalysis: site };
+      } else if (agentKey === 'competitor') {
+        const valueProp = currentResult.siteAnalysis?.valueProposition || 'High quality products & services';
+        const comp = await runCompetitorAnalysisAgent({ brandName, industry: activeBrand?.industry || 'Business', category: activeBrand?.category || 'General', valueProp, provider, model });
+        currentResult = { ...currentResult, competitorAnalysis: comp };
+      } else if (agentKey === 'audience') {
+        const valueProp = currentResult.siteAnalysis?.valueProposition || 'High quality products & services';
+        const keyOfferings = currentResult.siteAnalysis?.keyOfferings || ['Core Offering 1'];
+        const aud = await runAudienceProfilingAgent({ brandName, industry: activeBrand?.industry || 'Business', valueProp, keyOfferings, provider, model });
+        currentResult = { ...currentResult, audienceProfile: aud };
+      } else if (agentKey === 'strategy') {
+        const strat = await runMarketingStrategyAgent({ brandName, siteAnalysis: currentResult.siteAnalysis, competitorAnalysis: currentResult.competitorAnalysis, audienceProfile: currentResult.audienceProfile, provider, model });
+        currentResult = { ...currentResult, marketingStrategy: strat };
+      } else if (agentKey === 'posts') {
+        const posts = await runPostGenerationAgent({ brandName, strategy: currentResult.marketingStrategy, audience: currentResult.audienceProfile, brandVoice: currentResult.siteAnalysis?.brandVoice || 'Professional', postCount: 3, provider, model });
+        currentResult = { ...currentResult, postPackages: posts };
+      } else if (agentKey === 'ads') {
+        const ad = await generatePaidAdCampaign({
+          productOrOffer: currentResult.siteAnalysis?.keyOfferings?.[0] || currentResult.siteAnalysis?.valueProposition || 'Core Offerings & Products',
+          brand: { name: brandName, industry: activeBrand?.industry, brandTone: currentResult.siteAnalysis?.brandVoice },
+          targetObjective: 'Conversions',
+          destinationUrl: customWebsiteUrl || 'https://example.com',
+          provider,
+          model
+        });
+        currentResult = { ...currentResult, adCampaign: ad };
+      }
+
+      setPipelineResult(currentResult as AgentPipelineResult);
+      setAgentStatuses(prev => ({ ...prev, [agentKey]: { status: 'completed' } }));
+
+      if (selectedBrandId) {
+        await updateBrand(selectedBrandId, { agentResearchData: currentResult });
+      }
+    } catch (err: any) {
+      console.error(`Error running single agent (${agentKey}):`, err);
+      const errMsg = err?.message || String(err);
+      setAgentStatuses(prev => ({ ...prev, [agentKey]: { status: 'failed', error: errMsg } }));
     }
   };
 
@@ -354,22 +467,34 @@ export function AgentStudio() {
           </div>
         </div>
 
-        <div className="pt-2 flex justify-end">
+        <div className="pt-2 flex flex-wrap items-center justify-between gap-4">
           <button
-            onClick={handleRunPipeline}
-            disabled={running}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50"
+            type="button"
+            onClick={handleCrawlBrandVoice}
+            disabled={crawlingVoice || running}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-900 border border-gray-200 font-semibold text-xs rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50"
           >
-            {running ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 text-white" />}
-            {running ? 'Agents Executing Tasks...' : 'Launch Multi-Agent Pipeline'}
+            {crawlingVoice ? <Loader2 className="w-4 h-4 animate-spin text-gray-900" /> : <Search className="w-4 h-4 text-gray-900" />}
+            {crawlingVoice ? 'Scraping & Extracting Voice...' : 'AI Crawl Website & Learn Brand Voice'}
           </button>
 
-          {running && (
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 ml-4">
-              <Loader2 className="w-4 h-4 animate-spin text-gray-900" />
-              <span>{currentStep}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRunPipeline}
+              disabled={running}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white font-semibold text-sm rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50"
+            >
+              {running ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 text-white" />}
+              {running ? 'Executing All 6 Agents...' : 'Run Full 6-Agent Pipeline (1-Click)'}
+            </button>
+
+            {running && (
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <Loader2 className="w-4 h-4 animate-spin text-gray-900" />
+                <span>{currentStep}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -441,21 +566,46 @@ export function AgentStudio() {
 
           {/* Section 1: Site Analysis */}
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <button
-              onClick={() => setExpandedSection(expandedSection === 'site' ? null : 'site')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
-            >
-              <div className="flex items-center gap-3">
-                <Search className="w-5 h-5 text-gray-900" />
+            <div className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 border-b border-gray-100">
+              <button
+                onClick={() => setExpandedSection(expandedSection === 'site' ? null : 'site')}
+                className="flex items-center gap-3 text-left flex-1"
+              >
+                <Search className="w-5 h-5 text-gray-900 shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">1. Brand & Site Analysis Agent Results</h3>
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    1. Brand & Site Analysis Agent
+                    {agentStatuses['site']?.status === 'completed' && <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Completed</span>}
+                    {agentStatuses['site']?.status === 'failed' && <span className="text-[10px] font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Failed</span>}
+                  </h3>
                   <p className="text-xs text-gray-500">Value proposition, voice, personality, and visual tone</p>
                 </div>
-              </div>
-              {expandedSection === 'site' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-            </button>
+              </button>
 
-            {expandedSection === 'site' && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleRunSingleAgent('site')}
+                  disabled={agentStatuses['site']?.status === 'running'}
+                  className="px-3 py-1.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {agentStatuses['site']?.status === 'running' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
+                  {agentStatuses['site']?.status === 'running' ? 'Running Agent...' : 'Run Agent Now'}
+                </button>
+                <button onClick={() => setExpandedSection(expandedSection === 'site' ? null : 'site')}>
+                  {expandedSection === 'site' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                </button>
+              </div>
+            </div>
+
+            {agentStatuses['site']?.status === 'failed' && (
+              <div className="p-4 bg-red-50 border-b border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <span>Site Analysis Agent Error: {agentStatuses['site']?.error || "Execution failed. Please check your API key."}</span>
+              </div>
+            )}
+
+            {expandedSection === 'site' && pipelineResult?.siteAnalysis && (
               <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -710,24 +860,55 @@ export function AgentStudio() {
             )}
           </div>
 
-          {/* Section 6: Paid Ad Specialist Agent Results */}
-          {pipelineResult.adCampaign && (
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          {/* Section 6: Paid Ad Specialist Agent */}
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="w-full px-6 py-4 flex items-center justify-between bg-black text-white">
               <button
                 onClick={() => setExpandedSection(expandedSection === 'ads' ? null : 'ads')}
-                className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-amber-600 to-black text-white text-left"
+                className="flex items-center gap-3 text-left flex-1"
               >
-                <div className="flex items-center gap-3">
-                  <Megaphone className="w-5 h-5 text-amber-300" />
-                  <div>
-                    <h3 className="font-semibold text-white">6. Paid Ad Campaign Agent Results (Meta & Google Ads)</h3>
-                    <p className="text-xs text-amber-200">AIDA/PAS Meta copy, 15 Google RSA headlines, and 1-click Google Ads CSV Export</p>
-                  </div>
+                <Megaphone className="w-5 h-5 text-amber-400 shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-white flex items-center gap-2">
+                    6. Paid Ad Campaign Specialist Agent
+                    {agentStatuses['ads']?.status === 'completed' && <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-400" /> Completed Successfully</span>}
+                    {agentStatuses['ads']?.status === 'failed' && <span className="text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-red-400" /> Failed</span>}
+                  </h3>
+                  <p className="text-xs text-gray-300">AIDA/PAS Meta ad copy, 15 Google RSA headlines, and 1-click Google Ads CSV Export</p>
                 </div>
-                {expandedSection === 'ads' ? <ChevronUp className="w-5 h-5 text-amber-200" /> : <ChevronDown className="w-5 h-5 text-amber-200" />}
               </button>
 
-              {expandedSection === 'ads' && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleRunSingleAgent('ads')}
+                  disabled={agentStatuses['ads']?.status === 'running'}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {agentStatuses['ads']?.status === 'running' ? <Loader2 className="w-3.5 h-3.5 animate-spin text-black" /> : <Bot className="w-3.5 h-3.5 text-black" />}
+                  {agentStatuses['ads']?.status === 'running' ? 'Running Ad Agent...' : 'Run Ad Agent Now'}
+                </button>
+                <button onClick={() => setExpandedSection(expandedSection === 'ads' ? null : 'ads')}>
+                  {expandedSection === 'ads' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                </button>
+              </div>
+            </div>
+
+            {agentStatuses['ads']?.status === 'failed' && (
+              <div className="p-4 bg-red-50 border-b border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <span>Paid Ad Specialist Agent Error: {agentStatuses['ads']?.error || "Failed to generate ad copy. Please verify your Gemini API key."}</span>
+              </div>
+            )}
+
+            {agentStatuses['ads']?.status === 'completed' && (
+              <div className="p-3 bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Success: Paid Ad Campaign generated cleanly! Meta ad copy and 15 Google RSA headlines are ready for download.</span>
+              </div>
+            )}
+
+            {expandedSection === 'ads' && pipelineResult?.adCampaign && (
                 <div className="p-6 border-t border-gray-100 space-y-6">
                   {/* Meta Ad Card */}
                   <div className="border border-gray-200 rounded-xl p-5 space-y-3 bg-gray-50/60">
@@ -812,9 +993,8 @@ export function AgentStudio() {
                 </div>
               )}
             </div>
-          )}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
   );
 }

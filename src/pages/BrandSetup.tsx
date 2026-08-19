@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getBrandById, addBrand, updateBrand } from '../dbAdapter';
 import { auth } from '../auth';
-import { Loader2, UploadCloud, Link as LinkIcon, Check, Plus, X, Image as ImageIcon, ChevronLeft } from 'lucide-react';
+import { Loader2, UploadCloud, Link as LinkIcon, Check, Plus, X, Image as ImageIcon, ChevronLeft, Sparkles, Search } from 'lucide-react';
 import * as geminiService from '../services/geminiService';
+import { crawlAndExtractBrandVoice } from '../services/brandVoiceCrawler';
 
 export function BrandSetup() {
   const navigate = useNavigate();
@@ -101,6 +102,33 @@ export function BrandSetup() {
     } catch (error) {
       console.error("Analysis failed:", error);
       alert("Failed to analyze brand. Please try again.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleCrawlVoice = async () => {
+    if (!name) {
+      alert("Please enter a Brand Name first.");
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      const voiceProfile = await crawlAndExtractBrandVoice({
+        brandName: name,
+        websiteUrl,
+        sampleText: guidelinesText
+      });
+      setGuidelinesText(voiceProfile.guidelinesText);
+      setAnalysisResult({
+        brandTone: voiceProfile.brandTone,
+        brandPersonality: voiceProfile.brandPersonality,
+        targetICP: voiceProfile.targetICP
+      });
+      alert(`AI Brand Voice Learned!\nTone: ${voiceProfile.brandTone}\nTarget ICP: ${voiceProfile.targetICP}`);
+    } catch (err: any) {
+      console.error("Crawl failed:", err);
+      alert(`Failed to crawl brand voice: ${err.message || String(err)}`);
     } finally {
       setAnalyzing(false);
     }
@@ -244,8 +272,19 @@ export function BrandSetup() {
                 )}
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Website URL</label>
+            <div className="space-y-2 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">Website URL</label>
+                <button
+                  type="button"
+                  onClick={handleCrawlVoice}
+                  disabled={analyzing || !name}
+                  className="text-xs font-semibold text-black bg-gray-100 border border-gray-200 hover:bg-gray-200 px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50"
+                >
+                  {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-gray-900" />}
+                  {analyzing ? 'Crawling Website Voice...' : 'AI Crawl Website & Extract Brand Voice (Blaze AI)'}
+                </button>
+              </div>
               <div className="relative">
                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
