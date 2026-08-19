@@ -109,9 +109,12 @@ export function Dashboard() {
                 </div>
               )}
             </div>
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <Link to="/brand-setup" className="text-sm font-medium text-black hover:underline inline-flex items-center gap-1">
-                Edit Brand Settings <ArrowRight className="w-3 h-3" />
+            <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
+              <Link to={`/brand-setup/${brand.id}`} className="text-sm font-semibold text-black hover:underline inline-flex items-center gap-1">
+                Edit Brand Settings <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link to={`/brand-strategy/${brand.id}`} className="text-xs font-semibold text-gray-600 hover:text-black bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+                Strategy Hub
               </Link>
             </div>
           </div>

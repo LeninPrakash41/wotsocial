@@ -416,7 +416,7 @@ export function ContentGenerator() {
           )}
         >
           <Repeat className="w-3.5 h-3.5 text-sky-400" />
-          1-to-Many Repurposer (Blaze AI)
+          1-to-Many Content Repurposer
         </button>
         <button
           onClick={() => setGeneratorType('ads')}

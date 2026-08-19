@@ -144,7 +144,26 @@ const getLocalPosts = (): Post[] => {
 };
 
 const saveLocalPosts = (posts: Post[]) => {
-  localStorage.setItem('wotsocial_posts', JSON.stringify(posts));
+  const cleanPosts = posts.map(p => {
+    let schedISO: string | null = null;
+    if (p.scheduledTime) {
+      if (typeof p.scheduledTime === 'string') {
+        schedISO = p.scheduledTime;
+      } else if (typeof p.scheduledTime?.toDate === 'function') {
+        try { schedISO = p.scheduledTime.toDate().toISOString(); } catch (e) {}
+      } else if (typeof p.scheduledTime?.toISOString === 'function') {
+        try { schedISO = p.scheduledTime.toISOString(); } catch (e) {}
+      } else {
+        const d = getSafeDate(p.scheduledTime);
+        schedISO = d.toISOString();
+      }
+    }
+    return {
+      ...p,
+      scheduledTime: schedISO
+    };
+  });
+  localStorage.setItem('wotsocial_posts', JSON.stringify(cleanPosts));
 };
 
 // Brands API Client
