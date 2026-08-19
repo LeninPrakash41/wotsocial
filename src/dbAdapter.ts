@@ -85,8 +85,8 @@ export const getMediaAssetsAsync = async (): Promise<MediaAsset[]> => {
   return getMediaAssets();
 };
 
-export const addMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>): MediaAsset => {
-  const existing = getMediaAssets();
+export const addMediaAssetAsync = async (asset: Omit<MediaAsset, 'id' | 'createdAt'>): Promise<MediaAsset> => {
+  const existing = await loadMediaAssetsFromIDB();
   const newAsset: MediaAsset = {
     ...asset,
     id: 'media_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -97,17 +97,31 @@ export const addMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>): Medi
   localMediaCache = updated;
 
   // Persist full asset to IndexedDB (No 5MB Quota limit!)
-  saveMediaAssetToIDB(newAsset).catch(err => console.error("IDB save error:", err));
+  await saveMediaAssetToIDB(newAsset);
 
   // Store lightweight metadata in localStorage
   try {
-    const lightAssets = updated.slice(0, 15).map(a => ({
+    const lightAssets = updated.slice(0, 30).map(a => ({
       ...a,
       url: a.url.length > 500 ? a.url.slice(0, 500) : a.url
     }));
     localStorage.setItem(MEDIA_ASSETS_KEY, JSON.stringify(lightAssets));
   } catch (e) {}
 
+  return newAsset;
+};
+
+export const addMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>): MediaAsset => {
+  const existing = getMediaAssets();
+  const newAsset: MediaAsset = {
+    ...asset,
+    id: 'media_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    createdAt: new Date().toISOString()
+  };
+
+  const updated = [newAsset, ...existing];
+  localMediaCache = updated;
+  saveMediaAssetToIDB(newAsset).catch(err => console.error("IDB save error:", err));
   return newAsset;
 };
 

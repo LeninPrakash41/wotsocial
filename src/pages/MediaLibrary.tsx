@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMediaAssets, getMediaAssetsAsync, addMediaAsset, deleteMediaAsset, MediaAsset, getBrands, Brand } from '../dbAdapter';
+import { getMediaAssets, getMediaAssetsAsync, addMediaAsset, addMediaAssetAsync, deleteMediaAsset, MediaAsset, getBrands, Brand } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
 import { saveDraftMedia } from '../services/mediaStorage';
 import { 
@@ -25,28 +25,32 @@ export function MediaLibrary() {
     loadAssets();
   }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((f) => {
+    const uploadPromises = Array.from(files).map((f) => {
       const file = f as File;
       const isVideo = file.type.startsWith('video/');
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const url = reader.result as string;
-        addMediaAsset({
-          title: file.name,
-          url,
-          type: isVideo ? 'video' : 'image',
-          source: 'upload',
-          brandId: selectedBrandId
-        });
-        loadAssets();
-      };
-      reader.readAsDataURL(file);
+      return new Promise<void>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const url = reader.result as string;
+          await addMediaAssetAsync({
+            title: file.name,
+            url,
+            type: isVideo ? 'video' : 'image',
+            source: 'upload',
+            brandId: selectedBrandId
+          });
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
     });
 
+    await Promise.all(uploadPromises);
+    await loadAssets();
     e.target.value = '';
   };
 

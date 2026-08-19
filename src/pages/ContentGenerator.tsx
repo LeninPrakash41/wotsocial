@@ -110,6 +110,8 @@ export function ContentGenerator() {
       if (media && media.url) {
         setGeneratedMediaUrl(media.url);
         setMediaType(media.type as any || 'image');
+        setTopic('Selected Media Asset Post');
+        setGeneratedContent('Selected Media Asset from Library. Click "Generate Content" to write copy or "Save for Approval / Schedule Post" to add to your Calendar Grid.');
       }
     };
 
