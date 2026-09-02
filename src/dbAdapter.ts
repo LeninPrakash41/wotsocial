@@ -583,3 +583,152 @@ export const updateMetaCampaignStatus = (id: string, status: MetaCampaign['statu
     console.error("Error updating meta campaign status:", e);
   }
 };
+
+// Instagram Marketing Schemas & APIs
+export interface InstagramAccount {
+  id: string;
+  brandId: string;
+  instagramAccountId: string;
+  handle: string;
+  accessToken: string;
+  followersCount: number;
+  mediaCount: number;
+  status: 'CONNECTED' | 'DISCONNECTED';
+}
+
+export interface InstagramDMAutomation {
+  id: string;
+  brandId: string;
+  keyword: string;
+  replyMessage: string;
+  captureEmail: boolean;
+  status: 'ACTIVE' | 'PAUSED';
+  triggeredCount: number;
+  leadsCaptured: number;
+  createdAt: string;
+}
+
+// WhatsApp Business Marketing Schemas & APIs
+export interface WhatsAppAccount {
+  id: string;
+  brandId: string;
+  wabaAccountId: string;
+  phoneNumberId: string;
+  phoneNumber: string;
+  accessToken: string;
+  qualityRating: 'GREEN' | 'YELLOW' | 'RED';
+  status: 'CONNECTED' | 'DISCONNECTED';
+}
+
+export interface WhatsAppTemplate {
+  id: string;
+  name: string;
+  category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION';
+  language: string;
+  headerType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'LOCATION';
+  headerContent?: string;
+  bodyText: string;
+  footerText?: string;
+  buttons: { type: 'URL' | 'PHONE_NUMBER' | 'QUICK_REPLY'; text: string; value?: string }[];
+  status: 'APPROVED' | 'PENDING' | 'REJECTED';
+}
+
+export interface WhatsAppCampaign {
+  id: string;
+  brandId: string;
+  name: string;
+  templateName: string;
+  targetSegment: string;
+  recipientsCount: number;
+  deliveredCount: number;
+  readCount: number;
+  clickCount: number;
+  status: 'ACTIVE' | 'SCHEDULED' | 'COMPLETED' | 'PAUSED';
+  spent: number;
+  createdAt: string;
+}
+
+const INSTAGRAM_ACCOUNT_KEY = 'wot_instagram_account_v1';
+const INSTAGRAM_DM_KEY = 'wot_instagram_dm_v1';
+const WHATSAPP_ACCOUNT_KEY = 'wot_whatsapp_account_v1';
+const WHATSAPP_CAMPAIGNS_KEY = 'wot_whatsapp_campaigns_v1';
+
+export const getInstagramAccount = (brandId?: string): InstagramAccount | null => {
+  try {
+    const raw = localStorage.getItem(INSTAGRAM_ACCOUNT_KEY);
+    const list: InstagramAccount[] = raw ? JSON.parse(raw) : [];
+    if (brandId) return list.find(a => a.brandId === brandId) || list[0] || null;
+    return list[0] || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const saveInstagramAccount = (acc: InstagramAccount): void => {
+  try {
+    const raw = localStorage.getItem(INSTAGRAM_ACCOUNT_KEY);
+    const list: InstagramAccount[] = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter(a => a.brandId !== acc.brandId);
+    localStorage.setItem(INSTAGRAM_ACCOUNT_KEY, JSON.stringify([acc, ...filtered]));
+  } catch (e) {}
+};
+
+export const getInstagramDMAutomations = (brandId?: string): InstagramDMAutomation[] => {
+  try {
+    const raw = localStorage.getItem(INSTAGRAM_DM_KEY);
+    const list: InstagramDMAutomation[] = raw ? JSON.parse(raw) : [];
+    if (brandId) return list.filter(d => !d.brandId || d.brandId === brandId);
+    return list;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const saveInstagramDMAutomation = (rule: InstagramDMAutomation): void => {
+  try {
+    const raw = localStorage.getItem(INSTAGRAM_DM_KEY);
+    const list: InstagramDMAutomation[] = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter(r => r.id !== rule.id);
+    localStorage.setItem(INSTAGRAM_DM_KEY, JSON.stringify([rule, ...filtered]));
+  } catch (e) {}
+};
+
+export const getWhatsAppAccount = (brandId?: string): WhatsAppAccount | null => {
+  try {
+    const raw = localStorage.getItem(WHATSAPP_ACCOUNT_KEY);
+    const list: WhatsAppAccount[] = raw ? JSON.parse(raw) : [];
+    if (brandId) return list.find(a => a.brandId === brandId) || list[0] || null;
+    return list[0] || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const saveWhatsAppAccount = (acc: WhatsAppAccount): void => {
+  try {
+    const raw = localStorage.getItem(WHATSAPP_ACCOUNT_KEY);
+    const list: WhatsAppAccount[] = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter(a => a.brandId !== acc.brandId);
+    localStorage.setItem(WHATSAPP_ACCOUNT_KEY, JSON.stringify([acc, ...filtered]));
+  } catch (e) {}
+};
+
+export const getWhatsAppCampaigns = (brandId?: string): WhatsAppCampaign[] => {
+  try {
+    const raw = localStorage.getItem(WHATSAPP_CAMPAIGNS_KEY);
+    const list: WhatsAppCampaign[] = raw ? JSON.parse(raw) : [];
+    if (brandId) return list.filter(c => !c.brandId || c.brandId === brandId);
+    return list;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const saveWhatsAppCampaign = (campaign: WhatsAppCampaign): void => {
+  try {
+    const raw = localStorage.getItem(WHATSAPP_CAMPAIGNS_KEY);
+    const list: WhatsAppCampaign[] = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter(c => c.id !== campaign.id);
+    localStorage.setItem(WHATSAPP_CAMPAIGNS_KEY, JSON.stringify([campaign, ...filtered]));
+  } catch (e) {}
+};

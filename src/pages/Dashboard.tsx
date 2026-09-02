@@ -3,7 +3,7 @@ import { getBrands, getBrandById, getSavedTrends, getMediaAssets, Brand, SavedTr
 import { BrandSelector } from '../components/BrandSelector';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  ArrowRight, Calendar, PenTool, Settings, BarChart3, TrendingUp, Bot, Sparkles, Bookmark, Film, Folder, Layers, Globe, ShieldCheck, Megaphone 
+  ArrowRight, Calendar, PenTool, Settings, BarChart3, TrendingUp, Bot, Sparkles, Bookmark, Film, Folder, Layers, Globe, ShieldCheck, Megaphone, Instagram, MessageSquare 
 } from 'lucide-react';
 
 export function Dashboard() {
@@ -291,22 +291,30 @@ export function Dashboard() {
               </button>
             </div>
 
-            {/* Content Studio, Meta Ads & Scheduler Quick Links Grid */}
-            <div className="grid grid-cols-3 gap-4">
-              <Link to="/generate" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:border-black/30 transition-colors group">
-                <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center mb-2.5 group-hover:bg-black group-hover:text-white transition-colors">
-                  <PenTool className="w-4 h-4" />
-                </div>
-                <h3 className="text-xs font-bold text-gray-900 mb-1">Content Studio</h3>
-                <p className="text-[10px] text-gray-500 leading-snug">Generate posts & threads.</p>
-              </Link>
-
+            {/* Multi-Channel Quick Links Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Link to="/meta-ads" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:border-blue-600/40 transition-colors group">
                 <div className="w-9 h-9 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-2.5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                   <Megaphone className="w-4 h-4" />
                 </div>
-                <h3 className="text-xs font-bold text-gray-900 mb-1">Meta Ads Studio</h3>
+                <h3 className="text-xs font-bold text-gray-900 mb-1">Meta Ads</h3>
                 <p className="text-[10px] text-gray-500 leading-snug">Run FB & IG ad campaigns.</p>
+              </Link>
+
+              <Link to="/instagram-marketing" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:border-pink-600/40 transition-colors group">
+                <div className="w-9 h-9 bg-pink-50 text-pink-600 rounded-xl flex items-center justify-center mb-2.5 group-hover:bg-pink-600 group-hover:text-white transition-colors">
+                  <Instagram className="w-4 h-4" />
+                </div>
+                <h3 className="text-xs font-bold text-gray-900 mb-1">Instagram Studio</h3>
+                <p className="text-[10px] text-gray-500 leading-snug">Reels & DM automation.</p>
+              </Link>
+
+              <Link to="/whatsapp-marketing" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:border-emerald-600/40 transition-colors group">
+                <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-2.5 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <h3 className="text-xs font-bold text-gray-900 mb-1">WhatsApp Business</h3>
+                <p className="text-[10px] text-gray-500 leading-snug">Broadcast & HSM messages.</p>
               </Link>
 
               <Link to="/schedule" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:border-black/30 transition-colors group">
