@@ -22,6 +22,8 @@ import { generatePosterBatch, planBatch, BatchProgress } from '../services/poste
 import { availableProviders } from '../services/agentRuntime';
 import { generatePosterImage } from '../services/geminiService';
 import { describeError } from '../services/integrationsApi';
+import { AgentCredit } from '../components/AgentCredit';
+import { TemplatePreview, paletteFromBrand } from '../components/TemplatePreview';
 import { cn } from '../lib/utils';
 
 const RATIO_CLASS: Record<string, string> = {
@@ -245,6 +247,7 @@ export function PosterStudio() {
   if (loading) return <LoadingPage label="Loading Poster Studio…" />;
 
   const plan = planBatch(templates.filter(t => selectedKeys.includes(t.key)), count);
+  const palette = paletteFromBrand(brand);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-16">
@@ -272,6 +275,8 @@ export function PosterStudio() {
       {banner && (
         <Banner kind={banner.kind} message={banner.message} detail={banner.detail} onDismiss={() => setBanner(null)} />
       )}
+
+      <AgentCredit agentKey={source === 'shopify' ? 'product_promo' : 'poster_designer'} brand={brand} />
 
       <TabNav
         tabs={[
@@ -383,7 +388,7 @@ export function PosterStudio() {
                 }
               />
 
-              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-2.5 sm:grid-cols-2">
                 {templates.map(t => {
                   const on = selectedKeys.includes(t.key);
                   const share = plan.find(p => p.template.key === t.key)?.count || 0;
@@ -392,18 +397,27 @@ export function PosterStudio() {
                       key={t.key}
                       onClick={() => toggleTemplate(t.key)}
                       className={cn(
-                        'rounded-xl border p-3 text-left transition-colors',
+                        'flex gap-3 rounded-xl border p-3 text-left transition-colors',
                         on ? 'border-accent-line bg-accent-soft' : 'border-line bg-surface hover:border-line-strong'
                       )}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className={cn('text-xs font-bold', on ? 'text-accent-ink' : 'text-ink')}>{t.name}</span>
-                        {on && share > 0 && <Badge tone="accent">{share}</Badge>}
+                      {/* Shows the composition, so the layout is legible before committing a batch to it. */}
+                      <div className="w-16 shrink-0">
+                        <TemplatePreview template={t} palette={palette} selected={on} />
                       </div>
-                      <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-ink-3">{t.brief}</p>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <Badge tone="neutral">{t.ratio}</Badge>
-                        <span className="text-[10px] font-semibold text-ink-4">{t.category}</span>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className={cn('text-xs font-bold', on ? 'text-accent-ink' : 'text-ink')}>{t.name}</span>
+                          {on && share > 0 && <Badge tone="accent">{share}</Badge>}
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-ink-3">{t.brief}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Badge tone="neutral">{t.ratio}</Badge>
+                          <span className="text-[10px] font-semibold text-ink-4">
+                            {t.slots.length} text slot{t.slots.length === 1 ? '' : 's'}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   );

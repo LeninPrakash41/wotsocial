@@ -55,7 +55,9 @@ export const q = async <T = any>(text: string, params: any[] = []): Promise<T[]>
   if (sqliteDb) {
     const sql = text.replace(/\$(\d+)/g, '?');
     const stmt = sqliteDb.prepare(sql);
-    if (/^\s*(SELECT|WITH)/i.test(sql)) return stmt.all(...params) as T[];
+    // PRAGMA returns rows like a SELECT does; without it, schema introspection
+    // silently comes back empty and migrations quietly do nothing.
+    if (/^\s*(SELECT|WITH|PRAGMA)/i.test(sql)) return stmt.all(...params) as T[];
     stmt.run(...params);
     return [] as T[];
   }
@@ -362,6 +364,7 @@ const DDL = [
      category TEXT,
      brief TEXT,
      ratio TEXT,
+     layout TEXT,
      slots TEXT,
      constraints TEXT,
      art_direction TEXT,
@@ -458,6 +461,62 @@ const DDL = [
    )`
 ];
 
+/**
+ * Brings existing tables up to date with the DDL above.
+ *
+ * CREATE TABLE IF NOT EXISTS silently does nothing when a table already
+ * exists, so a column added in a later release never reaches an install that
+ * has been running since before it. This reads the DDL as the source of truth
+ * and adds whatever is missing. Columns are only ever added, never dropped or
+ * retyped — a destructive migration should be a deliberate, reviewed change,
+ * not something that happens on boot.
+ */
+const migrateColumns = async (): Promise<void> => {
+  const createStatements = DDL.filter(stmt => /CREATE TABLE/i.test(stmt));
+
+  for (const stmt of createStatements) {
+    const tableMatch = stmt.match(/CREATE TABLE IF NOT EXISTS\s+(\w+)\s*\(([\s\S]*)\)\s*$/i);
+    if (!tableMatch) continue;
+    const [, table, columnBlock] = tableMatch;
+
+    const wanted = columnBlock
+      .split(',')
+      .map(line => line.trim())
+      .filter(line => line && !/^(PRIMARY|FOREIGN|UNIQUE|CHECK)\b/i.test(line))
+      .map(line => {
+        const [name, ...rest] = line.split(/\s+/);
+        return { name, definition: rest.join(' ') || 'TEXT' };
+      })
+      .filter(c => /^\w+$/.test(c.name));
+
+    let existing: Set<string>;
+    try {
+      if (dbMode === 'postgres' && pgPool) {
+        const rows = await q<any>(
+          `SELECT column_name FROM information_schema.columns WHERE table_name = $1`, [table]
+        );
+        existing = new Set(rows.map(r => r.column_name));
+      } else {
+        const rows = await q<any>(`PRAGMA table_info(${table})`);
+        existing = new Set(rows.map(r => r.name));
+      }
+    } catch {
+      continue; // Table does not exist yet; the CREATE above will handle it.
+    }
+    if (!existing.size) continue;
+
+    for (const column of wanted) {
+      if (existing.has(column.name)) continue;
+      try {
+        await q(`ALTER TABLE ${table} ADD COLUMN ${column.name} ${column.definition}`);
+        console.log(`   migrated: ${table}.${column.name}`);
+      } catch (err) {
+        console.error(`   migration failed for ${table}.${column.name}:`, (err as Error).message);
+      }
+    }
+  }
+};
+
 let readyPromise: Promise<void> | null = null;
 
 export const ensureStoreReady = async (): Promise<void> => {
@@ -471,6 +530,7 @@ export const ensureStoreReady = async (): Promise<void> => {
           console.error('Integration schema statement failed:', (err as Error).message);
         }
       }
+      await migrateColumns();
       console.log('🔌 Live integration schema ready.');
     })();
   }

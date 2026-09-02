@@ -20,6 +20,7 @@ import {
 import { contentApi } from '../services/studioApi';
 import { runAgent, availableProviders, AgentRunError } from '../services/agentRuntime';
 import { describeError } from '../services/integrationsApi';
+import { AgentCredit } from '../components/AgentCredit';
 
 interface Article {
   title: string;
@@ -206,6 +207,8 @@ export function BlogStudio() {
       {banner && (
         <Banner kind={banner.kind} message={banner.message} detail={banner.detail} onDismiss={() => setBanner(null)} />
       )}
+
+      <AgentCredit agentKey="blog_writer" brand={brand} />
 
       <TabNav
         tabs={[

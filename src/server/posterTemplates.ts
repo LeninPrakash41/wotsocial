@@ -20,6 +20,23 @@ export type PosterCategory =
 
 export type PosterRatio = 'square' | 'portrait' | 'story' | 'landscape';
 
+/**
+ * The composition archetype, used to draw the thumbnail in the picker so a
+ * marketer can see the shape of a layout before committing a batch to it.
+ * It also tells the art director where the negative space has to be.
+ */
+export type PosterLayout =
+  | 'centered'
+  | 'split-horizontal'
+  | 'split-vertical'
+  | 'hero-number'
+  | 'list'
+  | 'quote'
+  | 'product'
+  | 'offer-badge'
+  | 'editorial'
+  | 'documentary';
+
 export interface PosterSlot {
   key: string;
   label: string;
@@ -34,6 +51,7 @@ export interface PosterTemplate {
   /** What this poster is for, in the words a marketer would use. */
   brief: string;
   ratio: PosterRatio;
+  layout: PosterLayout;
   slots: PosterSlot[];
   /** Handed to the agent verbatim as layout constraints. */
   constraints: string;
@@ -53,6 +71,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'awareness',
     brief: 'One strong claim, set large. The workhorse for building recognition.',
     ratio: 'square',
+    layout: 'centered',
     slots: [SLOT('headline', 'Statement', 9), SLOT('subhead', 'Supporting line', 14, false)],
     constraints:
       'Headline is at most 9 words and must work at thumbnail size. Subhead is optional and at most 14 words. No body copy.',
@@ -66,6 +85,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'awareness',
     brief: 'Names the frustration on top, answers it underneath. Reliably the highest-saving poster.',
     ratio: 'portrait',
+    layout: 'split-horizontal',
     slots: [
       SLOT('headline', 'The problem', 10),
       SLOT('subhead', 'The answer', 12),
@@ -83,6 +103,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'social-proof',
     brief: 'One number, given the whole poster. Best when the figure is genuinely surprising.',
     ratio: 'square',
+    layout: 'hero-number',
     slots: [
       SLOT('headline', 'The number', 3),
       SLOT('subhead', 'What it means', 14),
@@ -100,6 +121,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'education',
     brief: 'Three to five short, genuinely useful tips. The most saved and shared format.',
     ratio: 'portrait',
+    layout: 'list',
     slots: [SLOT('headline', 'List title', 8), SLOT('body', 'The tips', 45)],
     constraints:
       'Headline is at most 8 words. Body contains 3 to 5 numbered tips, each at most 9 words. Every tip must be independently useful — no filler entries.',
@@ -113,6 +135,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'education',
     brief: 'Corrects a belief your audience actually holds. Strong comment driver.',
     ratio: 'square',
+    layout: 'split-horizontal',
     slots: [SLOT('headline', 'The myth', 10), SLOT('subhead', 'The reality', 14)],
     constraints:
       'Headline states a real, commonly held belief in at most 10 words. Subhead corrects it in at most 14. Do not strawman the myth.',
@@ -126,6 +149,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'social-proof',
     brief: 'A real customer, in their own words. Only use quotes you actually have.',
     ratio: 'square',
+    layout: 'quote',
     slots: [
       SLOT('body', 'The quote', 28),
       SLOT('subhead', 'Attribution', 8),
@@ -143,6 +167,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'promotion',
     brief: 'One product, its benefit and its price. The default for a catalogue.',
     ratio: 'square',
+    layout: 'product',
     slots: [
       SLOT('headline', 'Benefit headline', 8),
       SLOT('subhead', 'Product name', 6),
@@ -161,6 +186,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'promotion',
     brief: 'A dated offer with a real deadline. Urgency only works when it is true.',
     ratio: 'portrait',
+    layout: 'offer-badge',
     slots: [
       SLOT('headline', 'The offer', 7),
       SLOT('subhead', 'What is included', 12),
@@ -179,6 +205,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'announcement',
     brief: 'A launch, a feature or a milestone. Clear on what changed and what to do.',
     ratio: 'square',
+    layout: 'centered',
     slots: [
       SLOT('headline', 'What is new', 8),
       SLOT('subhead', 'Why it matters', 14),
@@ -195,6 +222,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'social-proof',
     brief: 'Shows the change rather than describing it. Strong for services with visible results.',
     ratio: 'square',
+    layout: 'split-vertical',
     slots: [
       SLOT('headline', 'The transformation', 8),
       SLOT('subhead', 'The timeframe or method', 12),
@@ -212,6 +240,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'awareness',
     brief: 'A short, personal message. Builds trust in a way brand copy cannot.',
     ratio: 'portrait',
+    layout: 'editorial',
     slots: [SLOT('headline', 'The opening line', 9), SLOT('body', 'The note', 45), SLOT('subhead', 'Signature', 6)],
     constraints:
       'Written in first person, plainly. No corporate hedging, no superlatives. At most 45 words in the body.',
@@ -225,6 +254,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'announcement',
     brief: 'Webinar, workshop or launch event, with the details people need to attend.',
     ratio: 'portrait',
+    layout: 'editorial',
     slots: [
       SLOT('headline', 'Event name', 8),
       SLOT('subhead', 'The promise', 12),
@@ -242,6 +272,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'education',
     brief: 'Answers one question customers really ask. Cheap to produce, reliably useful.',
     ratio: 'square',
+    layout: 'split-horizontal',
     slots: [SLOT('headline', 'The question', 12), SLOT('body', 'The answer', 30)],
     constraints:
       'The question must be one a real customer would ask in their own words, not marketing phrasing.',
@@ -255,6 +286,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'awareness',
     brief: 'How the work actually gets done. Humanises a brand that reads as faceless.',
     ratio: 'portrait',
+    layout: 'documentary',
     slots: [SLOT('headline', 'The moment', 8), SLOT('body', 'What is happening', 30)],
     constraints: 'Describe a real, specific moment. Avoid generic team-photo language.',
     artDirection:
@@ -267,6 +299,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'recruitment',
     brief: 'A role, the team and how to apply.',
     ratio: 'square',
+    layout: 'centered',
     slots: [
       SLOT('headline', 'Role title', 6),
       SLOT('subhead', 'What they will do', 14),
@@ -284,6 +317,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'education',
     brief: 'Contrasts two approaches. Positions without naming a competitor.',
     ratio: 'square',
+    layout: 'split-vertical',
     slots: [
       SLOT('headline', 'The comparison', 8),
       SLOT('subhead', 'Option A', 12),
@@ -300,6 +334,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'education',
     brief: 'Something the reader can act on immediately. Very high save rate.',
     ratio: 'portrait',
+    layout: 'list',
     slots: [SLOT('headline', 'Checklist title', 8), SLOT('body', 'The items', 40)],
     constraints: '4 to 6 items, each at most 7 words, each genuinely actionable.',
     artDirection: 'Clean list with tick marks, generous line spacing, one accent colour for the marks.',
@@ -311,6 +346,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'awareness',
     brief: 'A quotable idea in your own voice. Good filler between campaign beats.',
     ratio: 'square',
+    layout: 'quote',
     slots: [SLOT('body', 'The idea', 24), SLOT('subhead', 'Attribution', 6, false)],
     constraints:
       'Attribute only to the brand or a named person at the brand. Never attribute an invented quote to a real outside figure.',
@@ -323,6 +359,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'promotion',
     brief: 'Ties the brand to a holiday or seasonal moment without being trite.',
     ratio: 'square',
+    layout: 'centered',
     slots: [SLOT('headline', 'The greeting or hook', 8), SLOT('subhead', 'The brand connection', 14)],
     constraints:
       'Connect the moment to something the brand genuinely does. Avoid generic well-wishing with a logo attached.',
@@ -336,6 +373,7 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
     category: 'social-proof',
     brief: 'A client outcome with the number that proves it.',
     ratio: 'portrait',
+    layout: 'hero-number',
     slots: [
       SLOT('headline', 'The result', 8),
       SLOT('subhead', 'Who and over what period', 12),

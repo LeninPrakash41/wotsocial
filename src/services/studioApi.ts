@@ -132,6 +132,8 @@ export interface PosterTemplate {
   category: string;
   brief: string;
   ratio: 'square' | 'portrait' | 'story' | 'landscape';
+  layout: 'centered' | 'split-horizontal' | 'split-vertical' | 'hero-number' | 'list'
+    | 'quote' | 'product' | 'offer-badge' | 'editorial' | 'documentary';
   slots: PosterSlotSpec[];
   constraints: string;
   artDirection: string;
