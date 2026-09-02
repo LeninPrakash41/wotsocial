@@ -1,1 +1,181 @@
 @import "tailwindcss";
+
+/* ==========================================================================
+   WotSocial design tokens
+
+   A black-and-white product with violet/pink used only where something is
+   live, selected, or asking for attention. Neutrals carry a slight violet
+   bias so greys sit with the accent instead of fighting it.
+   ========================================================================== */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    "Cascadia Mono", monospace;
+
+  /* Surfaces, light to dark */
+  --color-canvas: #FAFAFB;
+  --color-surface: #FFFFFF;
+  --color-sunk: #F5F4F8;
+  --color-line: #E8E6EC;
+  --color-line-strong: #D6D3DE;
+
+  /* Ink, strongest to faintest */
+  --color-ink: #17161A;
+  --color-ink-2: #45424D;
+  --color-ink-3: #6F6B7A;
+  --color-ink-4: #9B97A6;
+
+  /* Accent — violet leading, pink as the second note */
+  --color-accent: #6D4AFF;
+  --color-accent-hover: #5A35F0;
+  --color-accent-ink: #4A2ED0;
+  --color-accent-soft: #F1EDFF;
+  --color-accent-line: #DDD3FF;
+
+  --color-blush: #DB4F9E;
+  --color-blush-ink: #B33379;
+  --color-blush-soft: #FDEEF6;
+  --color-blush-line: #F8D6E8;
+
+  /* Semantic — separate from the accent, never used decoratively */
+  --color-ok: #0F7A56;
+  --color-ok-soft: #E7F5EF;
+  --color-ok-line: #C4E6D8;
+  --color-warn: #8F5D0C;
+  --color-warn-soft: #FCF3E1;
+  --color-warn-line: #F0DDB6;
+  --color-danger: #BE3128;
+  --color-danger-soft: #FDECEA;
+  --color-danger-line: #F6CFCB;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Shadows stay soft and low — nothing floats far off the page */
+  --shadow-xs: 0 1px 2px rgba(23, 22, 26, 0.05);
+  --shadow-sm: 0 1px 2px rgba(23, 22, 26, 0.05), 0 2px 8px -4px rgba(23, 22, 26, 0.08);
+  --shadow-md: 0 1px 2px rgba(23, 22, 26, 0.04), 0 8px 24px -12px rgba(23, 22, 26, 0.16);
+  --shadow-lift: 0 2px 4px rgba(23, 22, 26, 0.04), 0 16px 40px -20px rgba(23, 22, 26, 0.24);
+  --shadow-accent: 0 2px 6px rgba(109, 74, 255, 0.18), 0 12px 28px -14px rgba(109, 74, 255, 0.32);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings run tight; Jakarta has enough width to carry it. */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Figures that sit in columns should line up. */
+  th, td, .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-ink);
+  }
+
+  ::placeholder {
+    color: var(--color-ink-4);
+  }
+
+  input, textarea, select, button {
+    font-family: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Utilities used across studios
+   ========================================================================== */
+
+@layer utilities {
+  /* Scrollbars inside panels, kept out of the way. */
+  .scroll-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+  .scroll-slim::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-slim::-webkit-scrollbar-track { background: transparent; }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 999px;
+  }
+
+  /* The one place the two accent hues are used together: a live signal. */
+  .accent-thread {
+    background-image: linear-gradient(90deg, var(--color-accent), var(--color-blush));
+  }
+
+  .text-accent-thread {
+    background-image: linear-gradient(90deg, var(--color-accent), var(--color-blush));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* A quiet dot that pulses only while something is genuinely in flight. */
+  .pulse-live::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    margin-right: 6px;
+    animation: wot-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes wot-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* Device mockups: a real phone aspect, so previews stop guessing. */
+  .device-portrait {
+    aspect-ratio: 9 / 19.5;
+  }
+  .device-square {
+    aspect-ratio: 1 / 1;
+  }
+  .device-feed {
+    aspect-ratio: 4 / 5;
+  }
+}

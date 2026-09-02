@@ -185,8 +185,8 @@ export function Analytics() {
     <div className="space-y-8 max-w-6xl">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Analytics & Insights</h1>
-          <p className="text-gray-500 mt-1">Track audience engagement, growth metrics, and AI performance reports across all connected channels.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Analytics & Insights</h1>
+          <p className="text-ink-3 mt-1">Track audience engagement, growth metrics, and AI performance reports across all connected channels.</p>
         </div>
         <div className="flex items-center gap-3">
           <BrandSelector
@@ -201,7 +201,7 @@ export function Analytics() {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-surface border border-line text-sm font-medium rounded-lg hover:bg-sunk transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("w-4 h-4", syncing && "animate-spin")} />
             {syncing ? 'Syncing...' : 'Sync Data'}
@@ -209,7 +209,7 @@ export function Analytics() {
           <button
             onClick={handleAnalyze}
             disabled={analyzing || posts.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-sm font-medium rounded-lg hover:bg-ink-2 transition-colors disabled:opacity-50"
           >
             <Sparkles className={cn("w-4 h-4", analyzing && "animate-pulse")} />
             {analyzing ? 'Analyzing...' : 'Get AI Insights'}
@@ -220,24 +220,24 @@ export function Analytics() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Reach', value: totalReach.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Impressions', value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-gray-900', bg: 'bg-gray-100' },
-          { label: 'Engagement', value: totalEngagement.toLocaleString(), icon: ThumbsUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Avg. Likes', value: posts.length ? Math.round(totalLikes / posts.length).toLocaleString() : 0, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
+          { label: 'Total Reach', value: totalReach.toLocaleString(), icon: Users, color: 'text-accent', bg: 'bg-accent-soft' },
+          { label: 'Impressions', value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-ink', bg: 'bg-sunk' },
+          { label: 'Engagement', value: totalEngagement.toLocaleString(), icon: ThumbsUp, color: 'text-ok', bg: 'bg-ok-soft' },
+          { label: 'Avg. Likes', value: posts.length ? Math.round(totalLikes / posts.length).toLocaleString() : 0, icon: TrendingUp, color: 'text-accent', bg: 'bg-accent-soft' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+          <div key={i} className="bg-surface border border-line rounded-2xl p-5 shadow-sm">
             <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4", stat.bg)}>
               <stat.icon className={cn("w-5 h-5", stat.color)} />
             </div>
-            <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mt-1">{stat.label}</div>
+            <div className="text-2xl font-bold text-ink">{stat.value}</div>
+            <div className="text-xs font-medium text-ink-3 uppercase tracking-wider mt-1">{stat.label}</div>
           </div>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-surface border border-line rounded-2xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold mb-6">Engagement Overview</h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -261,31 +261,31 @@ export function Analytics() {
         </div>
 
         {/* AI Insights Panel */}
-        <div className="bg-black text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+        <div className="bg-ink text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-surface/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
           <div className="relative z-10 space-y-6">
-            <div className="flex items-center gap-2 text-emerald-400">
+            <div className="flex items-center gap-2 text-ok">
               <Sparkles className="w-5 h-5" />
               <span className="text-sm font-semibold uppercase tracking-wider">AI Performance Insights</span>
             </div>
 
             {!insight ? (
               <div className="space-y-4 py-8 text-center">
-                <p className="text-gray-400 text-sm">No insights generated yet. Click "Get AI Insights" to analyze your performance.</p>
+                <p className="text-ink-4 text-sm">No insights generated yet. Click "Get AI Insights" to analyze your performance.</p>
               </div>
             ) : (
               <div className="space-y-6">
                 <div>
-                  <p className="text-sm leading-relaxed text-gray-200">
+                  <p className="text-sm leading-relaxed text-ink-4">
                     {insight.insightText}
                   </p>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Top Themes</h4>
+                  <h4 className="text-xs font-bold text-ink-3 uppercase tracking-widest">Top Themes</h4>
                   <div className="flex flex-wrap gap-2">
                     {insight.topPerformingThemes?.map((theme: string, i: number) => (
-                      <span key={i} className="px-2 py-1 bg-white/10 rounded-md text-xs font-medium">
+                      <span key={i} className="px-2 py-1 bg-surface/10 rounded-md text-xs font-medium">
                         {theme}
                       </span>
                     ))}
@@ -293,11 +293,11 @@ export function Analytics() {
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Recommendations</h4>
+                  <h4 className="text-xs font-bold text-ink-3 uppercase tracking-widest">Recommendations</h4>
                   <ul className="space-y-2">
                     {insight.recommendations?.map((rec: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <li key={i} className="flex items-start gap-2 text-sm text-ink-4">
+                        <CheckCircle2 className="w-4 h-4 text-ok shrink-0 mt-0.5" />
                         {rec}
                       </li>
                     ))}
@@ -310,20 +310,20 @@ export function Analytics() {
       </div>
 
       {/* Audience Section */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+      <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h3 className="text-lg font-semibold">Audience Demographics</h3>
-            <p className="text-sm text-gray-500">Understand who is interacting with your brand.</p>
+            <p className="text-sm text-ink-3">Understand who is interacting with your brand.</p>
           </div>
-          <div className="flex bg-gray-100 p-1 rounded-lg">
+          <div className="flex bg-sunk p-1 rounded-lg">
             {['all', 'twitter', 'linkedin', 'instagram'].map((p) => (
               <button
                 key={p}
                 onClick={() => setSelectedPlatform(p)}
                 className={cn(
                   "px-4 py-1.5 text-xs font-medium rounded-md transition-all capitalize",
-                  selectedPlatform === p ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  selectedPlatform === p ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"
                 )}
               >
                 {p}
@@ -333,14 +333,14 @@ export function Analytics() {
         </div>
 
         {!activeAudience ? (
-          <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded-xl">
-            <Users className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No audience data for this platform. Sync your data to see insights.</p>
+          <div className="py-12 text-center border-2 border-dashed border-line rounded-xl">
+            <Users className="w-8 h-8 text-ink-4 mx-auto mb-3" />
+            <p className="text-sm text-ink-3">No audience data for this platform. Sync your data to see insights.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-12">
             <div className="space-y-6">
-              <h4 className="text-sm font-semibold text-gray-700">Age Distribution</h4>
+              <h4 className="text-sm font-semibold text-ink-2">Age Distribution</h4>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={ageData} layout="vertical">
@@ -354,7 +354,7 @@ export function Analytics() {
               </div>
             </div>
             <div className="space-y-6">
-              <h4 className="text-sm font-semibold text-gray-700">Top Locations</h4>
+              <h4 className="text-sm font-semibold text-ink-2">Top Locations</h4>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -379,7 +379,7 @@ export function Analytics() {
                 {locationData.map((loc, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                    <span className="text-xs text-gray-600 font-medium">{loc.name} ({loc.value}%)</span>
+                    <span className="text-xs text-ink-3 font-medium">{loc.name} ({loc.value}%)</span>
                   </div>
                 ))}
               </div>
@@ -389,14 +389,14 @@ export function Analytics() {
       </div>
 
       {/* Top Posts Table */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+      <div className="bg-surface border border-line rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-line flex items-center justify-between">
           <h3 className="text-lg font-semibold">Top Performing Posts</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <tr className="bg-sunk text-xs font-bold text-ink-3 uppercase tracking-wider">
                 <th className="px-6 py-4">Content</th>
                 <th className="px-6 py-4">Type</th>
                 <th className="px-6 py-4">Impressions</th>
@@ -404,22 +404,22 @@ export function Analytics() {
                 <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line">
               {posts.slice(0, 5).map((post) => (
-                <tr key={post.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={post.id} className="hover:bg-sunk transition-colors">
                   <td className="px-6 py-4 max-w-xs">
-                    <p className="text-sm text-gray-900 line-clamp-2">{post.content}</p>
+                    <p className="text-sm text-ink line-clamp-2">{post.content}</p>
                   </td>
-                  <td className="px-6 py-4 capitalize text-sm text-gray-600">{post.mediaType}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{(post.impressions || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4 capitalize text-sm text-ink-3">{post.mediaType}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-ink">{(post.impressions || 0).toLocaleString()}</td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-ok">
                       <TrendingUp className="w-3.5 h-3.5" />
                       {((post.likes || 0) + (post.shares || 0) + (post.comments || 0)).toLocaleString()}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-md">
+                    <span className="px-2 py-1 bg-ok-soft text-ok text-[10px] font-bold uppercase rounded-md">
                       {post.status}
                     </span>
                   </td>

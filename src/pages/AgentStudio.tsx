@@ -359,18 +359,18 @@ export function AgentStudio() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Bot className="w-6 h-6 text-gray-900" />
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-900 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded">Autonomous AI Workforce</span>
+            <Bot className="w-6 h-6 text-ink" />
+            <span className="text-xs font-bold uppercase tracking-wider text-ink bg-sunk border border-line px-2 py-0.5 rounded">Autonomous AI Workforce</span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Agentic Workflow Studio</h1>
-          <p className="text-gray-500 mt-1">Deploy specialized Gemini & Claude agents to automate site analysis, competitor tracking, audience profiling, and post generation.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Agentic Workflow Studio</h1>
+          <p className="text-ink-3 mt-1">Deploy specialized Gemini & Claude agents to automate site analysis, competitor tracking, audience profiling, and post generation.</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-200 shadow-xs">
+        <div className="flex items-center gap-3 bg-surface p-2 rounded-xl border border-line shadow-xs">
           <BrandSelector activeBrandId={selectedBrandId} onBrandChange={handleSelectBrand} />
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Provider</label>
+            <label className="text-[10px] font-bold text-ink-4 uppercase tracking-wider block">Provider</label>
             <select
               value={provider}
               onChange={(e) => {
@@ -378,7 +378,7 @@ export function AgentStudio() {
                 setProvider(p);
                 setModel(p === 'claude' ? 'claude-3-5-sonnet' : 'gemini-3-flash');
               }}
-              className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none"
+              className="text-xs font-medium bg-sunk border border-line rounded-lg px-2.5 py-1.5 focus:outline-none"
             >
               <option value="gemini">Google Gemini</option>
               <option value="claude">Anthropic Claude</option>
@@ -386,11 +386,11 @@ export function AgentStudio() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Model</label>
+            <label className="text-[10px] font-bold text-ink-4 uppercase tracking-wider block">Model</label>
             <select
               value={model}
               onChange={(e) => setModel(e.target.value as AIModel)}
-              className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none"
+              className="text-xs font-medium bg-sunk border border-line rounded-lg px-2.5 py-1.5 focus:outline-none"
             >
               {provider === 'gemini' ? (
                 <>
@@ -409,20 +409,20 @@ export function AgentStudio() {
       </header>
 
       {/* Target Setup Card */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Target className="w-5 h-5 text-blue-600" />
+      <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
+          <h2 className="text-lg font-semibold text-ink flex items-center gap-2">
+            <Target className="w-5 h-5 text-accent" />
             Target Brand & Input Data
           </h2>
 
           {brands.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 font-medium">Select Saved Brand:</span>
+              <span className="text-xs text-ink-3 font-medium">Select Saved Brand:</span>
               <select
                 value={selectedBrandId}
                 onChange={(e) => handleSelectBrand(e.target.value)}
-                className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none"
+                className="text-xs font-medium bg-sunk border border-line rounded-lg px-3 py-1.5 focus:outline-none"
               >
                 {brands.map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
@@ -434,35 +434,35 @@ export function AgentStudio() {
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-700">Brand Name *</label>
+            <label className="text-xs font-medium text-ink-2">Brand Name *</label>
             <input
               type="text"
               value={customBrandName}
               onChange={(e) => setCustomBrandName(e.target.value)}
               placeholder="e.g. Acme SaaS"
-              className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+              className="w-full px-3.5 py-2 border border-line-strong rounded-lg text-sm focus:ring-2 focus:ring-ink outline-none"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-700">Website URL (For Live Scraping)</label>
+            <label className="text-xs font-medium text-ink-2">Website URL (For Live Scraping)</label>
             <input
               type="url"
               value={customWebsiteUrl}
               onChange={(e) => setCustomWebsiteUrl(e.target.value)}
               placeholder="https://example.com"
-              className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+              className="w-full px-3.5 py-2 border border-line-strong rounded-lg text-sm focus:ring-2 focus:ring-ink outline-none"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-700">Guidelines / Product Text</label>
+            <label className="text-xs font-medium text-ink-2">Guidelines / Product Text</label>
             <input
               type="text"
               value={customGuidelines}
               onChange={(e) => setCustomGuidelines(e.target.value)}
               placeholder="Short description or mission statement"
-              className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+              className="w-full px-3.5 py-2 border border-line-strong rounded-lg text-sm focus:ring-2 focus:ring-ink outline-none"
             />
           </div>
         </div>
@@ -472,9 +472,9 @@ export function AgentStudio() {
             type="button"
             onClick={handleCrawlBrandVoice}
             disabled={crawlingVoice || running}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-900 border border-gray-200 font-semibold text-xs rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-sunk text-ink border border-line font-semibold text-xs rounded-xl hover:bg-line transition-all disabled:opacity-50"
           >
-            {crawlingVoice ? <Loader2 className="w-4 h-4 animate-spin text-gray-900" /> : <Search className="w-4 h-4 text-gray-900" />}
+            {crawlingVoice ? <Loader2 className="w-4 h-4 animate-spin text-ink" /> : <Search className="w-4 h-4 text-ink" />}
             {crawlingVoice ? 'Scraping & Extracting Voice...' : 'AI Crawl Website & Learn Brand Voice'}
           </button>
 
@@ -482,15 +482,15 @@ export function AgentStudio() {
             <button
               onClick={handleRunPipeline}
               disabled={running}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white font-semibold text-sm rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white font-semibold text-sm rounded-xl hover:bg-ink-2 transition-all shadow-sm disabled:opacity-50"
             >
               {running ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 text-white" />}
               {running ? 'Executing All 6 Agents...' : 'Run Full 6-Agent Pipeline (1-Click)'}
             </button>
 
             {running && (
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                <Loader2 className="w-4 h-4 animate-spin text-gray-900" />
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <Loader2 className="w-4 h-4 animate-spin text-ink" />
                 <span>{currentStep}</span>
               </div>
             )}
@@ -500,13 +500,13 @@ export function AgentStudio() {
 
       {/* Live Agent Execution Progress Log */}
       {stepLogs.length > 0 && (
-        <div className="bg-gray-900 text-gray-100 border border-gray-800 rounded-2xl p-6 shadow-md space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-100">
+        <div className="bg-ink text-white border border-ink-2 rounded-2xl p-6 shadow-md space-y-4">
+          <div className="flex items-center justify-between border-b border-ink-2 pb-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-white">
               <Bot className="w-4 h-4" />
               Agent Work Log & Thought Pipeline
             </div>
-            {running && <span className="text-xs text-gray-400 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Processing agents...</span>}
+            {running && <span className="text-xs text-ink-4 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Processing agents...</span>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
@@ -527,9 +527,9 @@ export function AgentStudio() {
                   key={stepName}
                   className={cn(
                     "p-3 rounded-xl border text-xs flex flex-col justify-between h-24 transition-all",
-                    isDone ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-300" :
-                    isRunning ? "bg-gray-800 border-gray-700 text-white animate-pulse" :
-                    "bg-slate-900 border-slate-800 text-gray-400"
+                    isDone ? "bg-ok/40 border-ok/60 text-ok-line" :
+                    isRunning ? "bg-ink-2 border-ink-2 text-white animate-pulse" :
+                    "bg-slate-900 border-slate-800 text-ink-4"
                   )}
                 >
                   <div className="font-bold text-[11px] tracking-tight">{i + 1}. {stepName.replace(' Agent', '')}</div>
@@ -537,7 +537,7 @@ export function AgentStudio() {
                     <span className="text-[10px]">
                       {isDone ? 'Completed' : isRunning ? 'Working...' : 'Pending'}
                     </span>
-                    {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : isRunning ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <div className="w-2 h-2 rounded-full bg-gray-700" />}
+                    {isDone ? <CheckCircle2 className="w-4 h-4 text-ok" /> : isRunning ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <div className="w-2 h-2 rounded-full bg-ink-2" />}
                   </div>
                 </div>
               );
@@ -549,36 +549,36 @@ export function AgentStudio() {
       {/* Agent Results Accordion & Dashboard */}
       {pipelineResult && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50 border border-gray-200 p-6 rounded-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sunk border border-line p-6 rounded-2xl">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Enrich Active Brand Profile</h3>
-              <p className="text-sm text-gray-500">Save extracted voice, personality traits, value props, and colors directly into your brand configuration.</p>
+              <h3 className="text-base font-semibold text-ink">Enrich Active Brand Profile</h3>
+              <p className="text-sm text-ink-3">Save extracted voice, personality traits, value props, and colors directly into your brand configuration.</p>
             </div>
             <button
               onClick={handleEnrichBrandProfile}
               disabled={savingToBrand}
-              className="px-5 py-2.5 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors shadow-xs text-sm shrink-0 flex items-center justify-center gap-2"
+              className="px-5 py-2.5 bg-ink text-white font-medium rounded-xl hover:bg-ink-2 transition-colors shadow-xs text-sm shrink-0 flex items-center justify-center gap-2"
             >
-              {savingToBrand ? <Loader2 className="w-4 h-4 animate-spin" /> : brandSavedSuccess ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <ShieldCheck className="w-4 h-4" />}
+              {savingToBrand ? <Loader2 className="w-4 h-4 animate-spin" /> : brandSavedSuccess ? <CheckCircle2 className="w-4 h-4 text-ok" /> : <ShieldCheck className="w-4 h-4" />}
               {savingToBrand ? 'Updating...' : brandSavedSuccess ? 'Brand Profile Updated!' : 'Save to Brand Profile'}
             </button>
           </div>
 
           {/* Section 1: Site Analysis */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 border-b border-gray-100">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
+            <div className="w-full px-6 py-4 flex items-center justify-between bg-sunk/80 border-b border-line">
               <button
                 onClick={() => setExpandedSection(expandedSection === 'site' ? null : 'site')}
                 className="flex items-center gap-3 text-left flex-1"
               >
-                <Search className="w-5 h-5 text-gray-900 shrink-0" />
+                <Search className="w-5 h-5 text-ink shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <h3 className="font-semibold text-ink flex items-center gap-2">
                     1. Brand & Site Analysis Agent
-                    {agentStatuses['site']?.status === 'completed' && <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Completed</span>}
-                    {agentStatuses['site']?.status === 'failed' && <span className="text-[10px] font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Failed</span>}
+                    {agentStatuses['site']?.status === 'completed' && <span className="text-[10px] font-bold bg-ok-soft text-ok px-2 py-0.5 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Completed</span>}
+                    {agentStatuses['site']?.status === 'failed' && <span className="text-[10px] font-bold bg-danger-soft text-danger px-2 py-0.5 rounded-full flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Failed</span>}
                   </h3>
-                  <p className="text-xs text-gray-500">Value proposition, voice, personality, and visual tone</p>
+                  <p className="text-xs text-ink-3">Value proposition, voice, personality, and visual tone</p>
                 </div>
               </button>
 
@@ -587,51 +587,51 @@ export function AgentStudio() {
                   type="button"
                   onClick={() => handleRunSingleAgent('site')}
                   disabled={agentStatuses['site']?.status === 'running'}
-                  className="px-3 py-1.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-3 py-1.5 bg-ink text-white text-xs font-semibold rounded-lg hover:bg-ink-2 transition-all flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {agentStatuses['site']?.status === 'running' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
                   {agentStatuses['site']?.status === 'running' ? 'Running Agent...' : 'Run Agent Now'}
                 </button>
                 <button onClick={() => setExpandedSection(expandedSection === 'site' ? null : 'site')}>
-                  {expandedSection === 'site' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                  {expandedSection === 'site' ? <ChevronUp className="w-5 h-5 text-ink-4" /> : <ChevronDown className="w-5 h-5 text-ink-4" />}
                 </button>
               </div>
             </div>
 
             {agentStatuses['site']?.status === 'failed' && (
-              <div className="p-4 bg-red-50 border-b border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+              <div className="p-4 bg-danger-soft border-b border-danger-line text-danger text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
                 <span>Site Analysis Agent Error: {agentStatuses['site']?.error || "Execution failed. Please check your API key."}</span>
               </div>
             )}
 
             {expandedSection === 'site' && pipelineResult?.siteAnalysis && (
-              <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
+              <div className="p-6 border-t border-line space-y-6 text-sm">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Core Value Proposition</h4>
-                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-xl border border-gray-100">{pipelineResult?.siteAnalysis?.valueProposition || 'N/A'}</p>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-1">Core Value Proposition</h4>
+                    <p className="font-medium text-ink bg-sunk p-3 rounded-xl border border-line">{pipelineResult?.siteAnalysis?.valueProposition || 'N/A'}</p>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Brand Voice & Personality</h4>
-                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-xl border border-gray-100">{pipelineResult?.siteAnalysis?.brandVoice || 'N/A'}</p>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-1">Brand Voice & Personality</h4>
+                    <p className="font-medium text-ink bg-sunk p-3 rounded-xl border border-line">{pipelineResult?.siteAnalysis?.brandVoice || 'N/A'}</p>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Key Product/Service Offerings</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-2">Key Product/Service Offerings</h4>
                   <div className="flex flex-wrap gap-2">
                     {(pipelineResult?.siteAnalysis?.keyOfferings || []).map((o, i) => (
-                      <span key={i} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg font-medium text-xs border border-gray-200">{o}</span>
+                      <span key={i} className="px-3 py-1 bg-sunk text-ink-2 rounded-lg font-medium text-xs border border-line">{o}</span>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Primary Content Hooks</h4>
-                  <ul className="space-y-1 text-gray-700">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-2">Primary Content Hooks</h4>
+                  <ul className="space-y-1 text-ink-2">
                     {(pipelineResult?.siteAnalysis?.primaryHooks || []).map((h, i) => (
-                      <li key={i} className="flex items-center gap-2"><ArrowRight className="w-3.5 h-3.5 text-gray-500 shrink-0" /> {h}</li>
+                      <li key={i} className="flex items-center gap-2"><ArrowRight className="w-3.5 h-3.5 text-ink-3 shrink-0" /> {h}</li>
                     ))}
                   </ul>
                 </div>
@@ -640,44 +640,44 @@ export function AgentStudio() {
           </div>
 
           {/* Section 2: Competitor Analysis */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
             <button
               onClick={() => setExpandedSection(expandedSection === 'competitor' ? null : 'competitor')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
+              className="w-full px-6 py-4 flex items-center justify-between bg-sunk/80 hover:bg-sunk/80 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <Target className="w-5 h-5 text-gray-900" />
+                <Target className="w-5 h-5 text-ink" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">2. Competitor & Market Analysis Agent Results</h3>
-                  <p className="text-xs text-gray-500">Market positioning, competitor strategies, and content gaps</p>
+                  <h3 className="font-semibold text-ink">2. Competitor & Market Analysis Agent Results</h3>
+                  <p className="text-xs text-ink-3">Market positioning, competitor strategies, and content gaps</p>
                 </div>
               </div>
-              {expandedSection === 'competitor' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+              {expandedSection === 'competitor' ? <ChevronUp className="w-5 h-5 text-ink-4" /> : <ChevronDown className="w-5 h-5 text-ink-4" />}
             </button>
 
             {expandedSection === 'competitor' && pipelineResult?.competitorAnalysis && (
-              <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
+              <div className="p-6 border-t border-line space-y-6 text-sm">
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Identified Top Competitors</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-2">Identified Top Competitors</h4>
                   <div className="flex flex-wrap gap-2">
                     {(pipelineResult?.competitorAnalysis?.topCompetitors || []).map((c, i) => (
-                      <span key={i} className="px-3 py-1 bg-gray-100 text-gray-900 rounded-lg font-medium text-xs border border-gray-200">{c}</span>
+                      <span key={i} className="px-3 py-1 bg-sunk text-ink rounded-lg font-medium text-xs border border-line">{c}</span>
                     ))}
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Content Gaps & Opportunities</h4>
-                    <ul className="space-y-1 text-gray-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-1">Content Gaps & Opportunities</h4>
+                    <ul className="space-y-1 text-ink-2 bg-sunk p-3.5 rounded-xl border border-line">
                       {(pipelineResult?.competitorAnalysis?.contentGapsAndOpportunities || []).map((g, i) => (
-                        <li key={i} className="flex items-start gap-2"><Sparkles className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {g}</li>
+                        <li key={i} className="flex items-start gap-2"><Sparkles className="w-3.5 h-3.5 text-ink-3 shrink-0 mt-0.5" /> {g}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Recommended Differentiation Angle</h4>
-                    <p className="font-medium text-gray-900 bg-gray-50 p-3.5 rounded-xl border border-gray-100">{pipelineResult?.competitorAnalysis?.recommendedDifferentiation || 'N/A'}</p>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-1">Recommended Differentiation Angle</h4>
+                    <p className="font-medium text-ink bg-sunk p-3.5 rounded-xl border border-line">{pipelineResult?.competitorAnalysis?.recommendedDifferentiation || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -685,42 +685,42 @@ export function AgentStudio() {
           </div>
 
           {/* Section 3: Target Audience */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
             <button
               onClick={() => setExpandedSection(expandedSection === 'audience' ? null : 'audience')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
+              className="w-full px-6 py-4 flex items-center justify-between bg-sunk/80 hover:bg-sunk/80 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-gray-900" />
+                <Users className="w-5 h-5 text-ink" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">3. Target Audience Profiling Agent Results</h3>
-                  <p className="text-xs text-gray-500">Ideal Customer Profile (ICP), pain points, and desires</p>
+                  <h3 className="font-semibold text-ink">3. Target Audience Profiling Agent Results</h3>
+                  <p className="text-xs text-ink-3">Ideal Customer Profile (ICP), pain points, and desires</p>
                 </div>
               </div>
-              {expandedSection === 'audience' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+              {expandedSection === 'audience' ? <ChevronUp className="w-5 h-5 text-ink-4" /> : <ChevronDown className="w-5 h-5 text-ink-4" />}
             </button>
 
             {expandedSection === 'audience' && pipelineResult?.audienceProfile && (
-              <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
+              <div className="p-6 border-t border-line space-y-6 text-sm">
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Primary Ideal Customer Profile (ICP)</h4>
-                  <p className="font-medium text-gray-900 bg-gray-50 p-3.5 rounded-xl border border-gray-100">{pipelineResult?.audienceProfile?.primaryICP || 'N/A'}</p>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-1">Primary Ideal Customer Profile (ICP)</h4>
+                  <p className="font-medium text-ink bg-sunk p-3.5 rounded-xl border border-line">{pipelineResult?.audienceProfile?.primaryICP || 'N/A'}</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Core Audience Pain Points</h4>
-                    <ul className="space-y-1.5 text-gray-700">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-2">Core Audience Pain Points</h4>
+                    <ul className="space-y-1.5 text-ink-2">
                       {(pipelineResult?.audienceProfile?.painPoints || []).map((p, i) => (
-                        <li key={i} className="flex items-start gap-2 bg-gray-50 text-gray-900 p-2 rounded-lg text-xs font-medium"><AlertTriangle className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {p}</li>
+                        <li key={i} className="flex items-start gap-2 bg-sunk text-ink p-2 rounded-lg text-xs font-medium"><AlertTriangle className="w-3.5 h-3.5 text-ink-3 shrink-0 mt-0.5" /> {p}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Key Desires & Transformation Goals</h4>
-                    <ul className="space-y-1.5 text-gray-700">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-2">Key Desires & Transformation Goals</h4>
+                    <ul className="space-y-1.5 text-ink-2">
                       {(pipelineResult?.audienceProfile?.desiresAndGoals || []).map((d, i) => (
-                        <li key={i} className="flex items-start gap-2 bg-gray-50 text-gray-900 p-2 rounded-lg text-xs font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" /> {d}</li>
+                        <li key={i} className="flex items-start gap-2 bg-sunk text-ink p-2 rounded-lg text-xs font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-ink-3 shrink-0 mt-0.5" /> {d}</li>
                       ))}
                     </ul>
                   </div>
@@ -730,29 +730,29 @@ export function AgentStudio() {
           </div>
 
           {/* Section 4: Marketing Strategy */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
             <button
               onClick={() => setExpandedSection(expandedSection === 'strategy' ? null : 'strategy')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/80 transition-colors text-left"
+              className="w-full px-6 py-4 flex items-center justify-between bg-sunk/80 hover:bg-sunk/80 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <Layers className="w-5 h-5 text-gray-900" />
-                <h3 className="font-semibold text-gray-900">4. Marketing Strategy & Content Pillars Agent Results</h3>
+                <Layers className="w-5 h-5 text-ink" />
+                <h3 className="font-semibold text-ink">4. Marketing Strategy & Content Pillars Agent Results</h3>
               </div>
-              {expandedSection === 'strategy' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+              {expandedSection === 'strategy' ? <ChevronUp className="w-5 h-5 text-ink-4" /> : <ChevronDown className="w-5 h-5 text-ink-4" />}
             </button>
 
             {expandedSection === 'strategy' && pipelineResult?.marketingStrategy && (
-              <div className="p-6 border-t border-gray-100 space-y-6 text-sm">
-                <h3 className="text-lg font-semibold text-gray-900">Recommended Strategic Content Pillars</h3>
+              <div className="p-6 border-t border-line space-y-6 text-sm">
+                <h3 className="text-lg font-semibold text-ink">Recommended Strategic Content Pillars</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   {(pipelineResult?.marketingStrategy?.contentPillars || []).map((pillar, i) => (
-                    <div key={i} className="p-4 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
-                      <div className="font-semibold text-gray-900 text-sm">{pillar.title}</div>
-                      <p className="text-xs text-gray-600 leading-relaxed">{pillar.description}</p>
+                    <div key={i} className="p-4 rounded-xl border border-line bg-sunk space-y-2">
+                      <div className="font-semibold text-ink text-sm">{pillar.title}</div>
+                      <p className="text-xs text-ink-3 leading-relaxed">{pillar.description}</p>
                       <div className="pt-2">
-                        <div className="text-[10px] font-bold text-gray-400 uppercase">Topics:</div>
-                        <ul className="text-xs text-gray-700 space-y-1 mt-1">
+                        <div className="text-[10px] font-bold text-ink-4 uppercase">Topics:</div>
+                        <ul className="text-xs text-ink-2 space-y-1 mt-1">
                           {(pillar.exampleTopics || []).map((t, idx) => (
                             <li key={idx}>• {t}</li>
                           ))}
@@ -764,18 +764,18 @@ export function AgentStudio() {
 
                 <div className="grid md:grid-cols-2 gap-6 pt-2">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Campaign Concepts</h4>
-                    <ul className="space-y-1 text-xs font-medium text-gray-800">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-2">Campaign Concepts</h4>
+                    <ul className="space-y-1 text-xs font-medium text-ink-2">
                       {(pipelineResult?.marketingStrategy?.campaignConcepts || []).map((c, i) => (
-                        <li key={i} className="p-2 bg-gray-50 rounded-lg border border-gray-100">{c}</li>
+                        <li key={i} className="p-2 bg-sunk rounded-lg border border-line">{c}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Hashtag & CTA Strategy</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4 mb-2">Hashtag & CTA Strategy</h4>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {(pipelineResult?.marketingStrategy?.hashtagStrategy || []).map((h, i) => (
-                        <span key={i} className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{h}</span>
+                        <span key={i} className="text-xs font-mono bg-sunk px-2 py-1 rounded">{h}</span>
                       ))}
                     </div>
                   </div>
@@ -785,29 +785,29 @@ export function AgentStudio() {
           </div>
 
           {/* Section 5: Post Generation Packages */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
             <button
               onClick={() => setExpandedSection(expandedSection === 'posts' ? null : 'posts')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-black text-white text-left"
+              className="w-full px-6 py-4 flex items-center justify-between bg-ink text-white text-left"
             >
               <div className="flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-white" />
                 <div>
                   <h3 className="font-semibold text-base">Generated Multi-Platform Post Packages</h3>
-                  <p className="text-xs text-gray-300">{pipelineResult?.postPackages?.length || 0} complete posts ready for publishing</p>
+                  <p className="text-xs text-ink-4">{pipelineResult?.postPackages?.length || 0} complete posts ready for publishing</p>
                 </div>
               </div>
-              {expandedSection === 'posts' ? <ChevronUp className="w-5 h-5 text-gray-300" /> : <ChevronDown className="w-5 h-5 text-gray-300" />}
+              {expandedSection === 'posts' ? <ChevronUp className="w-5 h-5 text-ink-4" /> : <ChevronDown className="w-5 h-5 text-ink-4" />}
             </button>
 
             {expandedSection === 'posts' && (
-              <div className="p-6 border-t border-gray-100 space-y-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Agent Post Generation Output</span>
+              <div className="p-6 border-t border-line space-y-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
+                  <span className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Agent Post Generation Output</span>
                   <button
                     onClick={handleSendPostsToScheduler}
                     disabled={schedulingPosts}
-                    className="px-4 py-2 bg-black text-white text-xs font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-ink text-white text-xs font-medium rounded-xl hover:bg-ink-2 transition-colors flex items-center gap-2"
                   >
                     {schedulingPosts ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4 text-white" />}
                     {schedulingPosts ? 'Scheduling...' : 'Send All Posts to Scheduler'}
@@ -816,41 +816,41 @@ export function AgentStudio() {
 
                 <div className="space-y-6">
                   {(pipelineResult?.postPackages || []).map((pkg, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-2xl p-6 bg-gray-50/50 space-y-4">
+                    <div key={idx} className="border border-line rounded-2xl p-6 bg-sunk/50 space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">{idx + 1}</span>
-                          <h4 className="font-bold text-gray-900">{pkg.topic}</h4>
+                          <span className="w-6 h-6 rounded-full bg-ink text-white text-xs font-bold flex items-center justify-center">{idx + 1}</span>
+                          <h4 className="font-bold text-ink">{pkg.topic}</h4>
                         </div>
-                        <span className="text-xs font-medium bg-gray-200 text-gray-800 px-2.5 py-0.5 rounded-full w-fit">Pillar: {pkg.contentPillar}</span>
+                        <span className="text-xs font-medium bg-line text-ink-2 px-2.5 py-0.5 rounded-full w-fit">Pillar: {pkg.contentPillar}</span>
                       </div>
 
                       <div className="grid md:grid-cols-2 gap-4">
                         {/* LinkedIn Version */}
-                        <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2">
-                          <div className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
+                        <div className="bg-surface p-4 rounded-xl border border-line space-y-2">
+                          <div className="text-xs font-bold text-accent-ink flex items-center gap-1.5">
                             LinkedIn Version
                           </div>
-                          <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{pkg.linkedinPost}</p>
+                          <p className="text-xs text-ink-2 whitespace-pre-wrap leading-relaxed">{pkg.linkedinPost}</p>
                         </div>
 
                         {/* Twitter Version */}
-                        <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2">
-                          <div className="text-xs font-bold text-sky-600 flex items-center gap-1.5">
+                        <div className="bg-surface p-4 rounded-xl border border-line space-y-2">
+                          <div className="text-xs font-bold text-accent flex items-center gap-1.5">
                             Twitter / X Version
                           </div>
-                          <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{pkg.twitterPost}</p>
+                          <p className="text-xs text-ink-2 whitespace-pre-wrap leading-relaxed">{pkg.twitterPost}</p>
                         </div>
                       </div>
 
                       {/* Visual Media Prompt */}
                       {pkg.visualPrompt && (
-                        <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl space-y-1">
-                          <div className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                        <div className="p-4 bg-warn-soft/60 border border-warn-line rounded-xl space-y-1">
+                          <div className="text-xs font-bold text-warn uppercase tracking-wider flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-warn" />
                             Suggested Visual Prompt (for Imagen 3 / Veo AI):
                           </div>
-                          <p className="text-xs text-amber-950 font-mono">{pkg.visualPrompt}</p>
+                          <p className="text-xs text-warn font-mono">{pkg.visualPrompt}</p>
                         </div>
                       )}
                     </div>
@@ -861,20 +861,20 @@ export function AgentStudio() {
           </div>
 
           {/* Section 6: Paid Ad Specialist Agent */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="w-full px-6 py-4 flex items-center justify-between bg-black text-white">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
+            <div className="w-full px-6 py-4 flex items-center justify-between bg-ink text-white">
               <button
                 onClick={() => setExpandedSection(expandedSection === 'ads' ? null : 'ads')}
                 className="flex items-center gap-3 text-left flex-1"
               >
-                <Megaphone className="w-5 h-5 text-amber-400 shrink-0" />
+                <Megaphone className="w-5 h-5 text-warn shrink-0" />
                 <div>
                   <h3 className="font-semibold text-white flex items-center gap-2">
                     6. Paid Ad Campaign Specialist Agent
-                    {agentStatuses['ads']?.status === 'completed' && <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-400" /> Completed Successfully</span>}
-                    {agentStatuses['ads']?.status === 'failed' && <span className="text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-red-400" /> Failed</span>}
+                    {agentStatuses['ads']?.status === 'completed' && <span className="text-[10px] font-bold bg-ok/20 text-ok-line border border-ok/30 px-2 py-0.5 rounded-full flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-ok" /> Completed Successfully</span>}
+                    {agentStatuses['ads']?.status === 'failed' && <span className="text-[10px] font-bold bg-danger/20 text-danger-line border border-danger/30 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-danger" /> Failed</span>}
                   </h3>
-                  <p className="text-xs text-gray-300">AIDA/PAS Meta ad copy, 15 Google RSA headlines, and 1-click Google Ads CSV Export</p>
+                  <p className="text-xs text-ink-4">AIDA/PAS Meta ad copy, 15 Google RSA headlines, and 1-click Google Ads CSV Export</p>
                 </div>
               </button>
 
@@ -883,68 +883,68 @@ export function AgentStudio() {
                   type="button"
                   onClick={() => handleRunSingleAgent('ads')}
                   disabled={agentStatuses['ads']?.status === 'running'}
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-3 py-1.5 bg-warn hover:bg-warn text-ink text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  {agentStatuses['ads']?.status === 'running' ? <Loader2 className="w-3.5 h-3.5 animate-spin text-black" /> : <Bot className="w-3.5 h-3.5 text-black" />}
+                  {agentStatuses['ads']?.status === 'running' ? <Loader2 className="w-3.5 h-3.5 animate-spin text-ink" /> : <Bot className="w-3.5 h-3.5 text-ink" />}
                   {agentStatuses['ads']?.status === 'running' ? 'Running Ad Agent...' : 'Run Ad Agent Now'}
                 </button>
                 <button onClick={() => setExpandedSection(expandedSection === 'ads' ? null : 'ads')}>
-                  {expandedSection === 'ads' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                  {expandedSection === 'ads' ? <ChevronUp className="w-5 h-5 text-ink-4" /> : <ChevronDown className="w-5 h-5 text-ink-4" />}
                 </button>
               </div>
             </div>
 
             {agentStatuses['ads']?.status === 'failed' && (
-              <div className="p-4 bg-red-50 border-b border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+              <div className="p-4 bg-danger-soft border-b border-danger-line text-danger text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
                 <span>Paid Ad Specialist Agent Error: {agentStatuses['ads']?.error || "Failed to generate ad copy. Please verify your Gemini API key."}</span>
               </div>
             )}
 
             {agentStatuses['ads']?.status === 'completed' && (
-              <div className="p-3 bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="p-3 bg-ok-soft border-b border-ok-line text-ok text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-ok shrink-0" />
                 <span>Success: Paid Ad Campaign generated cleanly! Meta ad copy and 15 Google RSA headlines are ready for download.</span>
               </div>
             )}
 
             {expandedSection === 'ads' && pipelineResult?.adCampaign && (
-                <div className="p-6 border-t border-gray-100 space-y-6">
+                <div className="p-6 border-t border-line space-y-6">
                   {/* Meta Ad Card */}
-                  <div className="border border-gray-200 rounded-xl p-5 space-y-3 bg-gray-50/60">
-                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-                      <span className="font-bold text-xs text-gray-900">Meta Sponsored Ad Package (FB & IG)</span>
-                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">{pipelineResult.adCampaign.metaAd.framework} Framework</span>
+                  <div className="border border-line rounded-xl p-5 space-y-3 bg-sunk/60">
+                    <div className="flex items-center justify-between border-b border-line pb-2">
+                      <span className="font-bold text-xs text-ink">Meta Sponsored Ad Package (FB & IG)</span>
+                      <span className="text-[10px] font-bold bg-warn-soft text-warn px-2 py-0.5 rounded">{pipelineResult.adCampaign.metaAd.framework} Framework</span>
                     </div>
 
                     <div className="space-y-2 text-xs">
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Primary Text (Short):</span>
-                        <p className="font-medium text-gray-900 bg-white p-2.5 rounded-lg border border-gray-200">{pipelineResult.adCampaign.metaAd.primaryTextShort}</p>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Primary Text (Short):</span>
+                        <p className="font-medium text-ink bg-surface p-2.5 rounded-lg border border-line">{pipelineResult.adCampaign.metaAd.primaryTextShort}</p>
                       </div>
 
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Primary Text (Long / Storytelling):</span>
-                        <p className="text-gray-800 bg-white p-2.5 rounded-lg border border-gray-200 whitespace-pre-wrap">{pipelineResult.adCampaign.metaAd.primaryTextLong}</p>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Primary Text (Long / Storytelling):</span>
+                        <p className="text-ink-2 bg-surface p-2.5 rounded-lg border border-line whitespace-pre-wrap">{pipelineResult.adCampaign.metaAd.primaryTextLong}</p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 pt-1">
                         <div>
-                          <span className="font-bold text-gray-400 uppercase text-[10px]">Ad Headline ($\le 45$ chars):</span>
-                          <p className="font-bold text-gray-900 text-sm">{pipelineResult.adCampaign.metaAd.headline}</p>
+                          <span className="font-bold text-ink-4 uppercase text-[10px]">Ad Headline ($\le 45$ chars):</span>
+                          <p className="font-bold text-ink text-sm">{pipelineResult.adCampaign.metaAd.headline}</p>
                         </div>
                         <div>
-                          <span className="font-bold text-gray-400 uppercase text-[10px]">Recommended CTA Button:</span>
-                          <p className="font-bold text-blue-600">{pipelineResult.adCampaign.metaAd.ctaButton}</p>
+                          <span className="font-bold text-ink-4 uppercase text-[10px]">Recommended CTA Button:</span>
+                          <p className="font-bold text-accent">{pipelineResult.adCampaign.metaAd.ctaButton}</p>
                         </div>
                       </div>
 
                       {/* Meta Targeting */}
-                      <div className="pt-2 border-t border-gray-200">
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Meta Ads Manager Interest Categories:</span>
+                      <div className="pt-2 border-t border-line">
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Meta Ads Manager Interest Categories:</span>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {pipelineResult.adCampaign.metaAd.metaTargeting.interests.map((int, i) => (
-                            <span key={i} className="bg-gray-100 text-gray-900 text-[10px] font-semibold px-2.5 py-0.5 rounded border border-gray-200">{int}</span>
+                            <span key={i} className="bg-sunk text-ink text-[10px] font-semibold px-2.5 py-0.5 rounded border border-line">{int}</span>
                           ))}
                         </div>
                       </div>
@@ -952,12 +952,12 @@ export function AgentStudio() {
                   </div>
 
                   {/* Google RSA Card */}
-                  <div className="border border-gray-200 rounded-xl p-5 space-y-3 bg-white">
-                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-                      <span className="font-bold text-xs text-emerald-800">Google Search Ads (Responsive Search Ads - RSA)</span>
+                  <div className="border border-line rounded-xl p-5 space-y-3 bg-surface">
+                    <div className="flex items-center justify-between border-b border-line pb-2">
+                      <span className="font-bold text-xs text-ok">Google Search Ads (Responsive Search Ads - RSA)</span>
                       <button
                         onClick={() => downloadGoogleAdsEditorCSV(pipelineResult.adCampaign!.googleAd)}
-                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
+                        className="px-3.5 py-1.5 bg-accent hover:bg-accent text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
                       >
                         <Download className="w-3.5 h-3.5" />
                         Download Google Ads CSV
@@ -966,24 +966,24 @@ export function AgentStudio() {
 
                     <div className="space-y-3 text-xs">
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">15 Responsive Search Headlines ($\le 30$ chars):</span>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">15 Responsive Search Headlines ($\le 30$ chars):</span>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 mt-1">
                           {pipelineResult.adCampaign.googleAd.headlines.map((h, i) => (
-                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
-                              <span className="font-semibold text-gray-900 line-clamp-1">{h}</span>
-                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{h.length}/30</span>
+                            <div key={i} className="bg-sunk p-2 rounded border border-line text-[11px] flex justify-between">
+                              <span className="font-semibold text-ink line-clamp-1">{h}</span>
+                              <span className="text-[9px] text-ink-4 shrink-0 ml-1">{h.length}/30</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">4 Descriptions ($\le 90$ chars):</span>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">4 Descriptions ($\le 90$ chars):</span>
                         <div className="space-y-1 mt-1">
                           {pipelineResult.adCampaign.googleAd.descriptions.map((d, i) => (
-                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
-                              <span className="text-gray-800">{d}</span>
-                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{d.length}/90</span>
+                            <div key={i} className="bg-sunk p-2 rounded border border-line text-[11px] flex justify-between">
+                              <span className="text-ink-2">{d}</span>
+                              <span className="text-[9px] text-ink-4 shrink-0 ml-1">{d.length}/90</span>
                             </div>
                           ))}
                         </div>

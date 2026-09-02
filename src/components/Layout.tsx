@@ -69,16 +69,16 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+      <div className="md:hidden bg-surface border-b border-line px-4 py-3 flex items-center justify-between sticky top-0 z-50">
         <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-ink rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">W</span>
           </div>
           <span className="font-bold text-lg tracking-tight">WotSocial</span>
         </Link>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-gray-600 hover:text-black transition-colors"
+          className="p-2 text-ink-3 hover:text-ink transition-colors"
           aria-label="Toggle Menu"
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -88,14 +88,14 @@ export function Layout() {
       {/* Sidebar Overlay (Mobile) */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-ink/50 z-40 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 bg-white border-r border-gray-200 flex flex-col z-50 transition-all duration-300 ease-in-out",
+        "fixed inset-y-0 left-0 bg-surface border-r border-line flex flex-col z-50 transition-all duration-300 ease-in-out",
         // Mobile states
         isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full w-64",
         // Desktop states
@@ -103,14 +103,14 @@ export function Layout() {
         isDesktopCollapsed ? "md:w-20" : "md:w-64"
       )}>
         <div className={cn(
-          "p-6 border-b border-gray-100 flex items-center justify-between",
+          "p-6 border-b border-line flex items-center justify-between",
           isDesktopCollapsed ? "md:px-4" : "md:px-6"
         )}>
           <Link to="/dashboard" className={cn(
             "flex items-center gap-2 transition-all duration-300",
             isDesktopCollapsed && "md:justify-center md:w-full"
           )}>
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-ink rounded-lg flex items-center justify-center shrink-0">
               <span className="text-white font-bold text-lg">W</span>
             </div>
             <span className={cn(
@@ -125,7 +125,7 @@ export function Layout() {
           {/* Desktop Collapse Toggle */}
           <button 
             onClick={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
-            className="hidden md:flex p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+            className="hidden md:flex p-1.5 rounded-lg hover:bg-sunk text-ink-4 hover:text-ink transition-colors"
             title={isDesktopCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             {isDesktopCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
@@ -136,7 +136,7 @@ export function Layout() {
           {navGroups.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-1">
               {!isDesktopCollapsed && (
-                <div className="px-3 text-[10px] font-bold tracking-wider uppercase text-gray-400 mb-1">
+                <div className="px-3 text-[10px] font-bold tracking-wider uppercase text-ink-4 mb-1">
                   {group.category}
                 </div>
               )}
@@ -152,8 +152,8 @@ export function Layout() {
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200",
                       isActive 
-                        ? "bg-black text-white shadow-sm" 
-                        : "text-gray-600 hover:bg-gray-100 hover:text-black",
+                        ? "bg-ink text-white shadow-sm" 
+                        : "text-ink-3 hover:bg-sunk hover:text-ink",
                       isDesktopCollapsed && "md:justify-center md:px-0"
                     )}
                   >
@@ -172,12 +172,12 @@ export function Layout() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-4 border-t border-line">
           <button
             onClick={handleLogout}
             title={isDesktopCollapsed ? "Sign Out" : undefined}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors",
+              "flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-ink-3 hover:bg-sunk hover:text-ink transition-colors",
               isDesktopCollapsed && "md:justify-center md:px-0"
             )}
           >
@@ -196,9 +196,9 @@ export function Layout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Navbar */}
-        <header className="h-16 bg-white border-b border-gray-200 px-4 md:px-8 flex items-center justify-between shrink-0">
+        <header className="h-16 bg-surface border-b border-line px-4 md:px-8 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 hidden sm:inline">Active Brand Workspace</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-ink-3 hidden sm:inline">Active Brand Workspace</span>
           </div>
           <div className="flex items-center gap-3">
             <BrandSelector />

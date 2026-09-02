@@ -381,8 +381,8 @@ export function ContentGenerator() {
     return (
       <div className="p-8 text-center">
         <h2 className="text-xl font-semibold mb-2">Setup Your Brand First</h2>
-        <p className="text-gray-500 mb-4">You need to configure your brand settings before generating content.</p>
-        <button onClick={() => navigate('/brand-setup')} className="px-4 py-2 bg-black text-white rounded-lg">Go to Brand Setup</button>
+        <p className="text-ink-3 mb-4">You need to configure your brand settings before generating content.</p>
+        <button onClick={() => navigate('/brand-setup')} className="px-4 py-2 bg-ink text-white rounded-lg">Go to Brand Setup</button>
       </div>
     );
   }
@@ -391,8 +391,8 @@ export function ContentGenerator() {
     <div className="space-y-8 max-w-7xl mx-auto w-full pb-16 font-sans">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content Studio</h1>
-          <p className="text-gray-500 mt-1">Generate multi-platform posts, images, videos, and PPC ad campaigns for your brand.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Content Studio</h1>
+          <p className="text-ink-3 mt-1">Generate multi-platform posts, images, videos, and PPC ad campaigns for your brand.</p>
         </div>
         <div className="flex items-center gap-3">
           <BrandSelector 
@@ -406,14 +406,14 @@ export function ContentGenerator() {
       </header>
       
       {/* Mode Switcher */}
-      <div className="flex flex-wrap bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
+      <div className="flex flex-wrap bg-sunk p-1 rounded-xl border border-line w-fit">
         <button
           onClick={() => setGeneratorType('organic')}
           className={cn(
             "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
             generatorType === 'organic'
-              ? "bg-white text-black shadow-xs font-bold"
-              : "text-gray-500 hover:text-gray-900"
+              ? "bg-surface text-ink shadow-xs font-bold"
+              : "text-ink-3 hover:text-ink"
           )}
         >
           <PenTool className="w-3.5 h-3.5" />
@@ -424,11 +424,11 @@ export function ContentGenerator() {
           className={cn(
             "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
             generatorType === 'repurpose'
-              ? "bg-black text-white shadow-xs font-bold"
-              : "text-gray-500 hover:text-gray-900"
+              ? "bg-ink text-white shadow-xs font-bold"
+              : "text-ink-3 hover:text-ink"
           )}
         >
-          <Repeat className="w-3.5 h-3.5 text-sky-400" />
+          <Repeat className="w-3.5 h-3.5 text-accent" />
           1-to-Many Content Repurposer
         </button>
         <button
@@ -436,11 +436,11 @@ export function ContentGenerator() {
           className={cn(
             "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all",
             generatorType === 'ads'
-              ? "bg-black text-white shadow-xs font-bold"
-              : "text-gray-500 hover:text-gray-900"
+              ? "bg-ink text-white shadow-xs font-bold"
+              : "text-ink-3 hover:text-ink"
           )}
         >
-          <Megaphone className="w-3.5 h-3.5 text-amber-400" />
+          <Megaphone className="w-3.5 h-3.5 text-warn" />
           Paid Ad Campaigns
         </button>
       </div>
@@ -448,22 +448,22 @@ export function ContentGenerator() {
       {/* 1-to-Many Repurposer Studio */}
       {generatorType === 'repurpose' && (
         <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+          <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
               <div>
-                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Repeat className="w-5 h-5 text-sky-500" />
+                <h2 className="text-base font-bold text-ink flex items-center gap-2">
+                  <Repeat className="w-5 h-5 text-accent" />
                   1-to-Many Multi-Channel Content Repurposer
                 </h2>
-                <p className="text-xs text-gray-500">Transform any single blog post, document, URL, or topic into 6 distinct platform assets (LinkedIn, X Thread, IG Carousel, Newsletter, Short Video Script, Meta Ad).</p>
+                <p className="text-xs text-ink-3">Transform any single blog post, document, URL, or topic into 6 distinct platform assets (LinkedIn, X Thread, IG Carousel, Newsletter, Short Video Script, Meta Ad).</p>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">Source Type:</span>
+                <span className="text-xs font-semibold text-ink-3">Source Type:</span>
                 <select
                   value={repurposerSourceType}
                   onChange={(e) => setRepurposerSourceType(e.target.value as any)}
-                  className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none"
+                  className="text-xs font-medium bg-sunk border border-line rounded-lg px-2.5 py-1.5 outline-none"
                 >
                   <option value="blog">Long-Form Blog / Article</option>
                   <option value="url">Website URL</option>
@@ -474,85 +474,85 @@ export function ContentGenerator() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-700">Source Content or URL *</label>
+              <label className="text-xs font-semibold text-ink-2">Source Content or URL *</label>
               <textarea
                 rows={5}
                 value={repurposerSourceText}
                 onChange={(e) => setRepurposerSourceText(e.target.value)}
                 placeholder={repurposerSourceType === 'url' ? "https://example.com/blog-post" : "Paste your article, document text, or key points here..."}
-                className="w-full p-3.5 border border-gray-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-black font-mono leading-relaxed"
+                className="w-full p-3.5 border border-line-strong rounded-xl text-xs outline-none focus:ring-2 focus:ring-ink font-mono leading-relaxed"
               />
             </div>
 
             <button
               onClick={handleRunRepurposer}
               disabled={repurposing || !repurposerSourceText}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50 text-xs shrink-0 text-nowrap"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-ink text-white font-bold rounded-xl hover:bg-ink-2 transition-all shadow-sm disabled:opacity-50 text-xs shrink-0 text-nowrap"
             >
-              {repurposing ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Repeat className="w-4 h-4 text-sky-400" />}
+              {repurposing ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Repeat className="w-4 h-4 text-accent" />}
               {repurposing ? 'Repurposing 5 Channels...' : 'Generate Asset Package'}
             </button>
           </div>
 
           {repurposedPackage && (
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-4">
+            <div className="bg-sunk border border-line rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                  <h3 className="font-bold text-ink text-sm flex items-center gap-2">
                     Repurposed Asset Package: {repurposedPackage.title}
-                    <span className="text-xs font-semibold bg-sky-100 text-sky-800 px-2.5 py-0.5 rounded-full">Source: {repurposedPackage.sourceType}</span>
+                    <span className="text-xs font-semibold bg-accent-soft text-accent-ink px-2.5 py-0.5 rounded-full">Source: {repurposedPackage.sourceType}</span>
                   </h3>
-                  <p className="text-xs text-gray-500 mt-0.5">5 multi-platform posts generated from your source article.</p>
+                  <p className="text-xs text-ink-3 mt-0.5">5 multi-platform posts generated from your source article.</p>
                 </div>
                 <button
                   type="button"
                   onClick={handleScheduleRepurposedPackage}
                   disabled={scheduling}
-                  className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 shrink-0 text-nowrap"
+                  className="px-4 py-2 bg-ink text-white text-xs font-bold rounded-xl hover:bg-ink-2 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 shrink-0 text-nowrap"
                 >
-                  {scheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5 text-amber-400" />}
+                  {scheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5 text-warn" />}
                   {scheduling ? 'Scheduling...' : 'Schedule Package (5 Posts)'}
                 </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* 1. LinkedIn Post */}
-                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
+                <div className="bg-surface p-5 rounded-xl border border-line space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-700 flex items-center gap-1.5"><Linkedin className="w-4 h-4" /> 1. LinkedIn Post</span>
+                    <span className="text-xs font-bold text-accent-ink flex items-center gap-1.5"><Linkedin className="w-4 h-4" /> 1. LinkedIn Post</span>
                   </div>
-                  <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">{repurposedPackage.linkedinPost}</p>
+                  <p className="text-xs text-ink-2 whitespace-pre-wrap leading-relaxed bg-sunk p-3 rounded-lg border border-line">{repurposedPackage.linkedinPost}</p>
                 </div>
 
                 {/* 2. Twitter Thread */}
-                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
-                  <span className="text-xs font-bold text-sky-600 flex items-center gap-1.5"><Twitter className="w-4 h-4" /> 2. X / Twitter 5-Tweet Thread</span>
+                <div className="bg-surface p-5 rounded-xl border border-line space-y-2">
+                  <span className="text-xs font-bold text-accent flex items-center gap-1.5"><Twitter className="w-4 h-4" /> 2. X / Twitter 5-Tweet Thread</span>
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     {repurposedPackage.twitterThread.map((tweet, i) => (
-                      <p key={i} className="text-xs text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{tweet}</p>
+                      <p key={i} className="text-xs text-ink-2 bg-sunk p-2.5 rounded-lg border border-line">{tweet}</p>
                     ))}
                   </div>
                 </div>
               </div>
 
               {/* 3. Instagram Caption + Carousel */}
-              <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-4">
-                <span className="text-xs font-bold text-pink-600 flex items-center gap-1.5"><Instagram className="w-4 h-4" /> 3. Instagram Caption & 5-Slide Visual Carousel Outline</span>
-                <p className="text-xs text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100 whitespace-pre-wrap">{repurposedPackage.instagramPackage.caption}</p>
+              <div className="bg-surface p-5 rounded-xl border border-line space-y-4">
+                <span className="text-xs font-bold text-blush flex items-center gap-1.5"><Instagram className="w-4 h-4" /> 3. Instagram Caption & 5-Slide Visual Carousel Outline</span>
+                <p className="text-xs text-ink-2 bg-sunk p-3 rounded-lg border border-line whitespace-pre-wrap">{repurposedPackage.instagramPackage.caption}</p>
                 
                 <div>
-                  <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">5-Slide Carousel Layout</h5>
+                  <h5 className="text-[11px] font-bold text-ink-3 uppercase tracking-wider mb-2">5-Slide Carousel Layout</h5>
                   <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                     {repurposedPackage.instagramPackage.carouselSlides.map((slide, i) => (
-                      <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1 text-xs">
-                        <div className="font-bold text-gray-900 flex items-center justify-between">
+                      <div key={i} className="p-3 bg-sunk rounded-xl border border-line space-y-1 text-xs">
+                        <div className="font-bold text-ink flex items-center justify-between">
                           <span>Slide {slide.slideNumber}</span>
-                          {i === 0 && <span className="text-[9px] bg-pink-100 text-pink-700 px-1 rounded">Hook</span>}
-                          {i === 4 && <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">CTA</span>}
+                          {i === 0 && <span className="text-[9px] bg-blush-soft text-blush-ink px-1 rounded">Hook</span>}
+                          {i === 4 && <span className="text-[9px] bg-accent-soft text-accent-ink px-1 rounded">CTA</span>}
                         </div>
-                        <p className="font-semibold text-gray-800 text-[11px]">{slide.slideTitle}</p>
-                        <p className="text-gray-600 text-[10px] line-clamp-3">{slide.slideBody}</p>
-                        <div className="pt-1 text-[9px] font-mono text-gray-400 border-t border-gray-200 truncate">Graphic: {slide.visualPrompt}</div>
+                        <p className="font-semibold text-ink-2 text-[11px]">{slide.slideTitle}</p>
+                        <p className="text-ink-3 text-[10px] line-clamp-3">{slide.slideBody}</p>
+                        <div className="pt-1 text-[9px] font-mono text-ink-4 border-t border-line truncate">Graphic: {slide.visualPrompt}</div>
                       </div>
                     ))}
                   </div>
@@ -561,22 +561,22 @@ export function ContentGenerator() {
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* 4. Email Newsletter Digest */}
-                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
-                  <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5"><FileText className="w-4 h-4" /> 4. Email Newsletter Digest</span>
+                <div className="bg-surface p-5 rounded-xl border border-line space-y-2">
+                  <span className="text-xs font-bold text-ok flex items-center gap-1.5"><FileText className="w-4 h-4" /> 4. Email Newsletter Digest</span>
                   <div className="text-xs space-y-1">
-                    <p className="font-semibold text-gray-900">Subject: {repurposedPackage.emailNewsletter.subjectLine}</p>
-                    <p className="text-gray-500 text-[11px]">Preview: {repurposedPackage.emailNewsletter.previewText}</p>
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 whitespace-pre-wrap font-mono text-[11px] text-gray-800 max-h-48 overflow-y-auto">{repurposedPackage.emailNewsletter.bodyMarkdown}</div>
+                    <p className="font-semibold text-ink">Subject: {repurposedPackage.emailNewsletter.subjectLine}</p>
+                    <p className="text-ink-3 text-[11px]">Preview: {repurposedPackage.emailNewsletter.previewText}</p>
+                    <div className="bg-sunk p-3 rounded-lg border border-line whitespace-pre-wrap font-mono text-[11px] text-ink-2 max-h-48 overflow-y-auto">{repurposedPackage.emailNewsletter.bodyMarkdown}</div>
                   </div>
                 </div>
 
                 {/* 5. Video Script */}
-                <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-2">
-                  <span className="text-xs font-bold text-purple-700 flex items-center gap-1.5"><Video className="w-4 h-4" /> 5. YouTube Short / TikTok Script (60s)</span>
+                <div className="bg-surface p-5 rounded-xl border border-line space-y-2">
+                  <span className="text-xs font-bold text-accent-ink flex items-center gap-1.5"><Video className="w-4 h-4" /> 5. YouTube Short / TikTok Script (60s)</span>
                   <div className="text-xs space-y-2">
-                    <p className="font-semibold text-gray-900">Hook (0-3s): {repurposedPackage.videoScript.hook}</p>
-                    <p className="text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100 whitespace-pre-wrap">{repurposedPackage.videoScript.scriptBody}</p>
-                    <p className="font-semibold text-purple-700 text-[11px]">CTA: {repurposedPackage.videoScript.callToAction}</p>
+                    <p className="font-semibold text-ink">Hook (0-3s): {repurposedPackage.videoScript.hook}</p>
+                    <p className="text-ink-2 bg-sunk p-2.5 rounded-lg border border-line whitespace-pre-wrap">{repurposedPackage.videoScript.scriptBody}</p>
+                    <p className="font-semibold text-accent-ink text-[11px]">CTA: {repurposedPackage.videoScript.callToAction}</p>
                   </div>
                 </div>
               </div>
@@ -586,14 +586,14 @@ export function ContentGenerator() {
       )}
 
       {/* Suggestions & Trend Discovery Section */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+      <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-4">
           <div>
-            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h2 className="text-base font-bold text-ink flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-accent" />
               AI Trend Discovery Engine & Quick Topics
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-ink-3 mt-0.5">
               Discover viral industry trends, seasonal news hooks, and high-performing audience topics tailored to {brand?.name || 'your brand'}. Click any topic or chip to auto-generate content packages ready for approval & calendar grid publishing.
             </p>
           </div>
@@ -606,23 +606,23 @@ export function ContentGenerator() {
                 value={trendSearchQuery}
                 onChange={(e) => setTrendSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchSuggestions(brand, trendSearchQuery)}
-                className="pl-8 pr-3 py-2 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-black outline-none w-56 sm:w-72"
+                className="pl-8 pr-3 py-2 text-xs border border-line-strong rounded-xl focus:ring-2 focus:ring-ink outline-none w-56 sm:w-72"
               />
-              <TrendingUp className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <TrendingUp className="w-4 h-4 text-ink-4 absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
             <button 
               onClick={() => fetchSuggestions(brand, trendSearchQuery)}
               disabled={fetchingSuggestions}
-              className="px-4 py-2 bg-black text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              className="px-4 py-2 bg-ink text-white text-xs font-semibold rounded-xl hover:bg-ink-2 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
               <RefreshCw className={cn("w-3.5 h-3.5", fetchingSuggestions && "animate-spin")} />
               {trendSearchQuery ? 'Search Trends' : 'Refresh Suggestions'}
             </button>
-            <div className="h-6 w-px bg-gray-200 mx-1"></div>
+            <div className="h-6 w-px bg-line mx-1"></div>
             <button 
               onClick={() => handlePlanCalendar(7)}
               disabled={planning}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm"
+              className="px-3.5 py-2 bg-accent hover:bg-accent text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm"
             >
               {planning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5" />}
               Plan Week (7d)
@@ -630,7 +630,7 @@ export function ContentGenerator() {
             <button 
               onClick={() => handlePlanCalendar(30)}
               disabled={planning}
-              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm"
+              className="px-3.5 py-2 bg-accent hover:bg-accent text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm"
             >
               {planning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5" />}
               Plan Month (30d)
@@ -640,7 +640,7 @@ export function ContentGenerator() {
 
         {/* Quick Search Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Quick Search:</span>
+          <span className="text-[11px] font-bold text-ink-4 uppercase tracking-wider shrink-0">Quick Search:</span>
           {[
             '#AI & Future Trends',
             '#Growth & Viral Hacks',
@@ -656,7 +656,7 @@ export function ContentGenerator() {
                 setTrendSearchQuery(cleanQuery);
                 fetchSuggestions(brand, cleanQuery);
               }}
-              className="px-3 py-1 bg-gray-100 hover:bg-black hover:text-white text-gray-700 text-xs font-semibold rounded-full border border-gray-200 transition-all shrink-0"
+              className="px-3 py-1 bg-sunk hover:bg-ink hover:text-white text-ink-2 text-xs font-semibold rounded-full border border-line transition-all shrink-0"
             >
               {chip}
             </button>
@@ -666,7 +666,7 @@ export function ContentGenerator() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {fetchingSuggestions ? (
             Array(5).fill(0).map((_, i) => (
-              <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse"></div>
+              <div key={i} className="h-28 bg-sunk rounded-xl animate-pulse"></div>
             ))
           ) : suggestions.length > 0 ? (
             suggestions.map((s, i) => (
@@ -676,16 +676,16 @@ export function ContentGenerator() {
                   setTopic(s.title);
                   handleGenerate(s.title, true);
                 }}
-                className="group relative bg-white border border-gray-200 rounded-xl p-4 text-left hover:border-black transition-all shadow-sm flex flex-col h-full cursor-pointer"
+                className="group relative bg-surface border border-line rounded-xl p-4 text-left hover:border-ink transition-all shadow-sm flex flex-col h-full cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
                     {s.type === 'trend' || s.type === 'news' ? (
-                      <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+                      <TrendingUp className="w-3.5 h-3.5 text-accent" />
                     ) : (
-                      <PartyPopper className="w-3.5 h-3.5 text-orange-500" />
+                      <PartyPopper className="w-3.5 h-3.5 text-accent" />
                     )}
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-4">
                       {s.type}
                     </span>
                   </div>
@@ -702,22 +702,22 @@ export function ContentGenerator() {
                       });
                       alert(`Saved "${s.title}" to your Saved Trends Vault!`);
                     }}
-                    className="p-1 rounded text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-colors"
+                    className="p-1 rounded text-ink-4 hover:text-warn hover:bg-warn-soft transition-colors"
                     title="Bookmark / Save Trend to Vault"
                   >
                     <Bookmark className="w-4 h-4" />
                   </button>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mb-1">{s.title}</h3>
-                <p className="text-[11px] text-gray-500 line-clamp-3 flex-1">{s.description}</p>
+                <h3 className="text-sm font-semibold text-ink line-clamp-1 mb-1">{s.title}</h3>
+                <p className="text-[11px] text-ink-3 line-clamp-3 flex-1">{s.description}</p>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Use Trend</span>
-                  <PenTool className="w-3 h-3 text-gray-300 group-hover:text-black transition-colors" />
+                  <span className="text-[9px] font-bold text-accent bg-accent-soft px-1.5 py-0.5 rounded">Use Trend</span>
+                  <PenTool className="w-3 h-3 text-ink-4 group-hover:text-ink transition-colors" />
                 </div>
               </div>
             ))
           ) : (
-            <div className="col-span-full py-8 text-center text-gray-400 text-sm italic">
+            <div className="col-span-full py-8 text-center text-ink-4 text-sm italic">
               No trends found. Try searching for a specific topic above.
             </div>
           )}
@@ -728,30 +728,30 @@ export function ContentGenerator() {
         <div className="space-y-8">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Ad Input Panel */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6 h-fit">
-              <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-                <Megaphone className="w-5 h-5 text-amber-500" />
-                <h2 className="font-bold text-gray-900">Paid Ad Campaign Setup</h2>
+            <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6 h-fit">
+              <div className="flex items-center gap-2 border-b border-line pb-3">
+                <Megaphone className="w-5 h-5 text-warn" />
+                <h2 className="font-bold text-ink">Paid Ad Campaign Setup</h2>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-700">Product / Offer / Headline *</label>
+                <label className="text-xs font-semibold text-ink-2">Product / Offer / Headline *</label>
                 <textarea 
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+                  className="w-full px-4 py-2.5 border border-line-strong rounded-lg text-sm focus:ring-2 focus:ring-ink outline-none"
                   placeholder="e.g. Get 30% Off Annual SaaS Subscriptions - Limited Time Cyber Sale"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-700">Campaign Objective</label>
+                  <label className="text-xs font-semibold text-ink-2">Campaign Objective</label>
                   <select 
                     value={adObjective} 
                     onChange={(e) => setAdObjective(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg bg-white outline-none"
+                    className="w-full px-3 py-2 text-xs border border-line-strong rounded-lg bg-surface outline-none"
                   >
                     <option value="Conversions">Conversions / Sales</option>
                     <option value="Leads">Lead Generation</option>
@@ -761,13 +761,13 @@ export function ContentGenerator() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-700">Destination Landing URL</label>
+                  <label className="text-xs font-semibold text-ink-2">Destination Landing URL</label>
                   <input 
                     type="url"
                     value={adDestinationUrl}
                     onChange={(e) => setAdDestinationUrl(e.target.value)}
                     placeholder="https://yourbrand.com/offer"
-                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg outline-none"
+                    className="w-full px-3 py-2 text-xs border border-line-strong rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -794,67 +794,67 @@ export function ContentGenerator() {
                   }
                 }}
                 disabled={generatingAds || !topic}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-black text-white font-semibold rounded-xl hover:opacity-95 transition-all shadow-md disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-accent to-black text-white font-semibold rounded-xl hover:opacity-95 transition-all shadow-md disabled:opacity-50"
               >
-                {generatingAds ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-amber-300" />}
+                {generatingAds ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-warn-line" />}
                 {generatingAds ? 'Crafting High-Converting Ads...' : 'Generate Meta & Google Ad Campaign'}
               </button>
             </div>
 
             {/* Ad Preview Panel */}
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm min-h-[450px] flex flex-col">
-              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Ad Creatives & Copy Preview</h2>
+            <div className="bg-sunk border border-line rounded-2xl p-6 shadow-sm min-h-[450px] flex flex-col">
+              <h2 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-4">Ad Creatives & Copy Preview</h2>
 
               {!generatedAdCampaign && !generatingAds ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                  <Megaphone className="w-12 h-12 mb-3 opacity-20 text-amber-500" />
+                <div className="flex-1 flex flex-col items-center justify-center text-ink-4">
+                  <Megaphone className="w-12 h-12 mb-3 opacity-20 text-warn" />
                   <p className="text-sm">Meta Ads & Google Search Ads previews will appear here.</p>
                 </div>
               ) : generatingAds ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                  <Loader2 className="w-8 h-8 animate-spin mb-4 text-amber-500" />
+                <div className="flex-1 flex flex-col items-center justify-center text-ink-3">
+                  <Loader2 className="w-8 h-8 animate-spin mb-4 text-warn" />
                   <p className="text-sm font-medium">Formulating AIDA/PAS Meta copy & Google RSA Headlines...</p>
                 </div>
               ) : (
                 <div className="space-y-6 overflow-y-auto max-h-[600px] pr-1">
                   {/* Meta Ad Card */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <div className="bg-surface border border-line rounded-xl p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between border-b border-line pb-2">
                       <div className="flex items-center gap-2">
-                        <Facebook className="w-4 h-4 text-blue-600" />
-                        <Instagram className="w-4 h-4 text-pink-600" />
-                        <span className="font-bold text-xs text-gray-900">Meta Sponsored Ad (FB & IG)</span>
+                        <Facebook className="w-4 h-4 text-accent" />
+                        <Instagram className="w-4 h-4 text-blush" />
+                        <span className="font-bold text-xs text-ink">Meta Sponsored Ad (FB & IG)</span>
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{generatedAdCampaign.metaAd.framework} Framework</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-accent-soft text-accent-ink px-2 py-0.5 rounded">{generatedAdCampaign.metaAd.framework} Framework</span>
                     </div>
 
                     <div className="space-y-2 text-xs">
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Primary Text (Short):</span>
-                        <p className="font-medium text-gray-900 mt-0.5 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{generatedAdCampaign.metaAd.primaryTextShort}</p>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Primary Text (Short):</span>
+                        <p className="font-medium text-ink mt-0.5 bg-sunk p-2.5 rounded-lg border border-line">{generatedAdCampaign.metaAd.primaryTextShort}</p>
                       </div>
 
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Headline (Max 45 chars):</span>
-                        <p className="font-bold text-gray-900 text-sm mt-0.5">{generatedAdCampaign.metaAd.headline}</p>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Headline (Max 45 chars):</span>
+                        <p className="font-bold text-ink text-sm mt-0.5">{generatedAdCampaign.metaAd.headline}</p>
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
                         <div>
-                          <span className="font-bold text-gray-400 uppercase text-[10px]">Description:</span>
-                          <p className="text-gray-600 text-xs">{generatedAdCampaign.metaAd.description}</p>
+                          <span className="font-bold text-ink-4 uppercase text-[10px]">Description:</span>
+                          <p className="text-ink-3 text-xs">{generatedAdCampaign.metaAd.description}</p>
                         </div>
-                        <button className="px-3 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-md shadow-xs">
+                        <button className="px-3 py-1.5 bg-accent text-white font-bold text-xs rounded-md shadow-xs">
                           {generatedAdCampaign.metaAd.ctaButton}
                         </button>
                       </div>
 
                       {/* Meta Targeting */}
-                      <div className="pt-2 border-t border-gray-100">
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Meta Ads Manager Interest Targeting:</span>
+                      <div className="pt-2 border-t border-line">
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Meta Ads Manager Interest Targeting:</span>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {generatedAdCampaign.metaAd.metaTargeting.interests.map((int, i) => (
-                            <span key={i} className="bg-gray-100 text-gray-800 text-[10px] font-medium px-2 py-0.5 rounded border border-gray-200">{int}</span>
+                            <span key={i} className="bg-sunk text-ink-2 text-[10px] font-medium px-2 py-0.5 rounded border border-line">{int}</span>
                           ))}
                         </div>
                       </div>
@@ -862,14 +862,14 @@ export function ContentGenerator() {
                   </div>
 
                   {/* Google Search RSA Card */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <div className="bg-surface border border-line rounded-xl p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between border-b border-line pb-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-emerald-700">Google Search Ads (RSA)</span>
+                        <span className="font-bold text-xs text-ok">Google Search Ads (RSA)</span>
                       </div>
                       <button
                         onClick={() => downloadGoogleAdsEditorCSV(generatedAdCampaign.googleAd)}
-                        className="px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-lg flex items-center gap-1 hover:bg-emerald-700 transition"
+                        className="px-3 py-1 bg-accent text-white text-xs font-semibold rounded-lg flex items-center gap-1 hover:bg-accent transition"
                       >
                         <Download className="w-3 h-3" />
                         Export Google Ads CSV
@@ -878,34 +878,34 @@ export function ContentGenerator() {
 
                     <div className="space-y-3 text-xs">
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Responsive Search Headlines (15 Max 30 chars):</span>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Responsive Search Headlines (15 Max 30 chars):</span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1">
                           {generatedAdCampaign.googleAd.headlines.map((h, i) => (
-                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
-                              <span className="font-semibold text-gray-800 line-clamp-1">{h}</span>
-                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{h.length}/30</span>
+                            <div key={i} className="bg-sunk p-2 rounded border border-line text-[11px] flex justify-between">
+                              <span className="font-semibold text-ink-2 line-clamp-1">{h}</span>
+                              <span className="text-[9px] text-ink-4 shrink-0 ml-1">{h.length}/30</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
                       <div>
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">Descriptions (4 Max 90 chars):</span>
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">Descriptions (4 Max 90 chars):</span>
                         <div className="space-y-1 mt-1">
                           {generatedAdCampaign.googleAd.descriptions.map((d, i) => (
-                            <div key={i} className="bg-gray-50 p-2 rounded border border-gray-100 text-[11px] flex justify-between">
-                              <span className="text-gray-800">{d}</span>
-                              <span className="text-[9px] text-gray-400 shrink-0 ml-1">{d.length}/90</span>
+                            <div key={i} className="bg-sunk p-2 rounded border border-line text-[11px] flex justify-between">
+                              <span className="text-ink-2">{d}</span>
+                              <span className="text-[9px] text-ink-4 shrink-0 ml-1">{d.length}/90</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-gray-100">
-                        <span className="font-bold text-gray-400 uppercase text-[10px]">PPC Keywords:</span>
+                      <div className="pt-2 border-t border-line">
+                        <span className="font-bold text-ink-4 uppercase text-[10px]">PPC Keywords:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {generatedAdCampaign.googleAd.keywords.map((kw, i) => (
-                            <span key={i} className="font-mono text-[10px] bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded border border-emerald-100">{kw}</span>
+                            <span key={i} className="font-mono text-[10px] bg-ok-soft text-ok px-2 py-0.5 rounded border border-ok-line">{kw}</span>
                           ))}
                         </div>
                       </div>
@@ -919,20 +919,20 @@ export function ContentGenerator() {
       ) : (
         <div className="grid md:grid-cols-2 gap-8">
           {/* Input Section */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6 h-fit">
+          <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6 h-fit">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">What do you want to post about?</label>
+            <label className="text-sm font-medium text-ink-2">What do you want to post about?</label>
             <textarea 
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all resize-none"
+              className="w-full px-4 py-3 border border-line-strong rounded-lg focus:ring-2 focus:ring-ink focus:border-transparent outline-none transition-all resize-none"
               placeholder="e.g., Announcing our new eco-friendly packaging initiative..."
             />
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700">Target Platforms</label>
+            <label className="text-sm font-medium text-ink-2">Target Platforms</label>
             <div className="flex flex-wrap gap-2">
               {[
                 { id: 'twitter', name: 'Twitter', icon: Twitter },
@@ -946,8 +946,8 @@ export function ContentGenerator() {
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
                     selectedPlatforms.includes(p.id)
-                      ? "bg-black text-white border-black"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                      ? "bg-ink text-white border-ink"
+                      : "bg-surface text-ink-3 border-line hover:border-line-strong"
                   )}
                 >
                   <p.icon className="w-3.5 h-3.5" />
@@ -958,41 +958,41 @@ export function ContentGenerator() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700">Include Media?</label>
+            <label className="text-sm font-medium text-ink-2">Include Media?</label>
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => setMediaType('none')}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border ${mediaType === 'none' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border ${mediaType === 'none' ? 'border-ink bg-sunk' : 'border-line hover:border-line-strong'}`}
               >
-                <TypeIcon className="w-6 h-6 mb-2 text-gray-700" />
+                <TypeIcon className="w-6 h-6 mb-2 text-ink-2" />
                 <span className="text-sm font-medium">Text Only</span>
               </button>
               <button
                 onClick={() => setMediaType('image')}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border ${mediaType === 'image' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border ${mediaType === 'image' ? 'border-ink bg-sunk' : 'border-line hover:border-line-strong'}`}
               >
-                <ImageIcon className="w-6 h-6 mb-2 text-gray-700" />
+                <ImageIcon className="w-6 h-6 mb-2 text-ink-2" />
                 <span className="text-sm font-medium">Image</span>
               </button>
               <button
                 onClick={() => setMediaType('video')}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border ${mediaType === 'video' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border ${mediaType === 'video' ? 'border-ink bg-sunk' : 'border-line hover:border-line-strong'}`}
               >
-                <Video className="w-6 h-6 mb-2 text-gray-700" />
+                <Video className="w-6 h-6 mb-2 text-ink-2" />
                 <span className="text-sm font-medium">Video</span>
               </button>
             </div>
           </div>
 
           {mediaType !== 'none' && (
-            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="p-4 bg-sunk rounded-xl border border-line space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Model</label>
+                <label className="text-[11px] font-bold text-ink-3 uppercase tracking-wider">Model</label>
                 <div className="flex gap-2">
                   <select 
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none bg-white"
+                    className="flex-1 px-3 py-2 text-sm border border-line-strong rounded-lg focus:ring-2 focus:ring-ink outline-none bg-surface"
                   >
                     {mediaType === 'image' ? (
                       <>
@@ -1015,11 +1015,11 @@ export function ContentGenerator() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Aspect Ratio</label>
+                  <label className="text-[11px] font-bold text-ink-3 uppercase tracking-wider">Aspect Ratio</label>
                   <select 
                     value={aspectRatio}
                     onChange={(e) => setAspectRatio(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none bg-white"
+                    className="w-full px-3 py-2 text-sm border border-line-strong rounded-lg focus:ring-2 focus:ring-ink outline-none bg-surface"
                   >
                     {mediaType === 'image' ? (
                       <>
@@ -1038,12 +1038,12 @@ export function ContentGenerator() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Quality</label>
+                  <label className="text-[11px] font-bold text-ink-3 uppercase tracking-wider">Quality</label>
                   {mediaType === 'image' ? (
                     <select 
                       value={quality}
                       onChange={(e) => setQuality(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none bg-white"
+                      className="w-full px-3 py-2 text-sm border border-line-strong rounded-lg focus:ring-2 focus:ring-ink outline-none bg-surface"
                     >
                       <option value="512px">Standard (512px)</option>
                       <option value="1K">High (1K)</option>
@@ -1054,7 +1054,7 @@ export function ContentGenerator() {
                     <select 
                       value={videoResolution}
                       onChange={(e) => setVideoResolution(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none bg-white"
+                      className="w-full px-3 py-2 text-sm border border-line-strong rounded-lg focus:ring-2 focus:ring-ink outline-none bg-surface"
                     >
                       <option value="720p">HD (720p)</option>
                       <option value="1080p">Full HD (1080p)</option>
@@ -1068,7 +1068,7 @@ export function ContentGenerator() {
           <button
             onClick={() => handleGenerate()}
             disabled={generating || !topic}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-ink text-white font-medium rounded-xl hover:bg-ink-2 transition-colors disabled:opacity-50"
           >
             {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <PenTool className="w-5 h-5" />}
             {generating ? 'Generating Content...' : 'Generate Content'}
@@ -1076,37 +1076,37 @@ export function ContentGenerator() {
         </div>
 
         {/* Output Section */}
-        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm min-h-[500px] flex flex-col">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Preview</h2>
+        <div className="bg-sunk border border-line rounded-2xl p-6 shadow-sm min-h-[500px] flex flex-col">
+          <h2 className="text-sm font-semibold text-ink-3 uppercase tracking-wider mb-4">Preview</h2>
           
           {!generatedContent && !generating ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+            <div className="flex-1 flex flex-col items-center justify-center text-ink-4">
               <PenTool className="w-12 h-12 mb-4 opacity-20" />
               <p>Your generated content will appear here.</p>
             </div>
           ) : generating ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+            <div className="flex-1 flex flex-col items-center justify-center text-ink-3">
               <Loader2 className="w-8 h-8 animate-spin mb-4" />
               <p>Crafting the perfect post...</p>
-              {mediaType === 'video' && <p className="text-xs mt-2 text-gray-400">Video generation may take a few minutes.</p>}
+              {mediaType === 'video' && <p className="text-xs mt-2 text-ink-4">Video generation may take a few minutes.</p>}
             </div>
           ) : (
             <div className="flex-1 flex flex-col">
               <div className="space-y-4 mb-6">
-                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex-1">
+                <div className="bg-surface border border-line rounded-xl p-4 shadow-sm flex-1">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-500">
+                      <div className="w-10 h-10 bg-sunk rounded-full flex items-center justify-center font-bold text-ink-3">
                         {brand.name.charAt(0)}
                       </div>
                       <div>
                         <div className="font-semibold text-sm">{brand.name}</div>
-                        <div className="text-xs text-gray-500">Just now</div>
+                        <div className="text-xs text-ink-3">Just now</div>
                       </div>
                     </div>
                     <button 
                       onClick={() => setIsEditing(!isEditing)}
-                      className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      className="text-xs font-medium text-accent hover:text-accent-ink flex items-center gap-1"
                     >
                       <PenTool className="w-3 h-3" />
                       {isEditing ? 'Preview' : 'Edit Content'}
@@ -1118,22 +1118,22 @@ export function ContentGenerator() {
                       value={generatedContent}
                       onChange={(e) => setGeneratedContent(e.target.value)}
                       rows={8}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all resize-none mb-4"
+                      className="w-full px-3 py-2 text-sm border border-line-strong rounded-lg focus:ring-2 focus:ring-ink focus:border-transparent outline-none transition-all resize-none mb-4"
                     />
                   ) : (
-                    <div className="text-sm text-gray-800 whitespace-pre-wrap mb-4 bg-gray-100 p-4 rounded-xl">
+                    <div className="text-sm text-ink-2 whitespace-pre-wrap mb-4 bg-sunk p-4 rounded-xl">
                       {generatedContent}
                     </div>
                   )}
 
                   {generatedMediaUrl && mediaType === 'image' && (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-line rounded-lg overflow-hidden">
                       <img src={generatedMediaUrl} alt="Generated content" className="w-full h-64 object-cover" />
                     </div>
                   )}
                   
                   {generatedMediaUrl && mediaType === 'video' && (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-line rounded-lg overflow-hidden">
                       <video src={generatedMediaUrl} controls className="w-full h-64 object-cover" />
                     </div>
                   )}
@@ -1143,7 +1143,7 @@ export function ContentGenerator() {
               <button
                 onClick={() => setShowScheduleModal(true)}
                 disabled={scheduling}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-ink text-white font-medium rounded-xl hover:bg-ink-2 transition-colors disabled:opacity-50"
               >
                 {scheduling ? <Loader2 className="w-5 h-5 animate-spin" /> : <Calendar className="w-5 h-5" />}
                 {brand.automationSettings?.mode === 'auto' 
@@ -1152,21 +1152,21 @@ export function ContentGenerator() {
               </button>
               
               {showScheduleModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                  <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4">
+                <div className="fixed inset-0 bg-ink/50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-surface rounded-2xl p-6 w-full max-w-sm space-y-4">
                     <h3 className="font-semibold text-lg">Schedule Post</h3>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-700">Select Date & Time</label>
+                      <label className="text-xs font-medium text-ink-2">Select Date & Time</label>
                       <input
                         type="datetime-local"
                         value={scheduledDate}
                         onChange={(e) => setScheduledDate(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none"
+                        className="w-full px-3 py-2 text-sm border border-line-strong rounded-lg focus:ring-2 focus:ring-ink outline-none"
                       />
                     </div>
                     <div className="flex gap-3 pt-2">
-                      <button onClick={() => setShowScheduleModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium">Cancel</button>
-                      <button onClick={() => { handleSchedule(); setShowScheduleModal(false); }} className="flex-1 px-4 py-2 bg-black text-white rounded-lg text-sm font-medium">Confirm</button>
+                      <button onClick={() => setShowScheduleModal(false)} className="flex-1 px-4 py-2 border border-line-strong rounded-lg text-sm font-medium">Cancel</button>
+                      <button onClick={() => { handleSchedule(); setShowScheduleModal(false); }} className="flex-1 px-4 py-2 bg-ink text-white rounded-lg text-sm font-medium">Confirm</button>
                     </div>
                   </div>
                 </div>
@@ -1186,19 +1186,19 @@ export function ContentGenerator() {
                     alert(`Publishing failed: ${err.message || String(err)}`);
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white text-black border border-black font-medium rounded-xl hover:bg-gray-50 transition-colors mt-2"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-surface text-ink border border-ink font-medium rounded-xl hover:bg-sunk transition-colors mt-2"
               >
                 Post Now
               </button>
               
-              <div className="mt-4 p-3 bg-gray-100 rounded-lg border border-gray-200">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500">
+              <div className="mt-4 p-3 bg-sunk rounded-lg border border-line">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-ink-3">
                   <span>Automation Mode</span>
-                  <span className={brand.automationSettings?.mode === 'auto' ? 'text-green-600' : 'text-amber-600'}>
+                  <span className={brand.automationSettings?.mode === 'auto' ? 'text-ok' : 'text-warn'}>
                     {brand.automationSettings?.mode === 'auto' ? 'Auto-Post' : 'Manual Approval'}
                   </span>
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1">
+                <p className="text-[10px] text-ink-4 mt-1">
                   {brand.automationSettings?.mode === 'auto' 
                     ? `WotSocial is set to automatically post ${brand.automationSettings?.postsPerPeriod} time(s) per ${brand.automationSettings?.periodUnit}.` 
                     : `WotSocial will suggest ${brand.automationSettings?.postsPerPeriod} post(s) per ${brand.automationSettings?.periodUnit} for your approval.`}

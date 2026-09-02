@@ -5,6 +5,7 @@ import {
 } from '../dbAdapter';
 import { crmApi, metaApi, webhookApi, describeError } from '../services/integrationsApi';
 import { BrandSelector } from '../components/BrandSelector';
+import { TabNav } from '../components/ui';
 import { 
   UserCheck, Users, Download, Filter, Search, Sparkles, CheckCircle2, 
   Megaphone, Instagram, MessageSquare, Globe, ArrowRight, DollarSign, 
@@ -147,7 +148,7 @@ export function LeadManagementStudio() {
     return matchesSearch && matchesSource && matchesCampaign && matchesStatus;
   });
 
-  if (loading) return <div className="p-8 font-sans text-gray-500 animate-pulse">Loading Lead Management Studio...</div>;
+  if (loading) return <div className="p-8 font-sans text-ink-3 animate-pulse">Loading Lead Management Studio...</div>;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16 font-sans">
@@ -155,13 +156,13 @@ export function LeadManagementStudio() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-blue-600 to-emerald-600 px-3 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-white bg-accent px-3 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
               <UserCheck className="w-3.5 h-3.5" />
               Meta Ads & Multi-Channel Lead CRM
             </span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Lead Capture & Campaign Attribution Hub</h1>
-          <p className="text-gray-500 mt-1">Review, manage, and export all leads captured from your Meta Ad campaigns, Instagram DM Automations, and WhatsApp broadcasts.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Lead Capture & Campaign Attribution Hub</h1>
+          <p className="text-ink-3 mt-1">Review, manage, and export all leads captured from your Meta Ad campaigns, Instagram DM Automations, and WhatsApp broadcasts.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -177,62 +178,41 @@ export function LeadManagementStudio() {
           <button
             onClick={handleSyncMetaLeads}
             disabled={syncing}
-            className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 text-gray-700 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
+            className="px-4 py-2 bg-surface border border-line hover:bg-sunk disabled:opacity-50 text-ink-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
           >
-            <TrendingUp className={`w-4 h-4 text-blue-600 ${syncing ? 'animate-pulse' : ''}`} />
+            <TrendingUp className={`w-4 h-4 text-accent ${syncing ? 'animate-pulse' : ''}`} />
             {syncing ? 'Syncing from Meta…' : 'Sync Meta lead forms'}
           </button>
 
           <button
             onClick={handleExportCSV}
-            className="px-4 py-2 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+            className="px-4 py-2 bg-ink hover:bg-ink-2 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
           >
-            <Download className="w-4 h-4 text-emerald-400" /> Export Leads CSV
+            <Download className="w-4 h-4 text-ok" /> Export Leads CSV
           </button>
         </div>
       </header>
 
       {/* Main Tabs Navigation */}
-      <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 gap-1">
-        <button
-          onClick={() => setActiveTab('directory')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'directory' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Users className="w-4 h-4 text-emerald-400" />
-          1. Captured Leads Directory ({filteredLeads.length})
-        </button>
+      <TabNav
+        tabs={[
+          { id: 'directory', label: 'Leads', icon: Users, count: leads.length },
+          { id: 'analytics', label: 'Attribution', icon: BarChart3 },
+          { id: 'webhook', label: 'Capture Setup', icon: Settings }
+        ]}
+        active={activeTab}
+        onChange={(id) => setActiveTab(id as any)}
+      />
 
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'analytics' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4 text-blue-400" />
-          2. Lead Analytics & Cost Per Lead (CPL) Metrics
-        </button>
-
-        <button
-          onClick={() => setActiveTab('webhook')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'webhook' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Settings className="w-4 h-4 text-purple-400" />
-          3. Meta Lead Gen Webhook & Form Mapping
-        </button>
-      </div>
 
       {banner && (
         <div
           className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${
             banner.kind === 'error'
-              ? 'bg-red-50 border-red-200 text-red-900'
+              ? 'bg-danger-soft border-danger-line text-danger'
               : banner.kind === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                : 'bg-blue-50 border-blue-200 text-blue-900'
+                ? 'bg-ok-soft border-ok-line text-ok'
+                : 'bg-accent-soft border-accent-line text-accent-ink'
           }`}
         >
           <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
@@ -244,7 +224,7 @@ export function LeadManagementStudio() {
       )}
 
       {webhookInfo && !(webhookInfo.verifyToken && webhookInfo.appSecret) && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-[11px] text-amber-900 space-y-1">
+        <div className="rounded-2xl border border-warn-line bg-warn-soft px-5 py-4 text-[11px] text-warn space-y-1">
           <p className="text-xs font-bold">Real-time lead capture is inactive.</p>
           <p>
             New leads will not arrive automatically until the Meta webhook is configured. Set{' '}
@@ -261,15 +241,15 @@ export function LeadManagementStudio() {
       {activeTab === 'directory' && (
         <div className="space-y-6">
           {/* Filters Bar */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-surface border border-line rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-72">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-ink-4 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search lead name, email, company..."
-                className="w-full pl-9 pr-4 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                className="w-full pl-9 pr-4 py-2 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
               />
             </div>
 
@@ -277,7 +257,7 @@ export function LeadManagementStudio() {
               <select
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
-                className="px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none bg-white font-semibold"
+                className="px-3 py-2 text-xs border border-line-strong rounded-xl outline-none bg-surface font-semibold"
               >
                 <option value="all">All Lead Sources</option>
                 <option value="Meta Ads Lead Form">Meta Ads Lead Form</option>
@@ -290,7 +270,7 @@ export function LeadManagementStudio() {
                 <select
                   value={selectedCampaignFilter}
                   onChange={(e) => setSelectedCampaignFilter(e.target.value)}
-                  className="px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none bg-white font-semibold max-w-[200px] truncate"
+                  className="px-3 py-2 text-xs border border-line-strong rounded-xl outline-none bg-surface font-semibold max-w-[200px] truncate"
                 >
                   <option value="all">All Meta Campaigns</option>
                   {metaCampaigns.map(c => (
@@ -302,7 +282,7 @@ export function LeadManagementStudio() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none bg-white font-semibold"
+                className="px-3 py-2 text-xs border border-line-strong rounded-xl outline-none bg-surface font-semibold"
               >
                 <option value="all">All Lead Statuses</option>
                 <option value="NEW">NEW</option>
@@ -314,10 +294,10 @@ export function LeadManagementStudio() {
           </div>
 
           {/* Leads Table */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-gray-800">
-                <thead className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase font-bold tracking-wider text-gray-500">
+              <table className="w-full text-left text-xs text-ink-2">
+                <thead className="bg-sunk border-b border-line text-[10px] uppercase font-bold tracking-wider text-ink-3">
                   <tr>
                     <th className="px-6 py-3.5">Status</th>
                     <th className="px-6 py-3.5">Lead Contact</th>
@@ -327,25 +307,25 @@ export function LeadManagementStudio() {
                     <th className="px-6 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
+                <tbody className="divide-y divide-line font-medium">
                   {filteredLeads.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-xs">
+                      <td colSpan={6} className="px-6 py-12 text-center text-ink-4 text-xs">
                         No captured leads found matching your search and filter criteria.
                       </td>
                     </tr>
                   ) : (
                     filteredLeads.map((lead) => (
-                      <tr key={lead.id} className="hover:bg-gray-50/80 transition-colors">
+                      <tr key={lead.id} className="hover:bg-sunk/80 transition-colors">
                         <td className="px-6 py-4">
                           <select
                             value={lead.status}
                             onChange={(e) => handleStatusChange(lead.id, e.target.value as any)}
                             className={`px-2.5 py-1 rounded-full text-[10px] font-bold border outline-none cursor-pointer ${
-                              lead.status === 'NEW' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                              lead.status === 'QUALIFIED' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                              lead.status === 'CONVERTED' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                              'bg-gray-100 text-gray-800 border-gray-200'
+                              lead.status === 'NEW' ? 'bg-accent-soft text-accent-ink border-accent-line' :
+                              lead.status === 'QUALIFIED' ? 'bg-accent-soft text-accent-ink border-accent-line' :
+                              lead.status === 'CONVERTED' ? 'bg-ok-soft text-ok border-ok-line' :
+                              'bg-sunk text-ink-2 border-line'
                             }`}
                           >
                             <option value="NEW">NEW</option>
@@ -356,46 +336,46 @@ export function LeadManagementStudio() {
                         </td>
 
                         <td className="px-6 py-4 space-y-0.5">
-                          <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+                          <div className="font-bold text-ink text-xs flex items-center gap-1.5">
                             {lead.name}
-                            {lead.company && <span className="text-[10px] text-gray-400 font-normal">({lead.company})</span>}
+                            {lead.company && <span className="text-[10px] text-ink-4 font-normal">({lead.company})</span>}
                           </div>
-                          <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                          <div className="text-[11px] text-ink-3 flex items-center gap-2">
                             <span className="font-mono">{lead.email}</span>
                             <button
                               onClick={() => handleCopyEmail(lead.email)}
-                              className="text-gray-400 hover:text-black"
+                              className="text-ink-4 hover:text-ink"
                               title="Copy Email"
                             >
-                              {copiedEmail === lead.email ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              {copiedEmail === lead.email ? <Check className="w-3 h-3 text-ok" /> : <Copy className="w-3 h-3" />}
                             </button>
                           </div>
                         </td>
 
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-800 text-[11px] font-bold rounded-lg border border-gray-200">
-                            {lead.source.includes('Meta') ? <Megaphone className="w-3 h-3 text-blue-600" /> :
-                             lead.source.includes('Instagram') ? <Instagram className="w-3 h-3 text-pink-600" /> :
-                             <MessageSquare className="w-3 h-3 text-emerald-600" />}
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-sunk text-ink-2 text-[11px] font-bold rounded-lg border border-line">
+                            {lead.source.includes('Meta') ? <Megaphone className="w-3 h-3 text-accent" /> :
+                             lead.source.includes('Instagram') ? <Instagram className="w-3 h-3 text-blush" /> :
+                             <MessageSquare className="w-3 h-3 text-ok" />}
                             {lead.source}
                           </span>
                         </td>
 
                         <td className="px-6 py-4">
-                          <div className="font-semibold text-gray-900 truncate max-w-xs">{lead.campaignName || 'Organic Lead'}</div>
-                          {lead.adSetName && <div className="text-[10px] text-gray-400">{lead.adSetName}</div>}
+                          <div className="font-semibold text-ink truncate max-w-xs">{lead.campaignName || 'Organic Lead'}</div>
+                          {lead.adSetName && <div className="text-[10px] text-ink-4">{lead.adSetName}</div>}
                         </td>
 
-                        <td className="px-6 py-4 text-gray-500 font-mono text-[11px]">
+                        <td className="px-6 py-4 text-ink-3 font-mono text-[11px]">
                           {format(new Date(lead.createdAt), 'MMM d, h:mm a')}
                         </td>
 
                         <td className="px-6 py-4 text-right">
                           <a
                             href={`mailto:${lead.email}`}
-                            className="px-3 py-1.5 bg-black hover:bg-gray-800 text-white text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1"
+                            className="px-3 py-1.5 bg-ink hover:bg-ink-2 text-white text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1"
                           >
-                            <Mail className="w-3 h-3 text-amber-300" /> Contact Lead
+                            <Mail className="w-3 h-3 text-warn-line" /> Contact Lead
                           </a>
                         </td>
                       </tr>
@@ -412,31 +392,31 @@ export function LeadManagementStudio() {
       {activeTab === 'analytics' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Captured Leads</div>
-              <div className="text-2xl font-bold text-gray-900">{leads.length}</div>
-              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Total Captured Leads</div>
+              <div className="text-2xl font-bold text-ink">{leads.length}</div>
+              <div className="text-[10px] text-ok font-bold flex items-center gap-0.5">
                 <TrendingUp className="w-3 h-3" /> Real-Time CRM Ingest
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avg Cost Per Lead (CPL)</div>
-              <div className="text-2xl font-bold text-blue-600">$4.07</div>
-              <div className="text-[10px] text-gray-500 font-semibold">Meta Ads Benchmark</div>
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Avg Cost Per Lead (CPL)</div>
+              <div className="text-2xl font-bold text-accent">$4.07</div>
+              <div className="text-[10px] text-ink-3 font-semibold">Meta Ads Benchmark</div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Lead-to-Customer Rate</div>
-              <div className="text-2xl font-bold text-purple-600">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Lead-to-Customer Rate</div>
+              <div className="text-2xl font-bold text-accent">
                 {((leads.filter(l => l.status === 'CONVERTED').length / (leads.length || 1)) * 100).toFixed(1)}%
               </div>
-              <div className="text-[10px] text-purple-700 font-semibold">High Quality Leads</div>
+              <div className="text-[10px] text-accent-ink font-semibold">High Quality Leads</div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Qualified Pipeline</div>
-              <div className="text-2xl font-bold text-emerald-600 font-mono">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Qualified Pipeline</div>
+              <div className="text-2xl font-bold text-ok font-mono">
                 {leads.filter(l => l.status === 'QUALIFIED' || l.status === 'CONVERTED').length} Leads
               </div>
             </div>
@@ -446,36 +426,36 @@ export function LeadManagementStudio() {
 
       {/* Tab 3: Meta Lead Gen Webhook & Form Mapping */}
       {activeTab === 'webhook' && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm max-w-3xl mx-auto space-y-6">
-          <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+        <div className="bg-surface border border-line rounded-2xl p-8 shadow-sm max-w-3xl mx-auto space-y-6">
+          <div className="border-b border-line pb-3 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-ok" />
                 Meta Ads Instant Lead Form Webhook Mapping
               </h3>
-              <p className="text-xs text-gray-500">Automatically map question fields from Meta Lead Gen Forms (`/v19.0/leadgen_forms`) directly into WotSocial CRM fields.</p>
+              <p className="text-xs text-ink-3">Automatically map question fields from Meta Lead Gen Forms (`/v19.0/leadgen_forms`) directly into WotSocial CRM fields.</p>
             </div>
-            <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200">
+            <span className="text-xs bg-ok-soft text-ok font-bold px-3 py-1 rounded-full border border-ok-line">
               Webhook Live
             </span>
           </div>
 
           <div className="space-y-4 text-xs font-medium">
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div className="grid grid-cols-2 gap-4 bg-sunk p-4 rounded-xl border border-line">
               <div className="space-y-1">
-                <div className="font-bold text-gray-900">Meta Lead Form Field</div>
-                <div className="font-mono text-gray-600">full_name</div>
-                <div className="font-mono text-gray-600">email</div>
-                <div className="font-mono text-gray-600">phone_number</div>
-                <div className="font-mono text-gray-600">company_name</div>
+                <div className="font-bold text-ink">Meta Lead Form Field</div>
+                <div className="font-mono text-ink-3">full_name</div>
+                <div className="font-mono text-ink-3">email</div>
+                <div className="font-mono text-ink-3">phone_number</div>
+                <div className="font-mono text-ink-3">company_name</div>
               </div>
 
               <div className="space-y-1">
-                <div className="font-bold text-gray-900">WotSocial CRM Field</div>
-                <div className="font-mono text-emerald-700 font-bold">Lead Name</div>
-                <div className="font-mono text-emerald-700 font-bold">Email Address</div>
-                <div className="font-mono text-emerald-700 font-bold">Phone Number</div>
-                <div className="font-mono text-emerald-700 font-bold">Company / Organization</div>
+                <div className="font-bold text-ink">WotSocial CRM Field</div>
+                <div className="font-mono text-ok font-bold">Lead Name</div>
+                <div className="font-mono text-ok font-bold">Email Address</div>
+                <div className="font-mono text-ok font-bold">Phone Number</div>
+                <div className="font-mono text-ok font-bold">Company / Organization</div>
               </div>
             </div>
           </div>

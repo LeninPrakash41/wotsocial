@@ -126,23 +126,23 @@ export function Scheduler() {
   const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-  if (loading) return <div className="p-8 font-sans text-gray-500">Loading Content Schedule...</div>;
+  if (loading) return <div className="p-8 font-sans text-ink-3">Loading Content Schedule...</div>;
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 font-sans">
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Content Schedule Calendar</h1>
-          <p className="text-gray-500 mt-1">Review, approve, preview, and manage scheduled posts across all your connected social accounts.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Content Schedule Calendar</h1>
+          <p className="text-ink-3 mt-1">Review, approve, preview, and manage scheduled posts across all your connected social accounts.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* View Switcher */}
-          <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+          <div className="flex bg-sunk p-1 rounded-xl border border-line">
             <button
               onClick={() => setViewMode('calendar')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                viewMode === 'calendar' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-gray-900'
+                viewMode === 'calendar' ? 'bg-surface text-ink shadow-xs' : 'text-ink-3 hover:text-ink'
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@ export function Scheduler() {
             <button
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                viewMode === 'list' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-gray-900'
+                viewMode === 'list' ? 'bg-surface text-ink shadow-xs' : 'text-ink-3 hover:text-ink'
               }`}
             >
               <List className="w-3.5 h-3.5" />
@@ -170,15 +170,15 @@ export function Scheduler() {
       </header>
 
       {/* Search & Custom Filter Bar */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-surface border border-line rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-ink-4 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search scheduled posts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+            className="w-full pl-9 pr-4 py-2 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
           />
         </div>
 
@@ -187,7 +187,7 @@ export function Scheduler() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none"
+            className="text-xs font-semibold bg-sunk border border-line rounded-xl px-3 py-2 outline-none"
           >
             <option value="all">All Statuses ({posts.length})</option>
             <option value="scheduled">Scheduled ({posts.filter(p => p.status === 'scheduled').length})</option>
@@ -199,7 +199,7 @@ export function Scheduler() {
           <select
             value={platformFilter}
             onChange={(e) => setPlatformFilter(e.target.value)}
-            className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none"
+            className="text-xs font-semibold bg-sunk border border-line rounded-xl px-3 py-2 outline-none"
           >
             <option value="all">All Platforms</option>
             <option value="linkedin">LinkedIn</option>
@@ -214,7 +214,7 @@ export function Scheduler() {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none"
+            className="text-xs font-semibold bg-sunk border border-line rounded-xl px-3 py-2 outline-none"
           >
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -226,28 +226,28 @@ export function Scheduler() {
 
       {/* Main Content Area */}
       {viewMode === 'calendar' ? (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden space-y-4 p-6">
+        <div className="bg-surface border border-line rounded-2xl shadow-sm overflow-hidden space-y-4 p-6">
           {/* Calendar Header Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-gray-900">{format(currentMonth, 'MMMM yyyy')}</h2>
-              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-bold text-ink">{format(currentMonth, 'MMMM yyyy')}</h2>
+              <div className="flex items-center gap-1 bg-sunk p-1 rounded-lg border border-line">
                 <button
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  className="p-1 text-gray-600 hover:text-black rounded hover:bg-white transition-all"
+                  className="p-1 text-ink-3 hover:text-ink rounded hover:bg-surface transition-all"
                   title="Previous Month"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setCurrentMonth(new Date())}
-                  className="px-2.5 py-0.5 text-xs font-bold text-gray-700 hover:text-black rounded hover:bg-white transition-all"
+                  className="px-2.5 py-0.5 text-xs font-bold text-ink-2 hover:text-ink rounded hover:bg-surface transition-all"
                 >
                   Today
                 </button>
                 <button
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  className="p-1 text-gray-600 hover:text-black rounded hover:bg-white transition-all"
+                  className="p-1 text-ink-3 hover:text-ink rounded hover:bg-surface transition-all"
                   title="Next Month"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -256,21 +256,21 @@ export function Scheduler() {
             </div>
 
             <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Scheduled ({posts.filter(p => p.status === 'scheduled').length})</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Awaiting Approval ({posts.filter(p => p.status === 'suggested').length})</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Published ({posts.filter(p => p.status === 'published').length})</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ok"></span> Scheduled ({posts.filter(p => p.status === 'scheduled').length})</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-warn"></span> Awaiting Approval ({posts.filter(p => p.status === 'suggested').length})</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-accent"></span> Published ({posts.filter(p => p.status === 'published').length})</span>
             </div>
           </div>
 
           {/* Calendar Weekday Names */}
-          <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-xl overflow-hidden text-center text-xs font-bold uppercase tracking-wider text-gray-500">
+          <div className="grid grid-cols-7 gap-px bg-line rounded-xl overflow-hidden text-center text-xs font-bold uppercase tracking-wider text-ink-3">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-              <div key={day} className="bg-gray-50 py-2.5">{day}</div>
+              <div key={day} className="bg-sunk py-2.5">{day}</div>
             ))}
           </div>
 
           {/* Calendar Days Grid */}
-          <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-7 gap-px bg-line rounded-xl overflow-hidden">
             {calendarDays.map((day, idx) => {
               const dayPosts = posts.filter(p => {
                 const pDate = getSafeDate(p.scheduledTime || p.scheduled_time || p.created_at);
@@ -282,18 +282,18 @@ export function Scheduler() {
               return (
                 <div 
                   key={idx} 
-                  className={`min-h-[120px] p-2 bg-white flex flex-col justify-between transition-colors ${
-                    !isCurrentMonth ? 'bg-gray-50/50 text-gray-400' : 'text-gray-900'
-                  } ${isDayToday ? 'bg-blue-50/30' : ''}`}
+                  className={`min-h-[120px] p-2 bg-surface flex flex-col justify-between transition-colors ${
+                    !isCurrentMonth ? 'bg-sunk/50 text-ink-4' : 'text-ink'
+                  } ${isDayToday ? 'bg-accent-soft/30' : ''}`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center ${
-                      isDayToday ? 'bg-blue-600 text-white' : ''
+                      isDayToday ? 'bg-accent text-white' : ''
                     }`}>
                       {format(day, 'd')}
                     </span>
                     {dayPosts.length > 0 && (
-                      <span className="text-[10px] font-bold text-gray-400">{dayPosts.length} post{dayPosts.length > 1 ? 's' : ''}</span>
+                      <span className="text-[10px] font-bold text-ink-4">{dayPosts.length} post{dayPosts.length > 1 ? 's' : ''}</span>
                     )}
                   </div>
 
@@ -304,14 +304,14 @@ export function Scheduler() {
                         key={post.id}
                         onClick={() => setPreviewPost(post)}
                         className={`p-2 rounded-lg text-xs border transition-all cursor-pointer hover:shadow-md space-y-1 ${
-                          post.status === 'scheduled' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' :
-                          post.status === 'suggested' ? 'bg-amber-50 border-amber-200 text-amber-900' :
-                          'bg-blue-50 border-blue-200 text-blue-900'
+                          post.status === 'scheduled' ? 'bg-ok-soft border-ok-line text-ok' :
+                          post.status === 'suggested' ? 'bg-warn-soft border-warn-line text-warn' :
+                          'bg-accent-soft border-accent-line text-accent-ink'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-[10px] uppercase truncate max-w-[80px]">{post.status}</span>
-                          <Eye className="w-3 h-3 text-gray-500 hover:text-black shrink-0" />
+                          <Eye className="w-3 h-3 text-ink-3 hover:text-ink shrink-0" />
                         </div>
                         <p className="text-[11px] font-medium line-clamp-2 leading-tight">{post.content}</p>
                       </div>
@@ -326,12 +326,12 @@ export function Scheduler() {
         /* List View */
         <div className="space-y-4">
           {filteredPosts.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CalendarIcon className="w-8 h-8 text-gray-400" />
+            <div className="bg-surface border border-line rounded-2xl p-12 text-center shadow-sm">
+              <div className="w-16 h-16 bg-sunk rounded-full flex items-center justify-center mx-auto mb-6">
+                <CalendarIcon className="w-8 h-8 text-ink-4" />
               </div>
               <h2 className="text-xl font-semibold mb-2">No Posts Match Filter</h2>
-              <p className="text-gray-500 max-w-md mx-auto mb-6">Try clearing your search query or changing your status/platform/date filters.</p>
+              <p className="text-ink-3 max-w-md mx-auto mb-6">Try clearing your search query or changing your status/platform/date filters.</p>
               <button
                 onClick={() => {
                   setSearchQuery('');
@@ -339,7 +339,7 @@ export function Scheduler() {
                   setPlatformFilter('all');
                   setDateFilter('all');
                 }}
-                className="px-5 py-2.5 bg-black text-white font-semibold rounded-xl text-xs hover:bg-gray-800 transition-all inline-flex items-center gap-2"
+                className="px-5 py-2.5 bg-ink text-white font-semibold rounded-xl text-xs hover:bg-ink-2 transition-all inline-flex items-center gap-2"
               >
                 Clear All Filters
               </button>
@@ -347,15 +347,15 @@ export function Scheduler() {
           ) : (
             <>
               {filteredPosts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((post) => (
-                <div key={post.id} className={`bg-white border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 transition-all ${post.status === 'suggested' ? 'border-amber-200 bg-amber-50/10' : 'border-gray-200'}`}>
+                <div key={post.id} className={`bg-surface border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 transition-all ${post.status === 'suggested' ? 'border-warn-line bg-warn-soft/10' : 'border-line'}`}>
                   {/* Media Preview */}
-                  <div className="w-full md:w-48 h-48 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="w-full md:w-48 h-48 bg-sunk rounded-xl border border-line flex items-center justify-center overflow-hidden shrink-0">
                     {post.mediaType === 'image' && post.mediaUrl ? (
                       <img src={post.mediaUrl} alt="Post preview" className="w-full h-full object-cover" />
                     ) : post.mediaType === 'video' && post.mediaUrl ? (
                       <video src={post.mediaUrl} className="w-full h-full object-cover" />
                     ) : (
-                      <TypeIcon className="w-12 h-12 text-gray-300" />
+                      <TypeIcon className="w-12 h-12 text-ink-4" />
                     )}
                   </div>
 
@@ -364,14 +364,14 @@ export function Scheduler() {
                     <div>
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${post.status === 'suggested' ? 'bg-warn-soft text-warn' : 'bg-accent-soft text-accent-ink'}`}>
                             <Clock className="w-3.5 h-3.5" />
                             {post.scheduledTime ? format(getSafeDate(post.scheduledTime), "MMM d, yyyy 'at' h:mm a") : 'Unscheduled'}
                           </div>
                           <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md uppercase tracking-wider ${
-                            post.status === 'suggested' ? 'bg-amber-100 text-amber-700' : 
-                            post.status === 'scheduled' ? 'bg-green-100 text-green-700' :
-                            'bg-gray-100 text-gray-700'
+                            post.status === 'suggested' ? 'bg-warn-soft text-warn' : 
+                            post.status === 'scheduled' ? 'bg-ok-soft text-ok' :
+                            'bg-sunk text-ink-2'
                           }`}>
                             {post.status}
                           </div>
@@ -381,19 +381,19 @@ export function Scheduler() {
                           {/* Live Platform Preview Button */}
                           <button
                             onClick={() => setPreviewPost(post)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-medium rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sunk hover:bg-line text-ink-2 text-xs font-medium rounded-lg transition-colors"
                             title="Preview how this post looks on LinkedIn, Twitter, IG, Facebook"
                           >
-                            <Eye className="w-3.5 h-3.5 text-blue-600" />
+                            <Eye className="w-3.5 h-3.5 text-accent" />
                             Preview Post
                           </button>
 
                           {post.status === 'suggested' && (
                             <button
                               onClick={() => handleApprove(post.id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black hover:bg-gray-800 text-white text-xs font-medium rounded-lg transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ink hover:bg-ink-2 text-white text-xs font-medium rounded-lg transition-colors"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-ok" />
                               Approve
                             </button>
                           )}
@@ -412,14 +412,14 @@ export function Scheduler() {
                                 alert(`Publishing failed: ${err.message || String(err)}`);
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:bg-accent text-white text-xs font-medium rounded-lg transition-colors"
                           >
                             <Send className="w-3.5 h-3.5" />
                             Publish Now
                           </button>
                           <button
                             onClick={() => handleDelete(post.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-ink-4 hover:text-danger hover:bg-danger-soft rounded-lg transition-colors"
                             title="Delete Post"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -432,19 +432,19 @@ export function Scheduler() {
                           <textarea
                             value={editingContent}
                             onChange={(e) => setEditingContent(e.target.value)}
-                            className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none"
+                            className="w-full p-3 text-sm border border-line-strong rounded-lg focus:ring-2 focus:ring-ink outline-none"
                             rows={4}
                           />
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleUpdate(post.id)}
-                              className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg hover:bg-gray-800"
+                              className="px-3 py-1.5 bg-ink text-white text-xs font-medium rounded-lg hover:bg-ink-2"
                             >
                               Save Changes
                             </button>
                             <button
                               onClick={() => setEditingPostId(null)}
-                              className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-lg"
+                              className="px-3 py-1.5 border border-line-strong text-xs font-medium rounded-lg"
                             >
                               Cancel
                             </button>
@@ -453,7 +453,7 @@ export function Scheduler() {
                       ) : (
                         <p 
                           onClick={() => { setEditingPostId(post.id); setEditingContent(post.content); }}
-                          className="text-sm text-gray-800 whitespace-pre-wrap cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+                          className="text-sm text-ink-2 whitespace-pre-wrap cursor-pointer hover:bg-sunk p-2 rounded-lg transition-colors border border-transparent hover:border-line"
                           title="Click to edit text"
                         >
                           {post.content}
@@ -461,19 +461,19 @@ export function Scheduler() {
                       )}
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <div className="mt-4 pt-4 border-t border-line flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Platforms:</span>
+                        <span className="text-xs font-medium text-ink-3 uppercase tracking-wider">Platforms:</span>
                         <div className="flex gap-2">
                           {(post.platforms || ['linkedin', 'twitter']).map((platform: string) => (
-                            <span key={platform} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md capitalize font-semibold">
+                            <span key={platform} className="px-2 py-1 bg-sunk text-ink-3 text-xs rounded-md capitalize font-semibold">
                               {platform}
                             </span>
                           ))}
                         </div>
                       </div>
                       {post.status === 'suggested' && (
-                        <span className="text-[10px] font-medium text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                        <span className="text-[10px] font-medium text-warn uppercase tracking-widest bg-warn-soft px-2 py-0.5 rounded border border-warn-line">
                           Awaiting Approval
                         </span>
                       )}
@@ -484,18 +484,18 @@ export function Scheduler() {
 
               {/* List View Pagination Controls */}
               {filteredPosts.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-                  <div className="text-xs text-gray-500">
-                    Showing <span className="font-bold text-gray-900">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-bold text-gray-900">{Math.min(currentPage * itemsPerPage, filteredPosts.length)}</span> of <span className="font-bold text-gray-900">{filteredPosts.length}</span> scheduled posts
+                <div className="bg-surface border border-line rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+                  <div className="text-xs text-ink-3">
+                    Showing <span className="font-bold text-ink">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-bold text-ink">{Math.min(currentPage * itemsPerPage, filteredPosts.length)}</span> of <span className="font-bold text-ink">{filteredPosts.length}</span> scheduled posts
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <div className="flex items-center gap-1.5 text-xs text-ink-3">
                       <span>Per page:</span>
                       <select
                         value={itemsPerPage}
                         onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 outline-none text-xs font-bold"
+                        className="bg-sunk border border-line rounded-lg px-2 py-1 outline-none text-xs font-bold"
                       >
                         <option value={5}>5</option>
                         <option value={10}>10</option>
@@ -507,18 +507,18 @@ export function Scheduler() {
                       <button
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
+                        className="p-1.5 border border-line rounded-lg hover:bg-sunk disabled:opacity-40 transition-colors"
                         title="Previous Page"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
 
-                      <span className="text-xs font-bold text-gray-800 px-2">Page {currentPage} of {Math.max(1, Math.ceil(filteredPosts.length / itemsPerPage))}</span>
+                      <span className="text-xs font-bold text-ink-2 px-2">Page {currentPage} of {Math.max(1, Math.ceil(filteredPosts.length / itemsPerPage))}</span>
 
                       <button
                         onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredPosts.length / itemsPerPage), p + 1))}
                         disabled={currentPage === Math.ceil(filteredPosts.length / itemsPerPage)}
-                        className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
+                        className="p-1.5 border border-line rounded-lg hover:bg-sunk disabled:opacity-40 transition-colors"
                         title="Next Page"
                       >
                         <ChevronRight className="w-4 h-4" />

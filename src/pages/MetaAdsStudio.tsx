@@ -5,6 +5,7 @@ import {
   getMediaAssets, MediaAsset
 } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
+import { MediaSlot, TabNav } from '../components/ui';
 import {
   metaApi, getOAuthStatus, startOAuth, runOAuthPopup, describeError,
   IntegrationError, PublicConnection, LiveMetaCampaign
@@ -462,7 +463,7 @@ export function MetaAdsStudio() {
     }
   };
 
-  if (loading) return <div className="p-8 font-sans text-gray-500 animate-pulse">Loading Meta Marketing & Ads Studio...</div>;
+  if (loading) return <div className="p-8 font-sans text-ink-3 animate-pulse">Loading Meta Marketing & Ads Studio...</div>;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16 font-sans">
@@ -470,13 +471,13 @@ export function MetaAdsStudio() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-white bg-accent px-3 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
               <Megaphone className="w-3.5 h-3.5" />
               Meta Ads Manager Integration
             </span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Meta Marketing & Ads Studio</h1>
-          <p className="text-gray-500 mt-1">Create natural language ad copy, configure advanced Meta parameters, publish to Meta Ads Manager, and capture real-time ad performance analytics.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Meta Marketing & Ads Studio</h1>
+          <p className="text-ink-3 mt-1">Create natural language ad copy, configure advanced Meta parameters, publish to Meta Ads Manager, and capture real-time ad performance analytics.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -491,16 +492,16 @@ export function MetaAdsStudio() {
 
           <div className="flex flex-wrap items-center gap-2">
             {connected ? (
-              <span className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-800 shadow-xs">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span className="bg-ok-soft border border-ok-line px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-ok shadow-xs">
+                <ShieldCheck className="w-4 h-4 text-ok" />
                 <span>Live · {accountSummary?.name || adAccountId}</span>
               </span>
             ) : (
               <button
                 onClick={() => setActiveTab('settings')}
-                className="bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-amber-900 transition-colors"
+                className="bg-warn-soft hover:bg-warn-soft border border-warn-line px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-warn transition-colors"
               >
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <AlertTriangle className="w-4 h-4 text-warn" />
                 <span>{connection ? 'Reconnect Meta account' : 'Connect Meta ad account'}</span>
               </button>
             )}
@@ -509,7 +510,7 @@ export function MetaAdsStudio() {
               <button
                 onClick={() => brand && refreshCampaigns(brand.id)}
                 disabled={refreshing}
-                className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="bg-surface border border-line px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-ink-2 hover:bg-sunk disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
                 {refreshing ? 'Syncing…' : 'Sync from Meta'}
@@ -523,10 +524,10 @@ export function MetaAdsStudio() {
         <div
           className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${
             banner.kind === 'error'
-              ? 'bg-red-50 border-red-200 text-red-900'
+              ? 'bg-danger-soft border-danger-line text-danger'
               : banner.kind === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                : 'bg-blue-50 border-blue-200 text-blue-900'
+                ? 'bg-ok-soft border-ok-line text-ok'
+                : 'bg-accent-soft border-accent-line text-accent-ink'
           }`}
         >
           {banner.kind === 'error'
@@ -553,74 +554,44 @@ export function MetaAdsStudio() {
       )}
 
       {/* Main Studio Navigation Tabs */}
-      <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 gap-1">
-        <button
-          onClick={() => setActiveTab('generator')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'generator' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          1. Natural Language Ad Copy Studio
-        </button>
+      <TabNav
+        tabs={[
+          { id: 'generator', label: 'Ad Copy', icon: Sparkles },
+          { id: 'builder', label: 'Campaign Builder', icon: Layers },
+          { id: 'analytics', label: 'Performance', icon: BarChart3, count: campaigns.length },
+          { id: 'settings', label: 'Connection', icon: Settings }
+        ]}
+        active={activeTab}
+        onChange={(id) => setActiveTab(id as any)}
+      />
 
-        <button
-          onClick={() => setActiveTab('builder')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'builder' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Layers className="w-4 h-4 text-blue-400" />
-          2. Advanced Meta Campaign & Ad Set Builder
-        </button>
-
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'analytics' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4 text-emerald-400" />
-          3. Live Meta Ads Analytics & Reporting ({campaigns.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'settings' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Settings className="w-4 h-4 text-purple-400" />
-          4. Meta Account & Pixel Settings
-        </button>
-      </div>
 
       {/* Tab 1: Natural Language Ad Copy & Creative Studio */}
       {activeTab === 'generator' && (
         <div className="grid md:grid-cols-12 gap-8">
           <div className="md:col-span-7 space-y-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-500" />
+            <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="border-b border-line pb-3">
+                <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-warn" />
                   Natural Language Meta Ad Generator
                 </h3>
-                <p className="text-xs text-gray-500">Describe your product, promotional offer, or target goal in natural language. WotSocial AI will automatically generate Meta primary texts, headlines, CTAs, and recommended audience parameters.</p>
+                <p className="text-xs text-ink-3">Describe your product, promotional offer, or target goal in natural language. WotSocial AI will automatically generate Meta primary texts, headlines, CTAs, and recommended audience parameters.</p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Describe Campaign Intent or Promotional Prompt</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-ink-4">Describe Campaign Intent or Promotional Prompt</label>
                 <textarea
                   value={nlPrompt}
                   onChange={(e) => setNlPrompt(e.target.value)}
                   placeholder="e.g. Create a high-converting Facebook and Instagram ad campaign for our B2B SaaS platform offering a 14-day free trial. Target marketing managers and agency owners looking for AI automation."
                   rows={4}
-                  className="w-full px-4 py-3 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black leading-relaxed"
+                  className="w-full px-4 py-3 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink leading-relaxed"
                 />
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Quick Prompts:</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Quick Prompts:</span>
                 {[
                   "Free Trial Lead Generation for SaaS",
                   "E-commerce Summer Sale 20% Off",
@@ -630,7 +601,7 @@ export function MetaAdsStudio() {
                   <button
                     key={i}
                     onClick={() => setNlPrompt(prompt)}
-                    className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-[11px] font-medium rounded-lg border border-gray-200 transition-colors"
+                    className="px-2.5 py-1 bg-sunk hover:bg-line text-ink-2 text-[11px] font-medium rounded-lg border border-line transition-colors"
                   >
                     + {prompt}
                   </button>
@@ -640,31 +611,31 @@ export function MetaAdsStudio() {
               <button
                 onClick={handleGenerateAdFromNL}
                 disabled={generatingAd || !nlPrompt.trim()}
-                className="w-full py-3 bg-black hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+                className="w-full py-3 bg-ink hover:bg-ink-2 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
               >
-                {generatingAd ? <RefreshCw className="w-4 h-4 animate-spin text-amber-400" /> : <Sparkles className="w-4 h-4 text-amber-400" />}
+                {generatingAd ? <RefreshCw className="w-4 h-4 animate-spin text-warn" /> : <Sparkles className="w-4 h-4 text-warn" />}
                 {generatingAd ? 'Generating Meta Ad Copy & Parameters...' : 'Generate High-Converting Ad Campaign Copy'}
               </button>
             </div>
 
             {/* Generated Variations */}
             {primaryTextVariations.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">AI Generated Primary Text Copy Variations</h4>
+              <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-ink-4">AI Generated Primary Text Copy Variations</h4>
                 <div className="space-y-3">
                   {primaryTextVariations.map((text, i) => (
                     <div
                       key={i}
                       onClick={() => setPrimaryText(text)}
                       className={`p-4 rounded-xl border text-xs leading-relaxed cursor-pointer transition-all ${
-                        primaryText === text ? 'bg-blue-50/70 border-blue-300 ring-2 ring-blue-500/20' : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                        primaryText === text ? 'bg-accent-soft/70 border-accent-line ring-2 ring-accent/20' : 'bg-sunk border-line hover:border-line-strong'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Variation {i + 1}</span>
-                        {primaryText === text && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent">Variation {i + 1}</span>
+                        {primaryText === text && <CheckCircle2 className="w-4 h-4 text-accent" />}
                       </div>
-                      <p className="text-gray-900 font-medium">{text}</p>
+                      <p className="text-ink font-medium">{text}</p>
                     </div>
                   ))}
                 </div>
@@ -674,52 +645,81 @@ export function MetaAdsStudio() {
 
           {/* Right Column: Ad Creative & Media Asset Selector */}
           <div className="md:col-span-5 space-y-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-blue-600" />
+            <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="border-b border-line pb-3 flex items-center justify-between">
+                <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-accent" />
                   Meta Visual Ad Creative Media
                 </h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-4 bg-sunk px-2 py-0.5 rounded">
                   {mediaAssets.length} Assets in Vault
                 </span>
               </div>
 
-              {/* Selected Media Preview */}
-              <div className="relative h-56 bg-gray-900 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center">
-                {mediaUrl ? (
-                  mediaType === 'video' ? (
-                    <video src={mediaUrl} controls className="w-full h-full object-cover" />
-                  ) : (
-                    <img src={mediaUrl} alt="Ad Media" className="w-full h-full object-cover" />
-                  )
-                ) : (
-                  <div className="text-center text-gray-400 text-xs p-4">
-                    <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    Select visual creative from Media Vault or enter image URL below.
+              {/*
+                A real Meta link-ad card. The creative is submitted as
+                link_data with a picture, which Meta renders at 1.91:1 — so the
+                preview uses that ratio rather than an arbitrary height, and
+                shows the copy exactly as it will appear in the feed.
+              */}
+              <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
+                <div className="flex items-center gap-2.5 px-3 py-2.5">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[11px] font-bold text-accent-ink">
+                    {(brand?.name || 'B').charAt(0)}
                   </div>
-                )}
-                <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-black/80 text-white px-2 py-0.5 rounded">
-                  {mediaType}
-                </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-bold text-ink">{brand?.name || 'Your brand'}</div>
+                    <div className="text-[10px] text-ink-4">Sponsored</div>
+                  </div>
+                </div>
+
+                <p className="px-3 pb-2.5 text-[11px] leading-snug text-ink line-clamp-4">
+                  {primaryText || 'Your primary text will appear here.'}
+                </p>
+
+                <MediaSlot
+                  url={mediaUrl}
+                  type={mediaType}
+                  surface="link"
+                  placeholder="Select a creative from the Media Vault, or paste an image URL below"
+                />
+
+                <div className="flex items-center justify-between gap-3 bg-sunk px-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-[9px] uppercase tracking-wide text-ink-4">
+                      {(() => {
+                        try { return new URL(destinationUrl).hostname; } catch { return 'your-domain.com'; }
+                      })()}
+                    </div>
+                    <div className="truncate text-[11px] font-bold text-ink">
+                      {headline || 'Your headline'}
+                    </div>
+                    {description && (
+                      <div className="truncate text-[10px] text-ink-3">{description}</div>
+                    )}
+                  </div>
+                  <span className="shrink-0 rounded-md border border-line-strong bg-surface px-2.5 py-1 text-[10px] font-bold text-ink">
+                    {callToAction.replace(/_/g, ' ')}
+                  </span>
+                </div>
               </div>
 
               {/* Media URL Input */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Media Asset URL</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Media Asset URL</label>
                 <input
                   type="text"
                   value={mediaUrl}
                   onChange={(e) => setMediaUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-2 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                 />
               </div>
 
               {/* Select from Media Vault */}
               {mediaAssets.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-gray-100">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Choose from Digital Media Vault</div>
+                <div className="space-y-2 pt-2 border-t border-line">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Choose from Digital Media Vault</div>
                   <div className="grid grid-cols-4 gap-2">
                     {mediaAssets.slice(0, 8).map((asset) => (
                       <div
@@ -729,7 +729,7 @@ export function MetaAdsStudio() {
                           setMediaType(asset.type);
                         }}
                         className={`h-14 rounded-lg overflow-hidden border cursor-pointer transition-all relative ${
-                          mediaUrl === asset.url ? 'ring-2 ring-black border-black' : 'border-gray-200 hover:border-gray-400'
+                          mediaUrl === asset.url ? 'ring-2 ring-ink border-ink' : 'border-line hover:border-line-strong'
                         }`}
                       >
                         {asset.type === 'image' ? (
@@ -745,7 +745,7 @@ export function MetaAdsStudio() {
 
               <button
                 onClick={() => setActiveTab('builder')}
-                className="w-full py-2.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full py-2.5 bg-ink hover:bg-ink-2 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
               >
                 Proceed to Campaign Configuration <ArrowRight className="w-4 h-4" />
               </button>
@@ -757,21 +757,21 @@ export function MetaAdsStudio() {
       {/* Tab 2: Advanced Meta Campaign & Ad Set Builder */}
       {activeTab === 'builder' && (
         <div className="space-y-8">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-            <div className="border-b border-gray-100 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
+            <div className="border-b border-line pb-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-accent" />
                   Meta Ads Manager Parameters & Specs Configuration
                 </h3>
-                <p className="text-xs text-gray-500">Configure exact Meta campaign specifications matching Meta Ads Manager 1:1 including CBO budgets, conversion locations, placements, and UTM parameters.</p>
+                <p className="text-xs text-ink-3">Configure exact Meta campaign specifications matching Meta Ads Manager 1:1 including CBO budgets, conversion locations, placements, and UTM parameters.</p>
               </div>
 
               <div className="flex flex-col items-stretch gap-2 shrink-0">
                 <button
                   onClick={handlePublishCampaign}
                   disabled={publishing || !campaignName.trim() || !connected}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+                  className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
                 >
                   {publishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
                   {publishing
@@ -780,18 +780,18 @@ export function MetaAdsStudio() {
                 </button>
 
                 {/* An active campaign spends real budget, so this is opt-in. */}
-                <label className="flex items-center gap-2 text-[11px] font-semibold text-gray-600 cursor-pointer">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-ink-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={activateOnLaunch}
                     onChange={(e) => setActivateOnLaunch(e.target.checked)}
-                    className="rounded border-gray-300"
+                    className="rounded border-line-strong"
                   />
                   Activate immediately (starts spending budget)
                 </label>
 
                 {!connected && (
-                  <button onClick={() => setActiveTab('settings')} className="text-[11px] font-bold text-amber-700 underline">
+                  <button onClick={() => setActiveTab('settings')} className="text-[11px] font-bold text-warn underline">
                     Connect a Meta ad account first
                   </button>
                 )}
@@ -800,29 +800,29 @@ export function MetaAdsStudio() {
 
             {/* Section 1: Campaign Level Parameters */}
             <div className="space-y-4 pt-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px]">1</span>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-[10px]">1</span>
                 Campaign Level Specifications
               </h4>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-gray-700">Campaign Name</label>
+                  <label className="text-xs font-bold text-ink-2">Campaign Name</label>
                   <input
                     type="text"
                     value={campaignName}
                     onChange={(e) => setCampaignName(e.target.value)}
                     placeholder="e.g. Brand Growth - High Intent Leads Q3"
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Buying Type</label>
+                  <label className="text-xs font-bold text-ink-2">Buying Type</label>
                   <select
                     value={buyingType}
                     onChange={(e) => setBuyingType(e.target.value as any)}
-                    className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white"
+                    className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink bg-surface"
                   >
                     <option value="AUCTION">Auction (Recommended)</option>
                     <option value="RESERVATION">Reservation / Reach & Frequency</option>
@@ -830,11 +830,11 @@ export function MetaAdsStudio() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Campaign Objective</label>
+                  <label className="text-xs font-bold text-ink-2">Campaign Objective</label>
                   <select
                     value={objective}
                     onChange={(e) => setObjective(e.target.value as any)}
-                    className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white"
+                    className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink bg-surface"
                   >
                     <option value="OUTCOME_LEADS">Leads (Collect Forms & Sign-ups)</option>
                     <option value="OUTCOME_SALES">Sales / Conversions (Direct Purchases)</option>
@@ -846,11 +846,11 @@ export function MetaAdsStudio() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Special Ad Category</label>
+                  <label className="text-xs font-bold text-ink-2">Special Ad Category</label>
                   <select
                     value={specialCategory}
                     onChange={(e) => setSpecialCategory(e.target.value as any)}
-                    className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white"
+                    className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink bg-surface"
                   >
                     <option value="NONE">None (Standard Products/Services)</option>
                     <option value="CREDIT">Credit / Financial Offers</option>
@@ -861,14 +861,14 @@ export function MetaAdsStudio() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Advantage+ Daily Budget ($)</label>
+                  <label className="text-xs font-bold text-ink-2">Advantage+ Daily Budget ($)</label>
                   <div className="relative">
-                    <DollarSign className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <DollarSign className="w-4 h-4 text-ink-4 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="number"
                       value={dailyBudget}
                       onChange={(e) => setDailyBudget(Number(e.target.value))}
-                      className="w-full pl-9 pr-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-semibold"
+                      className="w-full pl-9 pr-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-semibold"
                     />
                   </div>
                 </div>
@@ -876,30 +876,30 @@ export function MetaAdsStudio() {
             </div>
 
             {/* Section 2: Ad Set Level Parameters */}
-            <div className="space-y-4 pt-4 border-t border-gray-100">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-600 flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center text-[10px]">2</span>
+            <div className="space-y-4 pt-4 border-t border-line">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-[10px]">2</span>
                 Ad Set & Targeting Specifications
               </h4>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Ad Set Name</label>
+                  <label className="text-xs font-bold text-ink-2">Ad Set Name</label>
                   <input
                     type="text"
                     value={adSetName}
                     onChange={(e) => setAdSetName(e.target.value)}
                     placeholder="e.g. US & CA - Tech Enthusiasts AdSet"
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Conversion Location</label>
+                  <label className="text-xs font-bold text-ink-2">Conversion Location</label>
                   <select
                     value={conversionLocation}
                     onChange={(e) => setConversionLocation(e.target.value as any)}
-                    className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white"
+                    className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink bg-surface"
                   >
                     <option value="WEBSITE">Website (Meta Pixel Tracking)</option>
                     <option value="MESSENGER">Messenger Direct</option>
@@ -909,11 +909,11 @@ export function MetaAdsStudio() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Optimization for Delivery</label>
+                  <label className="text-xs font-bold text-ink-2">Optimization for Delivery</label>
                   <select
                     value={optimizationGoal}
                     onChange={(e) => setOptimizationGoal(e.target.value as any)}
-                    className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white"
+                    className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink bg-surface"
                   >
                     <option value="CONVERSIONS">Conversions (Highest ROI)</option>
                     <option value="LINK_CLICKS">Link Clicks</option>
@@ -924,41 +924,41 @@ export function MetaAdsStudio() {
               </div>
 
               {/* Demographics & Detailed Targeting */}
-              <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <div className="grid md:grid-cols-2 gap-4 bg-sunk p-4 rounded-xl border border-line">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-800">Target Age & Demographics</label>
+                  <label className="text-xs font-bold text-ink-2">Target Age & Demographics</label>
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
                       value={targetAgeMin}
                       onChange={(e) => setTargetAgeMin(Number(e.target.value))}
-                      className="w-20 px-3 py-1.5 text-xs border border-gray-300 rounded-lg outline-none"
+                      className="w-20 px-3 py-1.5 text-xs border border-line-strong rounded-lg outline-none"
                     />
-                    <span className="text-xs text-gray-500">to</span>
+                    <span className="text-xs text-ink-3">to</span>
                     <input
                       type="number"
                       value={targetAgeMax}
                       onChange={(e) => setTargetAgeMax(Number(e.target.value))}
-                      className="w-20 px-3 py-1.5 text-xs border border-gray-300 rounded-lg outline-none"
+                      className="w-20 px-3 py-1.5 text-xs border border-line-strong rounded-lg outline-none"
                     />
-                    <span className="text-xs font-semibold text-gray-700">Years Old</span>
+                    <span className="text-xs font-semibold text-ink-2">Years Old</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-800">Detailed Meta Interest Keywords</label>
+                  <label className="text-xs font-bold text-ink-2">Detailed Meta Interest Keywords</label>
                   <input
                     type="text"
                     value={detailedInterests.join(', ')}
                     onChange={(e) => setDetailedInterests(e.target.value.split(',').map(s => s.trim()))}
-                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg outline-none"
+                    className="w-full px-3 py-2 text-xs border border-line-strong rounded-lg outline-none"
                   />
                 </div>
               </div>
 
               {/* Meta Placements */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-700">Meta Advantage+ Network Placements</label>
+                <label className="text-xs font-bold text-ink-2">Meta Advantage+ Network Placements</label>
                 <div className="flex flex-wrap gap-2">
                   {[
                     { id: 'feed', label: 'Facebook & Instagram Feeds' },
@@ -966,7 +966,7 @@ export function MetaAdsStudio() {
                     { id: 'reels', label: 'Instagram Reels Video' },
                     { id: 'right_column', label: 'Desktop Right Column' }
                   ].map((p) => (
-                    <label key={p.id} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-semibold text-gray-800 cursor-pointer">
+                    <label key={p.id} className="flex items-center gap-2 px-3 py-1.5 bg-sunk hover:bg-line rounded-lg text-xs font-semibold text-ink-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={placements.includes(p.id)}
@@ -974,7 +974,7 @@ export function MetaAdsStudio() {
                           if (e.target.checked) setPlacements([...placements, p.id]);
                           else setPlacements(placements.filter(item => item !== p.id));
                         }}
-                        className="rounded text-black focus:ring-black"
+                        className="rounded text-ink focus:ring-ink"
                       />
                       {p.label}
                     </label>
@@ -984,29 +984,29 @@ export function MetaAdsStudio() {
             </div>
 
             {/* Section 3: Ad Level Parameters & UTM Builder */}
-            <div className="space-y-4 pt-4 border-t border-gray-100">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px]">3</span>
+            <div className="space-y-4 pt-4 border-t border-line">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-ok flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-ok-soft text-ok flex items-center justify-center text-[10px]">3</span>
                 Ad Level Creative Copy & UTM Specifications
               </h4>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Ad Creative Name</label>
+                  <label className="text-xs font-bold text-ink-2">Ad Creative Name</label>
                   <input
                     type="text"
                     value={adName}
                     onChange={(e) => setAdName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Call To Action Button</label>
+                  <label className="text-xs font-bold text-ink-2">Call To Action Button</label>
                   <select
                     value={callToAction}
                     onChange={(e) => setCallToAction(e.target.value as any)}
-                    className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white"
+                    className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink bg-surface"
                   >
                     <option value="LEARN_MORE">Learn More (High Converting)</option>
                     <option value="SHOP_NOW">Shop Now (E-commerce)</option>
@@ -1019,68 +1019,68 @@ export function MetaAdsStudio() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Primary Ad Text (Facebook & Instagram Caption)</label>
+                <label className="text-xs font-bold text-ink-2">Primary Ad Text (Facebook & Instagram Caption)</label>
                 <textarea
                   value={primaryText}
                   onChange={(e) => setPrimaryText(e.target.value)}
                   rows={3}
-                  className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black leading-relaxed"
+                  className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink leading-relaxed"
                 />
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Headline (Title on Ad Card)</label>
+                  <label className="text-xs font-bold text-ink-2">Headline (Title on Ad Card)</label>
                   <input
                     type="text"
                     value={headline}
                     onChange={(e) => setHeadline(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-semibold"
+                    className="w-full px-3.5 py-2 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-semibold"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Description (Sub-headline)</label>
+                  <label className="text-xs font-bold text-ink-2">Description (Sub-headline)</label>
                   <input
                     type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-3.5 py-2 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                   />
                 </div>
               </div>
 
               {/* UTM Tracking Builder */}
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-                <div className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                  <Globe className="w-4 h-4 text-blue-600" /> Destination URL & UTM Tracking Parameters
+              <div className="bg-sunk p-4 rounded-xl border border-line space-y-3">
+                <div className="text-xs font-bold text-ink-2 flex items-center gap-1.5">
+                  <Globe className="w-4 h-4 text-accent" /> Destination URL & UTM Tracking Parameters
                 </div>
                 <div className="grid md:grid-cols-4 gap-3">
                   <div className="space-y-1 md:col-span-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Landing Page URL</label>
+                    <label className="text-[10px] font-bold text-ink-4 uppercase">Landing Page URL</label>
                     <input
                       type="text"
                       value={destinationUrl}
                       onChange={(e) => setDestinationUrl(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg outline-none"
+                      className="w-full px-3 py-2 text-xs border border-line-strong rounded-lg outline-none"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">utm_source</label>
+                    <label className="text-[10px] font-bold text-ink-4 uppercase">utm_source</label>
                     <input
                       type="text"
                       value={utmSource}
                       onChange={(e) => setUtmSource(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg outline-none font-mono"
+                      className="w-full px-3 py-2 text-xs border border-line-strong rounded-lg outline-none font-mono"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">utm_campaign</label>
+                    <label className="text-[10px] font-bold text-ink-4 uppercase">utm_campaign</label>
                     <input
                       type="text"
                       value={utmCampaign}
                       onChange={(e) => setUtmCampaign(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg outline-none font-mono"
+                      className="w-full px-3 py-2 text-xs border border-line-strong rounded-lg outline-none font-mono"
                     />
                   </div>
                 </div>
@@ -1095,52 +1095,52 @@ export function MetaAdsStudio() {
         <div className="space-y-6">
           {/* Key Metrics Cards Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Spend</div>
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Total Spend</div>
+              <div className="text-2xl font-bold text-ink">
                 ${campaigns.reduce((acc, c) => acc + c.spent, 0).toFixed(2)}
               </div>
-              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+              <div className="text-[10px] text-ok font-bold flex items-center gap-0.5">
                 <TrendingUp className="w-3 h-3" /> Live Meta Graph API
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Impressions</div>
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Total Impressions</div>
+              <div className="text-2xl font-bold text-ink">
                 {campaigns.reduce((acc, c) => acc + c.impressions, 0).toLocaleString()}
               </div>
-              <div className="text-[10px] text-gray-500 font-semibold">
+              <div className="text-[10px] text-ink-3 font-semibold">
                 {campaigns.reduce((acc, c) => acc + c.clicks, 0).toLocaleString()} Total Clicks
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avg Click-Through Rate</div>
-              <div className="text-2xl font-bold text-emerald-600">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Avg Click-Through Rate</div>
+              <div className="text-2xl font-bold text-ok">
                 {(campaigns.length > 0 ? campaigns.reduce((acc, c) => acc + c.ctr, 0) / campaigns.length : 0).toFixed(2)}%
               </div>
-              <div className="text-[10px] text-gray-500 font-semibold">Industry Benchmark: 1.5%</div>
+              <div className="text-[10px] text-ink-3 font-semibold">Industry Benchmark: 1.5%</div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avg Return on Ad Spend</div>
-              <div className="text-2xl font-bold text-purple-600">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Avg Return on Ad Spend</div>
+              <div className="text-2xl font-bold text-accent">
                 {(campaigns.length > 0 ? campaigns.reduce((acc, c) => acc + c.roas, 0) / campaigns.length : 4.85).toFixed(2)}x
               </div>
-              <div className="text-[10px] text-purple-700 font-semibold">High Performing Campaign</div>
+              <div className="text-[10px] text-accent-ink font-semibold">High Performing Campaign</div>
             </div>
           </div>
 
           {/* Campaigns Table */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm space-y-4">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm space-y-4">
+            <div className="p-6 border-b border-line flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-base text-gray-900 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-blue-600" />
+                <h3 className="font-bold text-base text-ink flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-accent" />
                   Meta Ads Manager Active Campaigns
                 </h3>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-ink-3">
                   {connected
                     ? `Read live from the Meta Marketing API for ${accountSummary?.name || adAccountId}. Amounts in ${currency}.`
                     : 'Not connected to Meta — there is nothing to report yet.'}
@@ -1149,15 +1149,15 @@ export function MetaAdsStudio() {
 
               <button
                 onClick={() => setActiveTab('builder')}
-                className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center gap-1.5"
+                className="px-4 py-2 bg-ink text-white text-xs font-bold rounded-xl hover:bg-ink-2 transition-all flex items-center gap-1.5"
               >
-                <Plus className="w-4 h-4 text-amber-400" /> Create New Meta Campaign
+                <Plus className="w-4 h-4 text-warn" /> Create New Meta Campaign
               </button>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-gray-800">
-                <thead className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase font-bold tracking-wider text-gray-500">
+              <table className="w-full text-left text-xs text-ink-2">
+                <thead className="bg-sunk border-b border-line text-[10px] uppercase font-bold tracking-wider text-ink-3">
                   <tr>
                     <th className="px-6 py-3">Status</th>
                     <th className="px-6 py-3">Campaign Name & Objective</th>
@@ -1170,21 +1170,21 @@ export function MetaAdsStudio() {
                     <th className="px-6 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
+                <tbody className="divide-y divide-line font-medium">
                   {campaigns.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={9} className="px-6 py-12 text-center text-ink-3">
                         {connected ? (
                           <div className="space-y-1">
-                            <p className="text-xs font-bold text-gray-700">No campaigns in this ad account yet.</p>
+                            <p className="text-xs font-bold text-ink-2">No campaigns in this ad account yet.</p>
                             <p className="text-[11px]">Build one in the Campaign Builder tab — it will be created on Meta for real.</p>
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            <p className="text-xs font-bold text-gray-700">Not connected to Meta.</p>
+                            <p className="text-xs font-bold text-ink-2">Not connected to Meta.</p>
                             <button
                               onClick={() => setActiveTab('settings')}
-                              className="text-[11px] font-bold text-blue-700 underline"
+                              className="text-[11px] font-bold text-accent-ink underline"
                             >
                               Connect an ad account to see live performance
                             </button>
@@ -1194,48 +1194,48 @@ export function MetaAdsStudio() {
                     </tr>
                   )}
                   {campaigns.map((camp) => (
-                    <tr key={camp.id} className="hover:bg-gray-50/80 transition-colors">
+                    <tr key={camp.id} className="hover:bg-sunk/80 transition-colors">
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                           camp.status === 'ACTIVE'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                            : 'bg-amber-100 text-amber-800 border-amber-200'
+                            ? 'bg-ok-soft text-ok border-ok-line'
+                            : 'bg-warn-soft text-warn border-warn-line'
                         }`}>
                           {camp.status}
                         </span>
                       </td>
 
                       <td className="px-6 py-4 space-y-0.5">
-                        <div className="font-bold text-gray-900 text-xs">{camp.name}</div>
-                        <div className="text-[10px] text-gray-400">{camp.objective} • {camp.adSetDetails?.conversionLocation || '—'}</div>
+                        <div className="font-bold text-ink text-xs">{camp.name}</div>
+                        <div className="text-[10px] text-ink-4">{camp.objective} • {camp.adSetDetails?.conversionLocation || '—'}</div>
                       </td>
 
                       <td className="px-6 py-4 font-semibold">${camp.dailyBudget}/day</td>
-                      <td className="px-6 py-4 font-bold text-gray-900">${camp.spent.toFixed(2)}</td>
+                      <td className="px-6 py-4 font-bold text-ink">${camp.spent.toFixed(2)}</td>
                       <td className="px-6 py-4">{camp.impressions.toLocaleString()}</td>
                       <td className="px-6 py-4">
                         <div>{camp.clicks} Clicks</div>
-                        <div className="text-[10px] text-emerald-600 font-bold">{camp.ctr}% CTR</div>
+                        <div className="text-[10px] text-ok font-bold">{camp.ctr}% CTR</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-gray-900">{camp.conversions} Conversions</div>
-                        <div className="text-[10px] text-gray-500">${camp.cpa.toFixed(2)} CPA</div>
+                        <div className="font-bold text-ink">{camp.conversions} Conversions</div>
+                        <div className="text-[10px] text-ink-3">${camp.cpa.toFixed(2)} CPA</div>
                       </td>
-                      <td className="px-6 py-4 font-bold text-purple-600">{camp.roas}x</td>
+                      <td className="px-6 py-4 font-bold text-accent">{camp.roas}x</td>
 
                       <td className="px-6 py-4 text-right space-x-2">
                         <button
                           onClick={() => navigate(`/leads?campaign=${encodeURIComponent(camp.name)}`)}
-                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1 border border-blue-200"
+                          className="px-3 py-1.5 bg-accent-soft hover:bg-accent-soft text-accent-ink text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1 border border-accent-line"
                         >
-                          <UserCheck className="w-3 h-3 text-blue-600" /> View Leads
+                          <UserCheck className="w-3 h-3 text-accent" /> View Leads
                         </button>
 
                         <button
                           onClick={() => handleToggleStatus(camp.id, camp.status)}
-                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1"
+                          className="px-3 py-1.5 bg-sunk hover:bg-line text-ink-2 text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1"
                         >
-                          {camp.status === 'ACTIVE' ? <Pause className="w-3 h-3 text-amber-600" /> : <Play className="w-3 h-3 text-emerald-600" />}
+                          {camp.status === 'ACTIVE' ? <Pause className="w-3 h-3 text-warn" /> : <Play className="w-3 h-3 text-ok" />}
                           {camp.status === 'ACTIVE' ? 'Pause' : 'Resume'}
                         </button>
                       </td>
@@ -1250,48 +1250,48 @@ export function MetaAdsStudio() {
 
       {/* Tab 4: Live Meta connection */}
       {activeTab === 'settings' && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm max-w-3xl mx-auto space-y-6">
-          <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+        <div className="bg-surface border border-line rounded-2xl p-8 shadow-sm max-w-3xl mx-auto space-y-6">
+          <div className="border-b border-line pb-3 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-purple-600" />
+              <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                <Settings className="w-5 h-5 text-accent" />
                 Meta Marketing API Connection
               </h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-3">
                 Your token is verified against Meta, then encrypted and stored on the server. It is never kept in the browser.
               </p>
             </div>
             {savedSuccess && (
-              <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Connected
+              <span className="text-xs bg-ok-soft text-ok font-bold px-3 py-1 rounded-full border border-ok-line flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-ok" /> Connected
               </span>
             )}
           </div>
 
           {connection && (
-            <div className={`rounded-xl border p-4 ${connected ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+            <div className={`rounded-xl border p-4 ${connected ? 'bg-ok-soft border-ok-line' : 'bg-danger-soft border-danger-line'}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <div className="text-xs font-bold text-gray-900 flex items-center gap-2">
+                  <div className="text-xs font-bold text-ink flex items-center gap-2">
                     {connected
-                      ? <><ShieldCheck className="w-4 h-4 text-emerald-600" /> Live connection verified</>
-                      : <><AlertTriangle className="w-4 h-4 text-red-600" /> Connection needs attention</>}
+                      ? <><ShieldCheck className="w-4 h-4 text-ok" /> Live connection verified</>
+                      : <><AlertTriangle className="w-4 h-4 text-danger" /> Connection needs attention</>}
                   </div>
-                  <div className="text-[11px] text-gray-600 font-mono">
+                  <div className="text-[11px] text-ink-3 font-mono">
                     {accountSummary?.name || connection.name} · {connection.externalId}
                   </div>
-                  <div className="text-[11px] text-gray-500">
+                  <div className="text-[11px] text-ink-3">
                     Token {connection.tokenPreview}
                     {accountSummary?.currency ? ` · ${accountSummary.currency}` : ''}
                     {connection.lastVerifiedAt ? ` · verified ${new Date(connection.lastVerifiedAt).toLocaleString()}` : ''}
                   </div>
                   {connection.lastError && (
-                    <div className="text-[11px] text-red-700 font-semibold">{connection.lastError}</div>
+                    <div className="text-[11px] text-danger font-semibold">{connection.lastError}</div>
                   )}
                 </div>
                 <button
                   onClick={handleDisconnect}
-                  className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-[11px] font-bold rounded-lg"
+                  className="px-3 py-1.5 bg-surface hover:bg-sunk border border-line-strong text-ink-2 text-[11px] font-bold rounded-lg"
                 >
                   Disconnect
                 </button>
@@ -1311,20 +1311,20 @@ export function MetaAdsStudio() {
           )}
 
           <div className="space-y-4">
-            <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+            <div className="text-[11px] font-bold text-ink-3 uppercase tracking-wide">
               {oauthConfigured ? 'Or connect with a system-user token' : 'Connect with a system-user access token'}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Meta access token</label>
+              <label className="text-xs font-bold text-ink-2">Meta access token</label>
               <input
                 type="password"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
                 placeholder="EAA…"
-                className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
               />
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[11px] text-ink-3">
                 Needs <span className="font-mono">ads_management</span>, <span className="font-mono">ads_read</span> and{' '}
                 <span className="font-mono">pages_show_list</span>. Generate one in Business Settings → System Users.
               </p>
@@ -1333,19 +1333,19 @@ export function MetaAdsStudio() {
             <button
               onClick={handleDiscoverAssets}
               disabled={connecting || !accessToken.trim()}
-              className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-800 font-bold text-xs rounded-xl flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-sunk hover:bg-line disabled:opacity-50 text-ink-2 font-bold text-xs rounded-xl flex items-center justify-center gap-2"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${connecting ? 'animate-spin' : ''}`} />
               Look up ad accounts and Pages on this token
             </button>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Ad account ID</label>
+              <label className="text-xs font-bold text-ink-2">Ad account ID</label>
               {discovered?.adAccounts?.length ? (
                 <select
                   value={adAccountId}
                   onChange={(e) => setAdAccountId(e.target.value)}
-                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                 >
                   {discovered.adAccounts.map((a: any) => (
                     <option key={a.id} value={a.id}>{a.name} — {a.id} ({a.currency})</option>
@@ -1357,19 +1357,19 @@ export function MetaAdsStudio() {
                   value={adAccountId}
                   onChange={(e) => setAdAccountId(e.target.value)}
                   placeholder="act_1092837465"
-                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                 />
               )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Facebook Page ID (required for creatives)</label>
+                <label className="text-xs font-bold text-ink-2">Facebook Page ID (required for creatives)</label>
                 {discovered?.pages?.length ? (
                   <select
                     value={pageId}
                     onChange={(e) => setPageId(e.target.value)}
-                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                    className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                   >
                     <option value="">Select a Page…</option>
                     {discovered.pages.map((p: any) => (
@@ -1382,18 +1382,18 @@ export function MetaAdsStudio() {
                     value={pageId}
                     onChange={(e) => setPageId(e.target.value)}
                     placeholder="102938475610293"
-                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                    className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                   />
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Meta Pixel (for conversion optimisation)</label>
+                <label className="text-xs font-bold text-ink-2">Meta Pixel (for conversion optimisation)</label>
                 {pixels.length ? (
                   <select
                     value={pixelId}
                     onChange={(e) => setPixelId(e.target.value)}
-                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                    className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                   >
                     <option value="">No pixel</option>
                     {pixels.map((px: any) => (
@@ -1406,7 +1406,7 @@ export function MetaAdsStudio() {
                     value={pixelId}
                     onChange={(e) => setPixelId(e.target.value)}
                     placeholder="1234567890"
-                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                    className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                   />
                 )}
               </div>
@@ -1415,9 +1415,9 @@ export function MetaAdsStudio() {
             <button
               onClick={handleConnectMetaAccount}
               disabled={connecting || !accessToken.trim() || !adAccountId.trim()}
-              className="w-full py-3 bg-black hover:bg-gray-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3 bg-ink hover:bg-ink-2 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <ShieldCheck className="w-4 h-4 text-ok" />
               {connecting ? 'Verifying with Meta…' : 'Verify & connect ad account'}
             </button>
           </div>

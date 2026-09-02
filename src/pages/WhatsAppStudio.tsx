@@ -5,6 +5,7 @@ import {
   WhatsAppCampaign, WhatsAppTemplate, getMediaAssets, MediaAsset
 } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
+import { PhoneFrame, TabNav } from '../components/ui';
 import {
   whatsappApi, getOAuthStatus, startOAuth, runOAuthPopup,
   describeError, PublicConnection
@@ -315,7 +316,7 @@ export function WhatsAppStudio() {
     }
   };
 
-  if (loading) return <div className="p-8 font-sans text-gray-500 animate-pulse">Loading WhatsApp Business Studio...</div>;
+  if (loading) return <div className="p-8 font-sans text-ink-3 animate-pulse">Loading WhatsApp Business Studio...</div>;
 
   const currentTmpl = templates.find(t => t.name === selectedTemplate) || templates[0] || null;
 
@@ -325,13 +326,13 @@ export function WhatsAppStudio() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-white bg-accent px-3 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
               <MessageSquare className="w-3.5 h-3.5" />
               WhatsApp Business Cloud API (WABA)
             </span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">WhatsApp Business Broadcast & HSM Studio</h1>
-          <p className="text-gray-500 mt-1">Send targeted marketing broadcasts, design pre-approved HSM templates with interactive buttons, and capture high-converting messaging analytics.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">WhatsApp Business Broadcast & HSM Studio</h1>
+          <p className="text-ink-3 mt-1">Send targeted marketing broadcasts, design pre-approved HSM templates with interactive buttons, and capture high-converting messaging analytics.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -345,17 +346,17 @@ export function WhatsAppStudio() {
           />
 
           {connected ? (
-            <div className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-900">
-              <Phone className="w-4 h-4 text-emerald-600" />
+            <div className="bg-ok-soft border border-ok-line px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-ok">
+              <Phone className="w-4 h-4 text-ok" />
               <span>Live · {phoneInfo?.displayPhoneNumber || connection?.username}</span>
               {phoneInfo?.qualityRating && phoneInfo.qualityRating !== 'UNKNOWN' && (
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                     phoneInfo.qualityRating === 'GREEN'
-                      ? 'bg-emerald-200 text-emerald-900'
+                      ? 'bg-ok-line text-ok'
                       : phoneInfo.qualityRating === 'YELLOW'
-                        ? 'bg-amber-200 text-amber-900'
-                        : 'bg-red-200 text-red-900'
+                        ? 'bg-warn-line text-warn'
+                        : 'bg-danger-line text-danger'
                   }`}
                 >
                   {phoneInfo.qualityRating}
@@ -365,9 +366,9 @@ export function WhatsAppStudio() {
           ) : (
             <button
               onClick={() => setActiveTab('settings')}
-              className="bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-amber-900 transition-colors"
+              className="bg-warn-soft hover:bg-warn-soft border border-warn-line px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-warn transition-colors"
             >
-              <Phone className="w-4 h-4 text-amber-600" />
+              <Phone className="w-4 h-4 text-warn" />
               <span>{connection ? 'Reconnect WhatsApp' : 'Connect WhatsApp number'}</span>
             </button>
           )}
@@ -376,7 +377,7 @@ export function WhatsAppStudio() {
             <button
               onClick={() => brand && refreshTemplates(brand.id, true)}
               disabled={templatesLoading}
-              className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="bg-surface border border-line px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-ink-2 hover:bg-sunk disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${templatesLoading ? 'animate-spin' : ''}`} />
               {templatesLoading ? 'Syncing…' : 'Sync templates'}
@@ -389,10 +390,10 @@ export function WhatsAppStudio() {
         <div
           className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${
             banner.kind === 'error'
-              ? 'bg-red-50 border-red-200 text-red-900'
+              ? 'bg-danger-soft border-danger-line text-danger'
               : banner.kind === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                : 'bg-blue-50 border-blue-200 text-blue-900'
+                ? 'bg-ok-soft border-ok-line text-ok'
+                : 'bg-accent-soft border-accent-line text-accent-ink'
           }`}
         >
           <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
@@ -407,79 +408,49 @@ export function WhatsAppStudio() {
       )}
 
       {/* Main Tabs Navigation */}
-      <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 gap-1">
-        <button
-          onClick={() => setActiveTab('broadcast')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'broadcast' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Send className="w-4 h-4 text-emerald-400" />
-          1. Broadcast Campaign Builder
-        </button>
+      <TabNav
+        tabs={[
+          { id: 'broadcast', label: 'Broadcast', icon: Send },
+          { id: 'templates', label: 'Templates', icon: FileText, count: templates.length },
+          { id: 'analytics', label: 'Delivery', icon: BarChart3, count: campaigns.length },
+          { id: 'settings', label: 'Connection', icon: Settings }
+        ]}
+        active={activeTab}
+        onChange={(id) => setActiveTab(id as any)}
+      />
 
-        <button
-          onClick={() => setActiveTab('templates')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'templates' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <FileText className="w-4 h-4 text-blue-400" />
-          2. Interactive HSM Template Creator ({templates.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'analytics' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4 text-purple-400" />
-          3. Broadcast Delivery & Read Analytics
-        </button>
-
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            activeTab === 'settings' ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Settings className="w-4 h-4 text-amber-400" />
-          4. WABA Account API Settings
-        </button>
-      </div>
 
       {/* Tab 1: Broadcast Campaign Builder */}
       {activeTab === 'broadcast' && (
         <div className="grid md:grid-cols-12 gap-8">
           <div className="md:col-span-7 space-y-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Send className="w-5 h-5 text-emerald-600" />
+            <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="border-b border-line pb-3 flex items-center justify-between">
+                <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                  <Send className="w-5 h-5 text-ok" />
                   Launch New WhatsApp Broadcast Campaign
                 </h3>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Broadcast Campaign Name</label>
+                  <label className="text-xs font-bold text-ink-2">Broadcast Campaign Name</label>
                   <input
                     type="text"
                     value={campaignName}
                     onChange={(e) => setCampaignName(e.target.value)}
                     placeholder="e.g. VIP Customers - Q3 Flash Discount Alert"
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Select HSM Message Template</label>
+                    <label className="text-xs font-bold text-ink-2">Select HSM Message Template</label>
                     <select
                       value={selectedTemplate}
                       onChange={(e) => setSelectedTemplate(e.target.value)}
-                      className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white font-bold"
+                      className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink bg-surface font-bold"
                     >
                       {templates.length === 0 && <option value="">No approved templates found</option>}
                       {templates.map(t => (
@@ -491,23 +462,23 @@ export function WhatsAppStudio() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700">Segment label</label>
+                    <label className="text-xs font-bold text-ink-2">Segment label</label>
                     <input
                       type="text"
                       value={targetSegment}
                       onChange={(e) => setTargetSegment(e.target.value)}
                       placeholder="e.g. VIP customers"
-                      className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                     />
-                    <p className="text-[11px] text-gray-500">Just a name for your own reporting.</p>
+                    <p className="text-[11px] text-ink-3">Just a name for your own reporting.</p>
                   </div>
                 </div>
 
                 {/* Real recipients — there is no hidden default list. */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 flex items-center justify-between">
+                  <label className="text-xs font-bold text-ink-2 flex items-center justify-between">
                     <span>Recipients (one E.164 number per line)</span>
-                    <span className={`font-mono ${parsedRecipients.length ? 'text-emerald-700' : 'text-gray-400'}`}>
+                    <span className={`font-mono ${parsedRecipients.length ? 'text-ok' : 'text-ink-4'}`}>
                       {parsedRecipients.length} recipient{parsedRecipients.length === 1 ? '' : 's'}
                     </span>
                   </label>
@@ -516,22 +487,22 @@ export function WhatsAppStudio() {
                     onChange={(e) => setRecipientsRaw(e.target.value)}
                     rows={5}
                     placeholder={'+14155552671\n+442071838750'}
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono resize-y"
+                    className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono resize-y"
                   />
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-ink-3">
                     WhatsApp only delivers to numbers that have opted in to receive messages from your business.
                     Meta bills per conversation.
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Header Attachment URL (Optional)</label>
+                  <label className="text-xs font-bold text-ink-2">Header Attachment URL (Optional)</label>
                   <input
                     type="text"
                     value={mediaHeaderUrl}
                     onChange={(e) => setMediaHeaderUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full px-3.5 py-2 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-3.5 py-2 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                   />
                 </div>
               </div>
@@ -540,16 +511,16 @@ export function WhatsAppStudio() {
                 <button
                   onClick={handlePublishBroadcast}
                   disabled={publishing || !campaignName.trim() || !connected || !parsedRecipients.length}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+                  className="w-full py-3 bg-accent hover:bg-accent-hover text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
                 >
-                  {publishing ? <RefreshCw className="w-4 h-4 animate-spin text-amber-300" /> : <Send className="w-4 h-4 text-emerald-300" />}
+                  {publishing ? <RefreshCw className="w-4 h-4 animate-spin text-warn-line" /> : <Send className="w-4 h-4 text-ok-line" />}
                   {publishing
                     ? 'Sending…'
                     : `Send to ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? '' : 's'} from ${phoneInfo?.displayPhoneNumber || 'your number'}`}
                 </button>
 
                 {!connected && (
-                  <button onClick={() => setActiveTab('settings')} className="w-full text-[11px] font-bold text-amber-700 underline">
+                  <button onClick={() => setActiveTab('settings')} className="w-full text-[11px] font-bold text-warn underline">
                     Connect a WhatsApp Business number first
                   </button>
                 )}
@@ -559,20 +530,20 @@ export function WhatsAppStudio() {
 
           {/* Right Column: WhatsApp Interactive Phone Chat Mockup */}
           <div className="md:col-span-5 space-y-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-emerald-600" />
+            <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="border-b border-line pb-3 flex items-center justify-between">
+                <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-ok" />
                   WhatsApp Live Chat Preview
                 </h3>
                 {currentTmpl && (
                   <span
                     className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
                       currentTmpl.status === 'APPROVED'
-                        ? 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-ok-soft text-ok'
                         : currentTmpl.status === 'PENDING'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-warn-soft text-warn'
+                          : 'bg-danger-soft text-danger'
                     }`}
                   >
                     {currentTmpl.status}
@@ -580,12 +551,30 @@ export function WhatsAppStudio() {
                 )}
               </div>
 
-              {/* Chat Bubble Mockup */}
-              <div className="bg-[#efeae2] rounded-2xl p-4 border border-gray-200 shadow-inner max-w-sm mx-auto space-y-3 min-h-[320px]">
+              {/*
+                A real phone frame at a fixed aspect, so a long template body
+                scrolls inside the handset instead of stretching it.
+              */}
+              <PhoneFrame label="WhatsApp · message preview">
+                <div className="flex items-center gap-2.5 border-b border-line bg-sunk px-3 py-2.5">
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ok-soft text-[10px] font-bold text-ok">
+                    {(brand?.name || 'W').charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-bold text-ink">
+                      {phoneInfo?.verifiedName || brand?.name || 'Your business'}
+                    </div>
+                    <div className="truncate text-[10px] text-ink-4">
+                      {phoneInfo?.displayPhoneNumber || 'Business account'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-3 bg-[#EFEAE2] p-3">
                 {!currentTmpl ? (
-                  <div className="bg-white rounded-xl p-6 text-center space-y-2 text-xs border border-gray-100">
-                    <p className="font-bold text-gray-700">No templates to preview.</p>
-                    <p className="text-gray-500">
+                  <div className="bg-surface rounded-xl p-6 text-center space-y-2 text-xs border border-line">
+                    <p className="font-bold text-ink-2">No templates to preview.</p>
+                    <p className="text-ink-3">
                       {connected
                         ? 'This WhatsApp Business Account has no message templates yet. Create one in the Template Creator tab, or in Meta Business Manager.'
                         : 'Connect a WhatsApp Business number to load the templates approved on your account.'}
@@ -593,23 +582,23 @@ export function WhatsAppStudio() {
                   </div>
                 ) : (
                   <>
-                    <div className="bg-white rounded-xl p-3 shadow-xs space-y-2 text-xs border border-gray-100">
+                    <div className="bg-surface rounded-xl p-3 shadow-xs space-y-2 text-xs border border-line">
                       {mediaHeaderUrl && (
-                        <div className="h-36 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                        <div className="h-36 bg-sunk rounded-lg overflow-hidden border border-line">
                           <img src={mediaHeaderUrl} alt="Header" className="w-full h-full object-cover" />
                         </div>
                       )}
 
                       {currentTmpl.headerContent && (
-                        <div className="font-bold text-gray-900">{currentTmpl.headerContent}</div>
+                        <div className="font-bold text-ink">{currentTmpl.headerContent}</div>
                       )}
 
-                      <p className="text-gray-800 leading-relaxed">
+                      <p className="text-ink-2 leading-relaxed">
                         {(currentTmpl.bodyText || '').replace('{{1}}', 'Alex').replace('{{2}}', brand?.name || 'WotSocial')}
                       </p>
 
                       {currentTmpl.footerText && (
-                        <div className="text-[10px] text-gray-400 border-t border-gray-100 pt-1">
+                        <div className="text-[10px] text-ink-4 border-t border-line pt-1">
                           {currentTmpl.footerText}
                         </div>
                       )}
@@ -619,7 +608,7 @@ export function WhatsAppStudio() {
                     {currentTmpl.buttons && currentTmpl.buttons.length > 0 && (
                       <div className="space-y-1.5 pt-1">
                         {currentTmpl.buttons.map((btn, i) => (
-                          <div key={i} className="w-full bg-white hover:bg-gray-50 text-emerald-600 text-xs font-bold py-2 rounded-xl text-center border border-gray-200 shadow-2xs flex items-center justify-center gap-1">
+                          <div key={i} className="w-full bg-surface hover:bg-sunk text-ok text-xs font-bold py-2 rounded-xl text-center border border-line shadow-2xs flex items-center justify-center gap-1">
                             {btn.type === 'URL' && <ExternalLink className="w-3.5 h-3.5" />}
                             {btn.text}
                           </div>
@@ -628,7 +617,8 @@ export function WhatsAppStudio() {
                     )}
                   </>
                 )}
-              </div>
+                </div>
+              </PhoneFrame>
             </div>
           </div>
         </div>
@@ -637,31 +627,31 @@ export function WhatsAppStudio() {
       {/* Tab 2: Interactive HSM Templates */}
       {activeTab === 'templates' && (
         <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
+          <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="border-b border-line pb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                <FileText className="w-5 h-5 text-accent" />
                 Pre-Approved WhatsApp HSM Templates
               </h3>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               {templates.map((tmpl) => (
-                <div key={tmpl.id} className="p-5 rounded-2xl border border-gray-200 bg-gray-50 space-y-3">
+                <div key={tmpl.id} className="p-5 rounded-2xl border border-line bg-sunk space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-gray-900 text-sm">{tmpl.name}</span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                    <span className="font-bold text-ink text-sm">{tmpl.name}</span>
+                    <span className="text-[10px] bg-ok-soft text-ok font-bold px-2 py-0.5 rounded">
                       {tmpl.status}
                     </span>
                   </div>
 
-                  <p className="text-xs text-gray-700 leading-relaxed font-mono bg-white p-3 rounded-xl border border-gray-200">
+                  <p className="text-xs text-ink-2 leading-relaxed font-mono bg-surface p-3 rounded-xl border border-line">
                     {tmpl.bodyText}
                   </p>
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     {tmpl.buttons.map((b, idx) => (
-                      <span key={idx} className="px-2.5 py-1 bg-blue-50 text-blue-800 text-[11px] font-bold rounded-lg border border-blue-200">
+                      <span key={idx} className="px-2.5 py-1 bg-accent-soft text-accent-ink text-[11px] font-bold rounded-lg border border-accent-line">
                         🔘 {b.text}
                       </span>
                     ))}
@@ -677,39 +667,39 @@ export function WhatsAppStudio() {
       {activeTab === 'analytics' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Recipients</div>
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Total Recipients</div>
+              <div className="text-2xl font-bold text-ink">
                 {campaigns.reduce((acc, c) => acc + c.recipientsCount, 0).toLocaleString()}
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avg Read Rate</div>
-              <div className="text-2xl font-bold text-emerald-600">86.4%</div>
-              <div className="text-[10px] text-gray-500 font-semibold">10x Higher than Email</div>
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Avg Read Rate</div>
+              <div className="text-2xl font-bold text-ok">86.4%</div>
+              <div className="text-[10px] text-ink-3 font-semibold">10x Higher than Email</div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avg Click-Through Rate</div>
-              <div className="text-2xl font-bold text-purple-600">34.4%</div>
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Avg Click-Through Rate</div>
+              <div className="text-2xl font-bold text-accent">34.4%</div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Spent</div>
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="bg-surface border border-line rounded-2xl p-5 shadow-sm space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-4">Total Spent</div>
+              <div className="text-2xl font-bold text-ink">
                 ${campaigns.reduce((acc, c) => acc + c.spent, 0).toFixed(2)}
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-gray-100 font-bold text-sm text-gray-900">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-line font-bold text-sm text-ink">
               WhatsApp Broadcast History
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-gray-800">
-                <thead className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase font-bold tracking-wider text-gray-500">
+              <table className="w-full text-left text-xs text-ink-2">
+                <thead className="bg-sunk border-b border-line text-[10px] uppercase font-bold tracking-wider text-ink-3">
                   <tr>
                     <th className="px-6 py-3">Status</th>
                     <th className="px-6 py-3">Campaign Name & Template</th>
@@ -720,21 +710,21 @@ export function WhatsAppStudio() {
                     <th className="px-6 py-3 font-right">Spent</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
+                <tbody className="divide-y divide-line font-medium">
                   {campaigns.map((camp) => (
-                    <tr key={camp.id} className="hover:bg-gray-50">
+                    <tr key={camp.id} className="hover:bg-sunk">
                       <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200">
+                        <span className="px-2.5 py-1 bg-ok-soft text-ok text-[10px] font-bold rounded-full border border-ok-line">
                           {camp.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-bold text-gray-900">{camp.name}</td>
-                      <td className="px-6 py-4 text-gray-600">{camp.targetSegment}</td>
+                      <td className="px-6 py-4 font-bold text-ink">{camp.name}</td>
+                      <td className="px-6 py-4 text-ink-3">{camp.targetSegment}</td>
                       <td className="px-6 py-4 font-semibold">{camp.deliveredCount} / {camp.recipientsCount}</td>
-                      <td className="px-6 py-4 font-bold text-emerald-600">
+                      <td className="px-6 py-4 font-bold text-ok">
                         {camp.deliveredCount ? ((camp.readCount / camp.deliveredCount) * 100).toFixed(1) : '0.0'}%
                       </td>
-                      <td className="px-6 py-4 font-bold text-purple-600">{camp.clickCount}</td>
+                      <td className="px-6 py-4 font-bold text-accent">{camp.clickCount}</td>
                       <td className="px-6 py-4 font-bold">${camp.spent.toFixed(2)}</td>
                     </tr>
                   ))}
@@ -747,55 +737,55 @@ export function WhatsAppStudio() {
 
       {/* Tab 4: Live connection */}
       {activeTab === 'settings' && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm max-w-2xl mx-auto space-y-6">
-          <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+        <div className="bg-surface border border-line rounded-2xl p-8 shadow-sm max-w-2xl mx-auto space-y-6">
+          <div className="border-b border-line pb-3 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-emerald-600" />
+              <h3 className="text-base font-bold text-ink flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-ok" />
                 WhatsApp Business Cloud API Connection
               </h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-3">
                 Your token is verified with Meta and stored encrypted on the server, never in the browser.
               </p>
             </div>
             {savedSuccess && (
-              <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs bg-ok-soft text-ok font-bold px-3 py-1 rounded-full border border-ok-line">
                 Connected
               </span>
             )}
           </div>
 
           {connection && (
-            <div className={`rounded-xl border p-4 ${connected ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+            <div className={`rounded-xl border p-4 ${connected ? 'bg-ok-soft border-ok-line' : 'bg-danger-soft border-danger-line'}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <div className="text-xs font-bold text-gray-900 flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-emerald-600" />
+                  <div className="text-xs font-bold text-ink flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-ok" />
                     {phoneInfo?.displayPhoneNumber || connection.username || connection.name}
                   </div>
                   {phoneInfo && (
-                    <div className="text-[11px] text-gray-600">
+                    <div className="text-[11px] text-ink-3">
                       {phoneInfo.verifiedName} · quality{' '}
                       <span className={
-                        phoneInfo.qualityRating === 'GREEN' ? 'text-emerald-700 font-bold'
-                          : phoneInfo.qualityRating === 'YELLOW' ? 'text-amber-700 font-bold'
-                          : 'text-red-700 font-bold'
+                        phoneInfo.qualityRating === 'GREEN' ? 'text-ok font-bold'
+                          : phoneInfo.qualityRating === 'YELLOW' ? 'text-warn font-bold'
+                          : 'text-danger font-bold'
                       }>
                         {phoneInfo.qualityRating}
                       </span>
                       {phoneInfo.throughputLevel ? ` · throughput ${phoneInfo.throughputLevel}` : ''}
                     </div>
                   )}
-                  <div className="text-[11px] text-gray-500 font-mono">
+                  <div className="text-[11px] text-ink-3 font-mono">
                     Phone ID {connection.externalId} · token {connection.tokenPreview}
                   </div>
                   {connection.lastError && (
-                    <div className="text-[11px] text-red-700 font-semibold">{connection.lastError}</div>
+                    <div className="text-[11px] text-danger font-semibold">{connection.lastError}</div>
                   )}
                 </div>
                 <button
                   onClick={handleDisconnect}
-                  className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-[11px] font-bold rounded-lg shrink-0"
+                  className="px-3 py-1.5 bg-surface hover:bg-sunk border border-line-strong text-ink-2 text-[11px] font-bold rounded-lg shrink-0"
                 >
                   Disconnect
                 </button>
@@ -804,7 +794,7 @@ export function WhatsAppStudio() {
           )}
 
           {!webhooksConfigured && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-[11px] text-amber-900 space-y-1">
+            <div className="rounded-xl border border-warn-line bg-warn-soft p-4 text-[11px] text-warn space-y-1">
               <p className="font-bold">Delivery receipts are inactive.</p>
               <p>
                 Messages will send, but delivered and read counts stay at zero until webhooks are configured. Set{' '}
@@ -819,7 +809,7 @@ export function WhatsAppStudio() {
             <button
               onClick={handleOAuthConnect}
               disabled={connecting}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3 bg-accent hover:bg-accent disabled:opacity-60 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
             >
               <MessageSquare className="w-4 h-4" />
               {connecting ? 'Waiting for Meta…' : 'Connect with WhatsApp Business (OAuth)'}
@@ -827,20 +817,20 @@ export function WhatsAppStudio() {
           )}
 
           <div className="space-y-4">
-            <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+            <div className="text-[11px] font-bold text-ink-3 uppercase tracking-wide">
               {oauthConfigured ? 'Or connect with a system-user token' : 'Connect with a system-user token'}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Permanent Meta access token</label>
+              <label className="text-xs font-bold text-ink-2">Permanent Meta access token</label>
               <input
                 type="password"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
                 placeholder="EAA…"
-                className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
               />
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[11px] text-ink-3">
                 Needs <span className="font-mono">whatsapp_business_messaging</span> and{' '}
                 <span className="font-mono">whatsapp_business_management</span>.
               </p>
@@ -848,26 +838,26 @@ export function WhatsAppStudio() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Phone number ID</label>
+                <label className="text-xs font-bold text-ink-2">Phone number ID</label>
                 <input
                   type="text"
                   value={phoneNumberId}
                   onChange={(e) => setPhoneNumberId(e.target.value)}
                   placeholder="109876543210987"
-                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">
-                  WABA ID <span className="font-normal text-gray-400">(needed for templates)</span>
+                <label className="text-xs font-bold text-ink-2">
+                  WABA ID <span className="font-normal text-ink-4">(needed for templates)</span>
                 </label>
                 <input
                   type="text"
                   value={wabaAccountId}
                   onChange={(e) => setWabaAccountId(e.target.value)}
                   placeholder="102938475601928"
-                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  className="w-full px-4 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink font-mono"
                 />
               </div>
             </div>
@@ -875,9 +865,9 @@ export function WhatsAppStudio() {
             <button
               onClick={handleConnectAccount}
               disabled={connecting || !accessToken.trim() || !phoneNumberId.trim()}
-              className="w-full py-3 bg-black hover:bg-gray-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3 bg-ink hover:bg-ink-2 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <ShieldCheck className="w-4 h-4 text-ok" />
               {connecting ? 'Verifying with Meta…' : 'Verify & connect WhatsApp number'}
             </button>
           </div>
