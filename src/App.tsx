@@ -26,6 +26,7 @@ import { MediaLibrary } from './pages/MediaLibrary';
 import { MetaAdsStudio } from './pages/MetaAdsStudio';
 import { InstagramStudio } from './pages/InstagramStudio';
 import { WhatsAppStudio } from './pages/WhatsAppStudio';
+import { MCPConnectorStudio } from './pages/MCPConnectorStudio';
 import { Login } from './pages/Login';
 
 export default function App() {
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/meta-ads" element={<MetaAdsStudio />} />
             <Route path="/instagram-marketing" element={<InstagramStudio />} />
             <Route path="/whatsapp-marketing" element={<WhatsAppStudio />} />
+            <Route path="/mcp-connector" element={<MCPConnectorStudio />} />
             <Route path="/brand-setup" element={<BrandSetup />} />
             <Route path="/brand-setup/:brandId" element={<BrandSetup />} />
             <Route path="/profile" element={<Profile />} />
