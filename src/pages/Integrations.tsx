@@ -70,7 +70,7 @@ export function Integrations() {
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight text-ink">Integrations</h1>
-        <p className="text-ink-3 mt-1">Manage your API credentials securely. Keys are stored locally in your browser.</p>
+        <p className="text-ink-3 mt-1">Connect the models, platforms and content sources this workspace uses.</p>
       </header>
 
       <div className="bg-surface border text-ink-2 border-line rounded-2xl p-6 shadow-sm space-y-6">
@@ -79,9 +79,11 @@ export function Integrations() {
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold">Security First (Bring Your Own Key)</h2>
+            <h2 className="text-xl font-semibold">Where your credentials live</h2>
             <p className="text-ink-3 text-sm mt-1">
-              WotSocial does not store your credentials on our servers. Your API keys and tokens never leave your local device and are only sent directly to the APIs when taking actions on your behalf.
+              The AI keys below stay in this browser and are sent straight to Gemini or Claude — they never reach our
+              server. Platform credentials are different: Meta, WordPress and Shopify have to be used server-side, so
+              those are encrypted at rest and only a masked preview is ever shown back to you.
             </p>
           </div>
         </div>

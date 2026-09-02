@@ -271,14 +271,16 @@ const BADGE_STYLES: Record<BadgeTone, string> = {
   danger: 'bg-danger-soft text-danger border-danger-line'
 };
 
-export function Badge({
-  tone = 'neutral', className, children, live
-}: {
+export interface BadgeProps {
   tone?: BadgeTone;
   className?: string;
   children: React.ReactNode;
   live?: boolean;
-}) {
+  /** This project has no @types/react, so JSX does not strip `key` for us. */
+  key?: React.Key;
+}
+
+export function Badge({ tone = 'neutral', className, children, live }: BadgeProps) {
   return (
     <span
       className={cn(
