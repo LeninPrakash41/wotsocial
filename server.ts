@@ -16,6 +16,8 @@ import webhookRoutes from "./src/server/webhookRoutes.ts";
 import oauthRoutes from "./src/server/oauthRoutes.ts";
 import mcpRoutes from "./src/server/mcpRoutes.ts";
 import crmRoutes from "./src/server/crmRoutes.ts";
+import agentRoutes from "./src/server/agentRoutes.ts";
+import contentRoutes from "./src/server/contentRoutes.ts";
 import { integrationErrorHandler } from "./src/server/http.ts";
 import { ensureStoreReady } from "./src/server/store.ts";
 
@@ -45,6 +47,8 @@ async function startServer() {
   app.use("/api/oauth", oauthRoutes);
   app.use("/api/mcp", mcpRoutes);
   app.use("/api/crm", crmRoutes);
+  app.use("/api/agents", agentRoutes);
+  app.use("/api/content", contentRoutes);
 
   app.get("/api/health", (req, res) => {
     res.json({

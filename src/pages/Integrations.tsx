@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Key, Shield, AlertCircle, Share2, Instagram, Facebook, Twitter, Linkedin } from 'lucide-react';
+import { ContentConnections } from '../components/ContentConnections';
 
 export function Integrations() {
   const [geminiKey, setGeminiKey] = useState('');
@@ -257,6 +258,17 @@ export function Integrations() {
           </div>
         </div>
 
+      </div>
+
+      {/* Content sources — stored server-side, unlike the browser-held AI keys */}
+      <div className="space-y-3 pt-2">
+        <div>
+          <h2 className="text-base font-bold text-ink">Content sources</h2>
+          <p className="text-xs text-ink-3">
+            Connect a blog to publish to, and a store to promote from. These are saved per brand.
+          </p>
+        </div>
+        <ContentConnections />
       </div>
 
       <div className="flex justify-end sticky bottom-4">

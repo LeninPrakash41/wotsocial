@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../auth';
-import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot, Layers, Bookmark, Film, Folder, Megaphone, Instagram, MessageSquare, Cpu, UserCheck } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot, Layers, Bookmark, Film, Folder, Megaphone, Instagram, MessageSquare, Cpu, UserCheck, Image } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useState, useEffect } from 'react';
 import { BrandSelector } from './BrandSelector';
@@ -26,6 +26,7 @@ export function Layout() {
         { name: 'Brand Strategy', path: '/brand-strategy', icon: Layers },
         { name: 'Content Studio', path: '/generate', icon: PenTool },
         { name: 'AI Video Studio', path: '/video-studio', icon: Film },
+        { name: 'Poster Studio', path: '/poster-studio', icon: Image },
       ]
     },
     {

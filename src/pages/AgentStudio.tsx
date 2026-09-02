@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { getBrands, updateBrand, addPost, Brand } from '../dbAdapter';
 import { auth } from '../auth';
 import { BrandSelector } from '../components/BrandSelector';
-import { Loader2, Bot, Sparkles, Target, Users, Search, ShieldCheck, ArrowRight, CheckCircle2, RefreshCw, Send, AlertTriangle, Layers, Calendar, ChevronDown, ChevronUp, Megaphone, Download } from 'lucide-react';
+import { TabNav, LoadingPage } from '../components/ui';
+import { AgentManager } from '../components/AgentManager';
+import { Loader2, Bot, Sparkles, Target, Users, Search, ShieldCheck, ArrowRight, CheckCircle2, RefreshCw, Send, AlertTriangle, Layers, Calendar, ChevronDown, ChevronUp, Megaphone, Download, Play, Settings2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   runEndToEndAgentPipeline, 
@@ -43,6 +45,7 @@ export function AgentStudio() {
 
   // UI accordion state
   const [expandedSection, setExpandedSection] = useState<'site' | 'competitor' | 'audience' | 'strategy' | 'posts' | 'ads' | null>('site');
+  const [studioTab, setStudioTab] = useState<'run' | 'manage'>('run');
   const [savingToBrand, setSavingToBrand] = useState(false);
   const [brandSavedSuccess, setBrandSavedSuccess] = useState(false);
   const [schedulingPosts, setSchedulingPosts] = useState(false);
@@ -351,7 +354,7 @@ export function AgentStudio() {
     }
   };
 
-  if (loading) return <div className="p-8">Loading Agent Studio...</div>;
+  if (loading) return <LoadingPage label="Loading Agent Studio…" />;
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16">
@@ -407,6 +410,19 @@ export function AgentStudio() {
           </div>
         </div>
       </header>
+
+      <TabNav
+        tabs={[
+          { id: 'run', label: 'Run pipeline', icon: Play },
+          { id: 'manage', label: 'Manage agents', icon: Settings2 }
+        ]}
+        active={studioTab}
+        onChange={(id) => setStudioTab(id as any)}
+      />
+
+      {studioTab === 'manage' && <AgentManager brandId={selectedBrandId} />}
+
+      {studioTab === 'run' && (<>
 
       {/* Target Setup Card */}
       <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
@@ -995,6 +1011,7 @@ export function AgentStudio() {
             </div>
           </div>
         )}
-      </div>
+        </>)}
+    </div>
   );
 }
