@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  getBrands, getBrandById, getMetaAccount, saveMetaAccount, getMetaCampaigns, 
-  saveMetaCampaign, updateMetaCampaignStatus, Brand, MetaAdAccount, MetaCampaign,
+  getBrands, getBrandById, Brand, MetaAdAccount, MetaCampaign,
   getMediaAssets, MediaAsset
 } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
+import {
+  metaApi, getOAuthStatus, startOAuth, runOAuthPopup, describeError,
+  IntegrationError, PublicConnection, LiveMetaCampaign
+} from '../services/integrationsApi';
+import { generatePaidAdCampaign } from '../services/adService';
 import { 
   Megaphone, Sparkles, Settings, BarChart3, Play, Pause, RefreshCw, CheckCircle2, 
   AlertTriangle, DollarSign, Target, Eye, MousePointer, ShieldCheck, Globe, 
@@ -71,119 +75,130 @@ export function MetaAdsStudio() {
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
   const [publishing, setPublishing] = useState(false);
 
+  // Live connection state — replaces the previous sandbox auto-seeding.
+  const [connection, setConnection] = useState<PublicConnection | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [oauthConfigured, setOauthConfigured] = useState(false);
+  const [accountSummary, setAccountSummary] = useState<{ name?: string; currency?: string; timezone?: string } | null>(null);
+  const [discovered, setDiscovered] = useState<{ adAccounts: any[]; pages: any[] } | null>(null);
+  const [pixels, setPixels] = useState<any[]>([]);
+  const [banner, setBanner] = useState<{ kind: 'error' | 'success' | 'info'; message: string; detail?: string } | null>(null);
+  const [launchResult, setLaunchResult] = useState<{ campaignId: string; reviewUrl: string; status: string; warnings: string[] } | null>(null);
+  const [activateOnLaunch, setActivateOnLaunch] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currency, setCurrency] = useState('USD');
+
+  /** Maps a live Meta campaign onto the shape the table already renders. */
+  const toDisplayCampaign = (c: LiveMetaCampaign): MetaCampaign => ({
+    id: c.id,
+    brandId: c.brandId,
+    name: c.name,
+    objective: c.objective as MetaCampaign['objective'],
+    specialAdCategory: (c.specialAdCategory || 'NONE') as MetaCampaign['specialAdCategory'],
+    buyingType: (c.buyingType || 'AUCTION') as MetaCampaign['buyingType'],
+    status: (c.effectiveStatus === 'ACTIVE' ? 'ACTIVE' : c.status) as MetaCampaign['status'],
+    dailyBudget: c.dailyBudget,
+    lifetimeBudget: c.lifetimeBudget,
+    spent: c.spent,
+    impressions: c.impressions,
+    clicks: c.clicks,
+    conversions: c.conversions,
+    ctr: c.ctr,
+    cpc: c.cpc,
+    cpa: c.cpa,
+    roas: c.roas,
+    startDate: c.startDate,
+    endDate: c.endDate,
+    adSetDetails: c.adSetDetails || {
+      name: '—', conversionLocation: 'WEBSITE', optimizationGoal: 'LINK_CLICKS',
+      targetAgeMin: 18, targetAgeMax: 65, targetGenders: [], locations: [],
+      detailedInterests: [], placements: []
+    },
+    adDetails: c.adDetails || {
+      name: '—', primaryText: '', headline: '', description: '',
+      callToAction: 'LEARN_MORE', destinationUrl: ''
+    },
+    createdAt: c.createdAt
+  });
+
+  /** Pulls campaigns and their insights live from the Marketing API. */
+  const refreshCampaigns = async (brandId: string, silent = false) => {
+    if (!silent) setRefreshing(true);
+    try {
+      const res = await metaApi.campaigns(brandId);
+      setCampaigns(res.campaigns.map(toDisplayCampaign));
+      setCurrency(res.currency || 'USD');
+    } catch (err) {
+      if (err instanceof IntegrationError && err.notConnected) {
+        setCampaigns([]);
+      } else {
+        setBanner({ kind: 'error', message: `Could not load campaigns from Meta: ${describeError(err)}` });
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const loadData = async (brandIdToLoad?: string) => {
     setLoading(true);
+    setBanner(null);
     try {
       const activeId = brandIdToLoad || localStorage.getItem('activeBrandId');
       let currentBrand: Brand | null = null;
 
-      if (activeId) {
-        currentBrand = await getBrandById(activeId);
-      }
+      if (activeId) currentBrand = await getBrandById(activeId);
       if (!currentBrand) {
         const all = await getBrands();
         if (all.length > 0) currentBrand = all[0];
       }
+      if (!currentBrand) { setBrand(null); return; }
 
-      if (currentBrand) {
-        setBrand(currentBrand);
-        localStorage.setItem('activeBrandId', currentBrand.id);
+      setBrand(currentBrand);
+      localStorage.setItem('activeBrandId', currentBrand.id);
 
-        // Load Meta Account
-        const acc = getMetaAccount(currentBrand.id);
-        if (acc) {
-          setMetaAccount(acc);
-          setAdAccountId(acc.adAccountId);
-          setAccessToken(acc.accessToken);
-          setPageId(acc.pageId);
-          setPixelId(acc.pixelId || '');
-          setInstagramAccountId(acc.instagramAccountId || '');
-        } else {
-          // Default Sandbox Account
-          const sandbox: MetaAdAccount = {
-            id: 'meta_acc_' + currentBrand.id,
-            brandId: currentBrand.id,
-            adAccountId: 'act_' + Math.floor(100000000 + Math.random() * 900000000),
-            accessToken: 'EAAG...' + Math.random().toString(36).substr(2, 12),
-            pageId: 'page_' + Math.floor(100000 + Math.random() * 900000),
-            pixelId: 'pixel_' + Math.floor(100000 + Math.random() * 900000),
-            currency: 'USD',
-            timezone: 'America/New_York',
-            connectedAt: new Date().toISOString(),
-            status: 'CONNECTED'
-          };
-          saveMetaAccount(sandbox);
-          setMetaAccount(sandbox);
-          setAdAccountId(sandbox.adAccountId);
-          setAccessToken(sandbox.accessToken);
-          setPageId(sandbox.pageId);
-          setPixelId(sandbox.pixelId || '');
+      getOAuthStatus().then(s => setOauthConfigured(s.configured)).catch(() => setOauthConfigured(false));
+
+      // Ask the server whether this brand has a live, verified Meta connection.
+      const connRes = await metaApi.connection(currentBrand.id);
+      setConnected(connRes.connected);
+      setConnection(connRes.connection);
+
+      if (connRes.connection) {
+        setAdAccountId(connRes.connection.externalId);
+        setPageId(connRes.connection.metadata?.pageId || '');
+        setPixelId(connRes.connection.metadata?.pixelId || '');
+        setInstagramAccountId(connRes.connection.metadata?.instagramActorId || '');
+        setAccountSummary({
+          name: connRes.connection.name,
+          currency: connRes.connection.metadata?.currency,
+          timezone: connRes.connection.metadata?.timezone
+        });
+        if (!connRes.connected) {
+          setBanner({
+            kind: 'error',
+            message: connRes.connection.lastError || 'The stored Meta token is no longer valid. Reconnect the account.'
+          });
         }
+      } else {
+        setAccountSummary(null);
+      }
 
-        // Load Meta Campaigns
-        const camps = getMetaCampaigns(currentBrand.id);
-        if (camps.length === 0) {
-          // Seed Initial High-Performing Meta Campaign
-          const seedCampaign: MetaCampaign = {
-            id: 'meta_camp_seed_1',
-            brandId: currentBrand.id,
-            name: `${currentBrand.name} - Direct Response Lead Gen`,
-            objective: 'OUTCOME_LEADS',
-            specialAdCategory: 'NONE',
-            buyingType: 'AUCTION',
-            status: 'ACTIVE',
-            dailyBudget: 50,
-            spent: 342.50,
-            impressions: 24890,
-            clicks: 980,
-            conversions: 84,
-            ctr: 3.94,
-            cpc: 0.35,
-            cpa: 4.07,
-            roas: 4.85,
-            startDate: new Date(Date.now() - 7 * 86400000).toISOString(),
-            adSetDetails: {
-              name: 'AdSet 1 - Advantage+ Interest Targeting',
-              conversionLocation: 'WEBSITE',
-              optimizationGoal: 'CONVERSIONS',
-              targetAgeMin: 24,
-              targetAgeMax: 55,
-              targetGenders: ['all'],
-              locations: ['United States', 'Canada'],
-              detailedInterests: ['Digital Marketing', 'Growth Hacking', 'Software as a Service'],
-              placements: ['feed', 'stories', 'reels']
-            },
-            adDetails: {
-              name: 'Ad 1 - High Converting Video Hook',
-              primaryText: `🚀 Scale ${currentBrand.name} faster with our automated AI engine. Get 3x higher ROI on your marketing campaigns without spending extra budget.`,
-              headline: `Transform Your Brand Marketing Today`,
-              description: `Join 1,000+ top brands accelerating growth. 14-day risk-free trial.`,
-              callToAction: 'LEARN_MORE',
-              mediaUrl: currentBrand.logoUrl || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60',
-              mediaType: 'image',
-              destinationUrl: currentBrand.websiteUrl || 'https://wotsocial.app',
-              utmSource: 'facebook',
-              utmMedium: 'cpc',
-              utmCampaign: 'lead_gen_q3'
-            },
-            createdAt: new Date(Date.now() - 7 * 86400000).toISOString()
-          };
-          saveMetaCampaign(seedCampaign);
-          setCampaigns([seedCampaign]);
-        } else {
-          setCampaigns(camps);
-        }
+      if (connRes.connected) {
+        await refreshCampaigns(currentBrand.id, true);
+        metaApi.pixels(currentBrand.id).then(r => setPixels(r.pixels)).catch(() => setPixels([]));
+      } else {
+        setCampaigns([]);
+      }
 
-        // Load Media Assets for Ad Creation
-        const assets = getMediaAssets().filter(a => !a.brandId || a.brandId === currentBrand?.id);
-        setMediaAssets(assets);
-        if (assets.length > 0) {
-          setMediaUrl(assets[0].url);
-          setMediaType(assets[0].type);
-        }
+      const assets = getMediaAssets().filter(a => !a.brandId || a.brandId === currentBrand?.id);
+      setMediaAssets(assets);
+      if (assets.length > 0 && !mediaUrl) {
+        setMediaUrl(assets[0].url);
+        setMediaType(assets[0].type);
       }
     } catch (err) {
-      console.error("Error loading Meta Ads Studio:", err);
+      setBanner({ kind: 'error', message: `Failed to load the Meta Ads Studio: ${describeError(err)}` });
     } finally {
       setLoading(false);
     }
@@ -201,104 +216,180 @@ export function MetaAdsStudio() {
     return () => window.removeEventListener('activeBrandChanged', handleBrandChange);
   }, []);
 
-  const handleSaveMetaAccount = () => {
-    if (!brand) return;
-    const acc: MetaAdAccount = {
-      id: metaAccount?.id || 'meta_acc_' + brand.id,
-      brandId: brand.id,
-      adAccountId: adAccountId || 'act_1092837465',
-      accessToken: accessToken || 'EAAG_TOKEN_SANDBOX',
-      pageId: pageId || 'page_987654',
-      pixelId: pixelId || 'pixel_123456',
-      instagramAccountId,
-      currency: 'USD',
-      timezone: 'America/New_York',
-      connectedAt: new Date().toISOString(),
-      status: 'CONNECTED'
-    };
-    saveMetaAccount(acc);
-    setMetaAccount(acc);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+  /** Lists what a pasted token can reach, so the right ad account is chosen. */
+  const handleDiscoverAssets = async () => {
+    if (!accessToken.trim()) {
+      setBanner({ kind: 'error', message: 'Paste a Meta access token first.' });
+      return;
+    }
+    setConnecting(true);
+    setBanner(null);
+    try {
+      const res = await metaApi.discover(accessToken.trim());
+      setDiscovered(res);
+      if (!res.adAccounts.length) {
+        setBanner({ kind: 'error', message: 'This token cannot reach any ad accounts. Check that it has the ads_management permission.' });
+      } else {
+        if (!adAccountId) setAdAccountId(res.adAccounts[0].id);
+        if (!pageId && res.pages.length) setPageId(res.pages[0].id);
+        setBanner({ kind: 'success', message: `Found ${res.adAccounts.length} ad account(s) and ${res.pages.length} Page(s) on this token.` });
+      }
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    } finally {
+      setConnecting(false);
+    }
   };
 
+  /** Verifies the token against Meta and stores it encrypted, server-side. */
+  const handleConnectMetaAccount = async () => {
+    if (!brand) return;
+    if (!accessToken.trim() || !adAccountId.trim()) {
+      setBanner({ kind: 'error', message: 'An access token and an ad account ID are both required.' });
+      return;
+    }
+    setConnecting(true);
+    setBanner(null);
+    try {
+      const res = await metaApi.connect({
+        brandId: brand.id,
+        accessToken: accessToken.trim(),
+        adAccountId: adAccountId.trim(),
+        pageId: pageId.trim() || undefined,
+        pixelId: pixelId.trim() || undefined,
+        instagramAccountId: instagramAccountId.trim() || undefined
+      });
+
+      setConnection(res.connection);
+      setConnected(true);
+      setAccountSummary({ name: res.account.name, currency: res.account.currency, timezone: res.account.timezone });
+      // The raw token now lives only on the server, encrypted.
+      setAccessToken('');
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+      setBanner({
+        kind: 'success',
+        message: `Connected to ${res.account.name} (${res.account.currency}). Token verified with Meta.`
+      });
+      await refreshCampaigns(brand.id);
+      metaApi.pixels(brand.id).then(r => setPixels(r.pixels)).catch(() => {});
+    } catch (err) {
+      setConnected(false);
+      setBanner({ kind: 'error', message: describeError(err) });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleOAuthConnect = async () => {
+    if (!brand) return;
+    setConnecting(true);
+    setBanner(null);
+    try {
+      const { url } = await startOAuth(brand.id, 'meta_ads');
+      const result = await runOAuthPopup(url);
+      if (result.success) {
+        setBanner({ kind: 'success', message: 'Meta account connected.' });
+        await loadData(brand.id);
+      } else {
+        setBanner({ kind: 'error', message: result.error || 'The connection was not completed.' });
+      }
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!brand) return;
+    try {
+      await metaApi.disconnect(brand.id);
+      setConnection(null);
+      setConnected(false);
+      setCampaigns([]);
+      setAccountSummary(null);
+      setBanner({ kind: 'info', message: 'Meta account disconnected. Stored credentials were deleted.' });
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    }
+  };
+
+  /** Real AI copy generation, using the configured Gemini or Claude key. */
   const handleGenerateAdFromNL = async () => {
     if (!nlPrompt.trim() || !brand) return;
     setGeneratingAd(true);
+    setBanner(null);
 
-    setTimeout(() => {
-      const generatedPrimaryText = `🔥 Stop wasting time on manual ads for ${brand.name}. ${nlPrompt}. Experience 4x higher CTR and instant conversions with our proven growth stack.`;
-      const generatedVariations = [
-        generatedPrimaryText,
-        `💡 Looking to boost engagement for ${brand.name}? ${nlPrompt}. Join 2,000+ businesses automating their advertising workflow today!`,
-        `📈 Scaling ${brand.name} just got easier. ${nlPrompt}. Click below to claim your exclusive trial now!`
-      ];
-      const generatedHeadline = `Scale ${brand.name} | ${nlPrompt.slice(0, 30)}...`;
-      const generatedDescription = `Limited time offer. Free setup & instant campaign activation.`;
+    try {
+      const provider = (localStorage.getItem('claude_api_key') || '').trim() ? 'claude' : 'gemini';
+      if (!(localStorage.getItem('gemini_api_key') || '').trim() && provider === 'gemini') {
+        throw new Error('No AI key configured. Add a Gemini or Claude API key in Integrations to generate ad copy.');
+      }
 
-      setPrimaryText(generatedPrimaryText);
-      setPrimaryTextVariations(generatedVariations);
-      setHeadline(generatedHeadline);
-      setDescription(generatedDescription);
-      setCampaignName(`${brand.name} - ${nlPrompt.slice(0, 25)} Ad Campaign`);
-      setAdSetName(`AdSet - ${nlPrompt.slice(0, 20)} Interest Audience`);
-      setAdName(`Ad Creative - ${nlPrompt.slice(0, 20)}`);
+      const pkg = await generatePaidAdCampaign({
+        productOrOffer: nlPrompt.trim(),
+        brand,
+        targetObjective: objective.replace('OUTCOME_', ''),
+        destinationUrl: destinationUrl || brand.websiteUrl || 'https://example.com',
+        provider
+      });
 
-      setGeneratingAd(false);
+      const meta = pkg.metaAd;
+      setPrimaryText(meta.primaryTextShort || meta.primaryTextLong);
+      setPrimaryTextVariations([meta.primaryTextShort, meta.primaryTextLong].filter(Boolean));
+      setHeadline(meta.headline);
+      setDescription(meta.description);
+      setCallToAction(
+        (meta.ctaButton === 'Shop Now' ? 'SHOP_NOW'
+          : meta.ctaButton === 'Sign Up' ? 'SIGN_UP'
+          : meta.ctaButton === 'Get Offer' ? 'GET_OFFER'
+          : meta.ctaButton === 'Contact Us' ? 'CONTACT_US'
+          : 'LEARN_MORE') as MetaCampaign['adDetails']['callToAction']
+      );
+      if (meta.metaTargeting?.interests?.length) setDetailedInterests(meta.metaTargeting.interests);
+      setCampaignName(`${brand.name} — ${nlPrompt.slice(0, 30)}`);
+      setAdSetName(`${nlPrompt.slice(0, 25)} — Interest Audience`);
+      setAdName(`${nlPrompt.slice(0, 25)} — Creative`);
       setActiveTab('builder');
-    }, 1200);
+    } catch (err) {
+      setBanner({ kind: 'error', message: `Ad copy generation failed: ${describeError(err)}` });
+    } finally {
+      setGeneratingAd(false);
+    }
   };
 
+  /**
+   * Launches the campaign on Meta for real: campaign → ad set → creative → ad.
+   * Created PAUSED unless "activate immediately" is explicitly ticked, because
+   * an active campaign starts spending budget straight away.
+   */
   const handlePublishCampaign = async () => {
     if (!brand || !campaignName.trim()) return;
-    setPublishing(true);
-
-    let realMetaCampaignId = 'meta_camp_' + Date.now();
-
-    if (accessToken && accessToken.startsWith('EAA')) {
-      try {
-        const res = await fetch(`https://graph.facebook.com/v19.0/${adAccountId || 'act_1092837465'}/campaigns`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: campaignName,
-            objective,
-            status: 'PAUSED',
-            special_ad_categories: [specialCategory === 'NONE' ? 'NONE' : specialCategory],
-            access_token: accessToken
-          })
-        });
-        const json = await res.json();
-        if (json.id) {
-          realMetaCampaignId = json.id;
-        }
-      } catch (e) {
-        console.warn("Meta API call note:", e);
-      }
+    if (!connected) {
+      setBanner({ kind: 'error', message: 'Connect a Meta ad account before launching a campaign.' });
+      setActiveTab('settings');
+      return;
     }
 
-    setTimeout(() => {
-      const newCampaign: MetaCampaign = {
-        id: realMetaCampaignId,
+    setPublishing(true);
+    setBanner(null);
+    setLaunchResult(null);
+
+    try {
+      const res = await metaApi.launchCampaign({
         brandId: brand.id,
-        name: campaignName,
+        name: campaignName.trim(),
         objective,
         specialAdCategory: specialCategory,
         buyingType,
-        status: 'ACTIVE',
-        dailyBudget,
+        dailyBudget: dailyBudget > 0 ? dailyBudget : undefined,
         lifetimeBudget: lifetimeBudget > 0 ? lifetimeBudget : undefined,
-        spent: 0,
-        impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        ctr: 0,
-        cpc: 0,
-        cpa: 0,
-        roas: 0,
-        startDate: new Date().toISOString(),
-        adSetDetails: {
-          name: adSetName || `${campaignName} AdSet`,
+        activate: activateOnLaunch,
+        pageId: pageId || undefined,
+        pixelId: pixelId || undefined,
+        adSet: {
+          name: adSetName || `${campaignName} — Ad Set`,
           conversionLocation,
           optimizationGoal,
           targetAgeMin,
@@ -308,33 +399,67 @@ export function MetaAdsStudio() {
           detailedInterests,
           placements
         },
-        adDetails: {
-          name: adName || `${campaignName} Ad Creative`,
-          primaryText: primaryText || `Discover top quality solutions with ${brand.name}`,
-          headline: headline || `Transform Your Strategy with ${brand.name}`,
-          description: description || `Join thousands of satisfied customers today.`,
+        ad: {
+          name: adName || `${campaignName} — Ad`,
+          primaryText,
+          headline,
+          description,
           callToAction,
-          mediaUrl: mediaUrl || brand.logoUrl || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60',
+          mediaUrl,
           mediaType,
-          destinationUrl: destinationUrl || brand.websiteUrl || 'https://example.com',
+          destinationUrl,
           utmSource,
           utmMedium,
-          utmCampaign
-        },
-        createdAt: new Date().toISOString()
-      };
+          utmCampaign,
+          instagramActorId: instagramAccountId || undefined
+        }
+      });
 
-      saveMetaCampaign(newCampaign);
-      setCampaigns([newCampaign, ...campaigns]);
-      setPublishing(false);
+      setLaunchResult({
+        campaignId: res.campaignId,
+        reviewUrl: res.reviewUrl,
+        status: res.status,
+        warnings: res.targetingWarnings || []
+      });
+      setBanner({
+        kind: 'success',
+        message: res.activated
+          ? `Campaign ${res.campaignId} is LIVE on Meta and now spending budget.`
+          : `Campaign ${res.campaignId} created on Meta as PAUSED. Review it, then activate to start spending.`,
+        detail: (res.targetingWarnings || []).join(' ')
+      });
+
+      await refreshCampaigns(brand.id);
       setActiveTab('analytics');
-    }, 1000);
+    } catch (err) {
+      const detail = err instanceof IntegrationError && err.details?.created
+        ? `Objects created before the failure were rolled back: ${JSON.stringify(err.details.created)}`
+        : undefined;
+      setBanner({ kind: 'error', message: `Campaign launch failed: ${describeError(err)}`, detail });
+    } finally {
+      setPublishing(false);
+    }
   };
 
-  const handleToggleStatus = (id: string, currentStatus: MetaCampaign['status']) => {
-    const nextStatus: MetaCampaign['status'] = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-    updateMetaCampaignStatus(id, nextStatus);
+  /** Pauses or resumes the campaign on Meta, along with its ad set and ad. */
+  const handleToggleStatus = async (id: string, currentStatus: MetaCampaign['status']) => {
+    if (!brand) return;
+    const nextStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+
+    if (nextStatus === 'ACTIVE' && !window.confirm(
+      'Activating this campaign will start delivering ads and spending your Meta budget. Continue?'
+    )) return;
+
+    const previous = campaigns;
     setCampaigns(campaigns.map(c => c.id === id ? { ...c, status: nextStatus } : c));
+
+    try {
+      await metaApi.setStatus(id, brand.id, nextStatus);
+      setBanner({ kind: 'success', message: `Campaign ${id} set to ${nextStatus} on Meta.` });
+    } catch (err) {
+      setCampaigns(previous); // Meta rejected it; do not show a state that is not real.
+      setBanner({ kind: 'error', message: `Could not change status: ${describeError(err)}` });
+    }
   };
 
   if (loading) return <div className="p-8 font-sans text-gray-500 animate-pulse">Loading Meta Marketing & Ads Studio...</div>;
@@ -365,23 +490,67 @@ export function MetaAdsStudio() {
           />
 
           <div className="flex flex-wrap items-center gap-2">
-            {accessToken && accessToken.startsWith('EAA') ? (
+            {connected ? (
               <span className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-800 shadow-xs">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Meta Graph API Connected ({adAccountId || 'act_1092837465'})</span>
+                <span>Live · {accountSummary?.name || adAccountId}</span>
               </span>
             ) : (
               <button
                 onClick={() => setActiveTab('settings')}
                 className="bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-amber-900 transition-colors"
               >
-                <ShieldCheck className="w-4 h-4 text-amber-600" />
-                <span>Connect Live Meta Access Token</span>
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <span>{connection ? 'Reconnect Meta account' : 'Connect Meta ad account'}</span>
+              </button>
+            )}
+
+            {connected && (
+              <button
+                onClick={() => brand && refreshCampaigns(brand.id)}
+                disabled={refreshing}
+                className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Syncing…' : 'Sync from Meta'}
               </button>
             )}
           </div>
         </div>
       </header>
+
+      {banner && (
+        <div
+          className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${
+            banner.kind === 'error'
+              ? 'bg-red-50 border-red-200 text-red-900'
+              : banner.kind === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}
+        >
+          {banner.kind === 'error'
+            ? <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+            : <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />}
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-bold break-words">{banner.message}</p>
+            {banner.detail && <p className="text-[11px] opacity-80 break-words">{banner.detail}</p>}
+            {launchResult && banner.kind === 'success' && (
+              <a
+                href={launchResult.reviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-bold underline inline-flex items-center gap-1"
+              >
+                Open in Meta Ads Manager <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </div>
+          <button onClick={() => setBanner(null)} className="ml-auto text-xs font-bold opacity-60 hover:opacity-100">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Main Studio Navigation Tabs */}
       <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 gap-1">
@@ -598,14 +767,35 @@ export function MetaAdsStudio() {
                 <p className="text-xs text-gray-500">Configure exact Meta campaign specifications matching Meta Ads Manager 1:1 including CBO budgets, conversion locations, placements, and UTM parameters.</p>
               </div>
 
-              <button
-                onClick={handlePublishCampaign}
-                disabled={publishing || !campaignName.trim()}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-md shrink-0 disabled:opacity-50"
-              >
-                {publishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
-                {publishing ? 'Publishing to Meta Ads Manager...' : 'Publish Campaign to Meta Ads'}
-              </button>
+              <div className="flex flex-col items-stretch gap-2 shrink-0">
+                <button
+                  onClick={handlePublishCampaign}
+                  disabled={publishing || !campaignName.trim() || !connected}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+                >
+                  {publishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
+                  {publishing
+                    ? 'Creating on Meta…'
+                    : activateOnLaunch ? 'Launch LIVE campaign on Meta' : 'Create campaign on Meta (paused)'}
+                </button>
+
+                {/* An active campaign spends real budget, so this is opt-in. */}
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={activateOnLaunch}
+                    onChange={(e) => setActivateOnLaunch(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  Activate immediately (starts spending budget)
+                </label>
+
+                {!connected && (
+                  <button onClick={() => setActiveTab('settings')} className="text-[11px] font-bold text-amber-700 underline">
+                    Connect a Meta ad account first
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Section 1: Campaign Level Parameters */}
@@ -950,7 +1140,11 @@ export function MetaAdsStudio() {
                   <Activity className="w-5 h-5 text-blue-600" />
                   Meta Ads Manager Active Campaigns
                 </h3>
-                <p className="text-xs text-gray-500">Live reporting captured directly from Meta Marketing API endpoints.</p>
+                <p className="text-xs text-gray-500">
+                  {connected
+                    ? `Read live from the Meta Marketing API for ${accountSummary?.name || adAccountId}. Amounts in ${currency}.`
+                    : 'Not connected to Meta — there is nothing to report yet.'}
+                </p>
               </div>
 
               <button
@@ -977,6 +1171,28 @@ export function MetaAdsStudio() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
+                  {campaigns.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                        {connected ? (
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-gray-700">No campaigns in this ad account yet.</p>
+                            <p className="text-[11px]">Build one in the Campaign Builder tab — it will be created on Meta for real.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs font-bold text-gray-700">Not connected to Meta.</p>
+                            <button
+                              onClick={() => setActiveTab('settings')}
+                              className="text-[11px] font-bold text-blue-700 underline"
+                            >
+                              Connect an ad account to see live performance
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
                   {campaigns.map((camp) => (
                     <tr key={camp.id} className="hover:bg-gray-50/80 transition-colors">
                       <td className="px-6 py-4">
@@ -991,7 +1207,7 @@ export function MetaAdsStudio() {
 
                       <td className="px-6 py-4 space-y-0.5">
                         <div className="font-bold text-gray-900 text-xs">{camp.name}</div>
-                        <div className="text-[10px] text-gray-400">{camp.objective} • {camp.adSetDetails.conversionLocation}</div>
+                        <div className="text-[10px] text-gray-400">{camp.objective} • {camp.adSetDetails?.conversionLocation || '—'}</div>
                       </td>
 
                       <td className="px-6 py-4 font-semibold">${camp.dailyBudget}/day</td>
@@ -1032,76 +1248,177 @@ export function MetaAdsStudio() {
         </div>
       )}
 
-      {/* Tab 4: Meta Account & Pixel Settings */}
+      {/* Tab 4: Live Meta connection */}
       {activeTab === 'settings' && (
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm max-w-3xl mx-auto space-y-6">
           <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <Settings className="w-5 h-5 text-purple-600" />
-                Meta Marketing API & Pixel OAuth Connection
+                Meta Marketing API Connection
               </h3>
-              <p className="text-xs text-gray-500">Connect your Meta Business Manager, Ad Account ID, System User Access Token, and Meta Pixel for direct Graph API execution.</p>
+              <p className="text-xs text-gray-500">
+                Your token is verified against Meta, then encrypted and stored on the server. It is never kept in the browser.
+              </p>
             </div>
             {savedSuccess && (
               <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Saved Successfully!
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Connected
               </span>
             )}
           </div>
 
+          {connection && (
+            <div className={`rounded-xl border p-4 ${connected ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-gray-900 flex items-center gap-2">
+                    {connected
+                      ? <><ShieldCheck className="w-4 h-4 text-emerald-600" /> Live connection verified</>
+                      : <><AlertTriangle className="w-4 h-4 text-red-600" /> Connection needs attention</>}
+                  </div>
+                  <div className="text-[11px] text-gray-600 font-mono">
+                    {accountSummary?.name || connection.name} · {connection.externalId}
+                  </div>
+                  <div className="text-[11px] text-gray-500">
+                    Token {connection.tokenPreview}
+                    {accountSummary?.currency ? ` · ${accountSummary.currency}` : ''}
+                    {connection.lastVerifiedAt ? ` · verified ${new Date(connection.lastVerifiedAt).toLocaleString()}` : ''}
+                  </div>
+                  {connection.lastError && (
+                    <div className="text-[11px] text-red-700 font-semibold">{connection.lastError}</div>
+                  )}
+                </div>
+                <button
+                  onClick={handleDisconnect}
+                  className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-[11px] font-bold rounded-lg"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          )}
+
+          {oauthConfigured && (
+            <button
+              onClick={handleOAuthConnect}
+              disabled={connecting}
+              className="w-full py-3 bg-[#1877F2] hover:bg-[#166FE5] disabled:opacity-60 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {connecting ? 'Waiting for Meta…' : 'Connect with Facebook (OAuth)'}
+            </button>
+          )}
+
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Meta Ad Account ID (Format: act_XXXXXXXXX)</label>
-              <input
-                type="text"
-                value={adAccountId}
-                onChange={(e) => setAdAccountId(e.target.value)}
-                placeholder="act_1092837465"
-                className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
-              />
+            <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+              {oauthConfigured ? 'Or connect with a system-user token' : 'Connect with a system-user access token'}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Meta System User Permanent Access Token</label>
+              <label className="text-xs font-bold text-gray-700">Meta access token</label>
               <input
                 type="password"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
-                placeholder="EAAG..."
+                placeholder="EAA…"
                 className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
               />
+              <p className="text-[11px] text-gray-500">
+                Needs <span className="font-mono">ads_management</span>, <span className="font-mono">ads_read</span> and{' '}
+                <span className="font-mono">pages_show_list</span>. Generate one in Business Settings → System Users.
+              </p>
+            </div>
+
+            <button
+              onClick={handleDiscoverAssets}
+              disabled={connecting || !accessToken.trim()}
+              className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-800 font-bold text-xs rounded-xl flex items-center justify-center gap-2"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${connecting ? 'animate-spin' : ''}`} />
+              Look up ad accounts and Pages on this token
+            </button>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700">Ad account ID</label>
+              {discovered?.adAccounts?.length ? (
+                <select
+                  value={adAccountId}
+                  onChange={(e) => setAdAccountId(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                >
+                  {discovered.adAccounts.map((a: any) => (
+                    <option key={a.id} value={a.id}>{a.name} — {a.id} ({a.currency})</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={adAccountId}
+                  onChange={(e) => setAdAccountId(e.target.value)}
+                  placeholder="act_1092837465"
+                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                />
+              )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Facebook Page ID</label>
-                <input
-                  type="text"
-                  value={pageId}
-                  onChange={(e) => setPageId(e.target.value)}
-                  placeholder="page_987654321"
-                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
-                />
+                <label className="text-xs font-bold text-gray-700">Facebook Page ID (required for creatives)</label>
+                {discovered?.pages?.length ? (
+                  <select
+                    value={pageId}
+                    onChange={(e) => setPageId(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  >
+                    <option value="">Select a Page…</option>
+                    {discovered.pages.map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.name} — {p.id}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={pageId}
+                    onChange={(e) => setPageId(e.target.value)}
+                    placeholder="102938475610293"
+                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  />
+                )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Meta Pixel ID (Web Conversions)</label>
-                <input
-                  type="text"
-                  value={pixelId}
-                  onChange={(e) => setPixelId(e.target.value)}
-                  placeholder="pixel_123456789"
-                  className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
-                />
+                <label className="text-xs font-bold text-gray-700">Meta Pixel (for conversion optimisation)</label>
+                {pixels.length ? (
+                  <select
+                    value={pixelId}
+                    onChange={(e) => setPixelId(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  >
+                    <option value="">No pixel</option>
+                    {pixels.map((px: any) => (
+                      <option key={px.id} value={px.id}>{px.name} — {px.id}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={pixelId}
+                    onChange={(e) => setPixelId(e.target.value)}
+                    placeholder="1234567890"
+                    className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+                  />
+                )}
               </div>
             </div>
 
             <button
-              onClick={handleSaveMetaAccount}
-              className="w-full py-3 bg-black hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              onClick={handleConnectMetaAccount}
+              disabled={connecting || !accessToken.trim() || !adAccountId.trim()}
+              className="w-full py-3 bg-black hover:bg-gray-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> Save & Authorize Meta Marketing Connection
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              {connecting ? 'Verifying with Meta…' : 'Verify & connect ad account'}
             </button>
           </div>
         </div>

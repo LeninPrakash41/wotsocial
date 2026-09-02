@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  getBrands, getBrandById, getInstagramAccount, saveInstagramAccount, 
-  getInstagramDMAutomations, saveInstagramDMAutomation, Brand, InstagramAccount, 
+  getBrands, getBrandById, Brand, InstagramAccount,
   InstagramDMAutomation, getMediaAssets, MediaAsset
 } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
+import {
+  instagramApi, getOAuthStatus, startOAuth, runOAuthPopup,
+  describeError, PublicConnection, IgProfile
+} from '../services/integrationsApi';
+import { generateClaudeJSON } from '../services/claudeService';
+import { generateGeminiJSON } from '../services/geminiService';
 import { 
   Instagram, Sparkles, MessageSquare, BarChart3, Settings, Plus, RefreshCw, 
   CheckCircle2, Film, Image as ImageIcon, Send, ArrowRight, Eye, Users, 
@@ -44,79 +49,78 @@ export function InstagramStudio() {
   // Media Assets
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
 
+  // Live connection state — replaces the previous auto-seeded sandbox account.
+  const [connection, setConnection] = useState<PublicConnection | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [profile, setProfile] = useState<IgProfile | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [oauthConfigured, setOauthConfigured] = useState(false);
+  const [webhooksConfigured, setWebhooksConfigured] = useState(false);
+  const [banner, setBanner] = useState<{ kind: 'error' | 'success' | 'info'; message: string; detail?: string } | null>(null);
+  const [publishResult, setPublishResult] = useState<{ mediaId: string; permalink: string } | null>(null);
+  const [publications, setPublications] = useState<any[]>([]);
+  const [insights, setInsights] = useState<Record<string, any> | null>(null);
+  const [recentMedia, setRecentMedia] = useState<any[]>([]);
+
   const loadData = async (brandIdToLoad?: string) => {
     setLoading(true);
+    setBanner(null);
     try {
       const activeId = brandIdToLoad || localStorage.getItem('activeBrandId');
       let currentBrand: Brand | null = null;
 
-      if (activeId) {
-        currentBrand = await getBrandById(activeId);
-      }
+      if (activeId) currentBrand = await getBrandById(activeId);
       if (!currentBrand) {
         const all = await getBrands();
         if (all.length > 0) currentBrand = all[0];
       }
+      if (!currentBrand) { setBrand(null); return; }
 
-      if (currentBrand) {
-        setBrand(currentBrand);
-        localStorage.setItem('activeBrandId', currentBrand.id);
+      setBrand(currentBrand);
+      localStorage.setItem('activeBrandId', currentBrand.id);
 
-        // Load Account
-        const acc = getInstagramAccount(currentBrand.id);
-        if (acc) {
-          setIgAccount(acc);
-          setIgAccountId(acc.instagramAccountId);
-          setIgHandle(acc.handle);
-          setAccessToken(acc.accessToken);
-        } else {
-          const defaultAcc: InstagramAccount = {
-            id: 'ig_acc_' + currentBrand.id,
-            brandId: currentBrand.id,
-            instagramAccountId: '178414' + Math.floor(10000000 + Math.random() * 90000000),
-            handle: currentBrand.name.toLowerCase().replace(/[^a-z0-9]/g, '') + '_official',
-            accessToken: 'IGQVJ...' + Math.random().toString(36).substr(2, 10),
-            followersCount: 14250,
-            mediaCount: 184,
-            status: 'CONNECTED'
-          };
-          saveInstagramAccount(defaultAcc);
-          setIgAccount(defaultAcc);
-          setIgAccountId(defaultAcc.instagramAccountId);
-          setIgHandle(defaultAcc.handle);
-          setAccessToken(defaultAcc.accessToken);
-        }
+      getOAuthStatus()
+        .then(st => { setOauthConfigured(st.configured); setWebhooksConfigured(st.webhookConfigured); })
+        .catch(() => {});
 
-        // Load DM Automation Rules
-        const rules = getInstagramDMAutomations(currentBrand.id);
-        if (rules.length === 0) {
-          const seedRule: InstagramDMAutomation = {
-            id: 'ig_dm_seed_1',
-            brandId: currentBrand.id,
-            keyword: 'PROMO',
-            replyMessage: `Hey there! Thanks for reaching out to ${currentBrand.name}. Here is your exclusive 20% discount link: https://wotsocial.app/promo-20`,
-            captureEmail: true,
-            status: 'ACTIVE',
-            triggeredCount: 342,
-            leadsCaptured: 128,
-            createdAt: new Date().toISOString()
-          };
-          saveInstagramDMAutomation(seedRule);
-          setDmRules([seedRule]);
-        } else {
-          setDmRules(rules);
-        }
+      const connRes = await instagramApi.connection(currentBrand.id);
+      setConnected(connRes.connected);
+      setConnection(connRes.connection);
+      setProfile(connRes.profile);
 
-        // Load Media Assets
-        const assets = getMediaAssets().filter(a => !a.brandId || a.brandId === currentBrand?.id);
-        setMediaAssets(assets);
-        if (assets.length > 0) {
-          setMediaUrl(assets[0].url);
-          setMediaType(assets[0].type);
-        }
+      if (connRes.profile) {
+        setIgAccountId(connRes.profile.id);
+        setIgHandle(connRes.profile.username);
+      }
+      if (connRes.connection && !connRes.connected) {
+        setBanner({
+          kind: 'error',
+          message: connRes.error || connRes.connection.lastError || 'The stored Instagram token is no longer valid. Reconnect the account.'
+        });
+      }
+
+      // DM rules live on the server so the webhook can act on them.
+      const rulesRes = await instagramApi.dmRules(currentBrand.id);
+      setDmRules(rulesRes.rules as InstagramDMAutomation[]);
+
+      instagramApi.publications(currentBrand.id).then(r => setPublications(r.publications)).catch(() => {});
+
+      if (connRes.connected) {
+        instagramApi.insights(currentBrand.id).then(r => setInsights(r.metrics)).catch(() => setInsights(null));
+        instagramApi.media(currentBrand.id).then(r => setRecentMedia(r.media)).catch(() => setRecentMedia([]));
+      } else {
+        setInsights(null);
+        setRecentMedia([]);
+      }
+
+      const assets = getMediaAssets().filter(a => !a.brandId || a.brandId === currentBrand?.id);
+      setMediaAssets(assets);
+      if (assets.length > 0 && !mediaUrl) {
+        setMediaUrl(assets[0].url);
+        setMediaType(assets[0].type);
       }
     } catch (err) {
-      console.error("Error loading Instagram Studio:", err);
+      setBanner({ kind: 'error', message: `Failed to load the Instagram Studio: ${describeError(err)}` });
     } finally {
       setLoading(false);
     }
@@ -132,55 +136,200 @@ export function InstagramStudio() {
     return () => window.removeEventListener('activeBrandChanged', handleBrandChange);
   }, []);
 
-  const handleSaveAccount = () => {
+  /** Verifies the token with Meta, then stores it encrypted server-side. */
+  const handleConnectAccount = async () => {
     if (!brand) return;
-    const acc: InstagramAccount = {
-      id: igAccount?.id || 'ig_acc_' + brand.id,
-      brandId: brand.id,
-      instagramAccountId: igAccountId || '178414000000000',
-      handle: igHandle || brand.name.toLowerCase(),
-      accessToken: accessToken || 'IG_TOKEN_SANDBOX',
-      followersCount: igAccount?.followersCount || 14250,
-      mediaCount: igAccount?.mediaCount || 184,
-      status: 'CONNECTED'
-    };
-    saveInstagramAccount(acc);
-    setIgAccount(acc);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    if (!accessToken.trim()) {
+      setBanner({ kind: 'error', message: 'Paste a Meta access token with instagram_content_publish permission.' });
+      return;
+    }
+    setConnecting(true);
+    setBanner(null);
+    try {
+      const res = await instagramApi.connect({
+        brandId: brand.id,
+        accessToken: accessToken.trim(),
+        instagramAccountId: igAccountId.trim() || undefined
+      });
+      setConnection(res.connection);
+      setProfile(res.profile);
+      setConnected(true);
+      setIgHandle(res.profile.username);
+      setIgAccountId(res.profile.id);
+      setAccessToken(''); // The raw token now lives only on the server.
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+      setBanner({
+        kind: 'success',
+        message: `Connected to @${res.profile.username} — ${res.profile.followersCount.toLocaleString()} followers.`
+      });
+      loadData(brand.id);
+    } catch (err) {
+      setConnected(false);
+      setBanner({ kind: 'error', message: describeError(err) });
+    } finally {
+      setConnecting(false);
+    }
   };
 
-  const handleGenerateCaption = () => {
+  const handleOAuthConnect = async () => {
+    if (!brand) return;
+    setConnecting(true);
+    setBanner(null);
+    try {
+      const { url } = await startOAuth(brand.id, 'instagram');
+      const result = await runOAuthPopup(url);
+      if (result.success) {
+        setBanner({ kind: 'success', message: 'Instagram account connected.' });
+        await loadData(brand.id);
+      } else {
+        setBanner({ kind: 'error', message: result.error || 'The connection was not completed.' });
+      }
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!brand) return;
+    try {
+      await instagramApi.disconnect(brand.id);
+      setConnection(null);
+      setConnected(false);
+      setProfile(null);
+      setBanner({ kind: 'info', message: 'Instagram disconnected. Stored credentials were deleted.' });
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    }
+  };
+
+  /** Real caption generation through the configured AI provider. */
+  const handleGenerateCaption = async () => {
     if (!prompt.trim() || !brand) return;
     setGenerating(true);
+    setBanner(null);
+    try {
+      const claudeKey = (localStorage.getItem('claude_api_key') || '').trim();
+      const geminiKey = (localStorage.getItem('gemini_api_key') || '').trim();
+      if (!claudeKey && !geminiKey) {
+        throw new Error('No AI key configured. Add a Gemini or Claude API key in Integrations to generate captions.');
+      }
 
-    setTimeout(() => {
-      const generatedCaption = `✨ ${prompt}\n\nTransforming how ${brand.name} delivers results! Tap the link in our bio to learn how you can automate your growth stack today. 🔥\n\nDrop a comment with "INFO" to get the link sent directly to your DMs! 📩`;
-      const generatedHashtags = `#${brand.name.toLowerCase().replace(/\s+/g, '')} #instagramgrowth #reels #contentmarketing #ai #automation #viralreels`;
+      const systemPrompt =
+        'You are an expert Instagram content strategist. You write scroll-stopping captions with a strong hook, ' +
+        'genuine value, and a clear call to action.';
+      const userPrompt = `Write an Instagram ${postType} caption for the brand "${brand.name}"` +
+        `${brand.industry ? ` (${brand.industry})` : ''}.\n` +
+        `Brand voice: ${brand.brandTone || 'professional and engaging'}.\n` +
+        `Topic: ${prompt.trim()}\n\n` +
+        'Return JSON: { "caption": "the caption with line breaks and emoji", "hashtags": "20 space-separated hashtags starting with #" }';
 
-      setCaption(generatedCaption);
-      setFirstCommentHashtags(generatedHashtags);
+      const result = claudeKey
+        ? await generateClaudeJSON<{ caption: string; hashtags: string }>({ systemPrompt, userPrompt })
+        : await generateGeminiJSON<{ caption: string; hashtags: string }>(systemPrompt, userPrompt);
+
+      setCaption(result.caption || '');
+      setFirstCommentHashtags(result.hashtags || '');
+    } catch (err) {
+      setBanner({ kind: 'error', message: `Caption generation failed: ${describeError(err)}` });
+    } finally {
       setGenerating(false);
-    }, 1200);
+    }
   };
 
-  const handleAddDMRule = () => {
+  /**
+   * Publishes for real through the Graph API container flow.
+   * Reels and video go through transcoding, so this can take a while — the
+   * server polls the container and only reports success once Meta publishes.
+   */
+  const handlePublishToInstagram = async () => {
+    if (!brand) return;
+    if (!connected) {
+      setBanner({ kind: 'error', message: 'Connect an Instagram Business account before publishing.' });
+      setActiveTab('settings');
+      return;
+    }
+    if (!mediaUrl) {
+      setBanner({ kind: 'error', message: 'Select media to publish.' });
+      return;
+    }
+    if (mediaUrl.startsWith('data:') || mediaUrl.startsWith('blob:')) {
+      setBanner({
+        kind: 'error',
+        message: 'Instagram fetches media from a public URL — it cannot read a local or embedded file. Host the asset first, then publish.'
+      });
+      return;
+    }
+    if (!window.confirm(`This will publish to @${profile?.username} immediately and it will be visible to followers. Continue?`)) {
+      return;
+    }
+
+    setPublishing(true);
+    setBanner(null);
+    setPublishResult(null);
+
+    const apiMediaType =
+      postType === 'REELS' ? 'REELS' : postType === 'STORIES' ? 'STORIES' : 'IMAGE';
+
+    try {
+      const res = await instagramApi.publish({
+        brandId: brand.id,
+        mediaType: apiMediaType,
+        mediaUrl: mediaType === 'image' ? mediaUrl : undefined,
+        videoUrl: mediaType === 'video' ? mediaUrl : undefined,
+        caption,
+        firstComment: firstCommentHashtags || undefined
+      });
+
+      setPublishResult({ mediaId: res.mediaId, permalink: res.permalink });
+      setBanner({
+        kind: 'success',
+        message: `Published to @${profile?.username}. Media ID ${res.mediaId}.`,
+        detail: res.firstComment && res.firstComment !== 'posted'
+          ? `The post is live, but the hashtag comment did not post — ${res.firstComment}`
+          : undefined
+      });
+      instagramApi.publications(brand.id).then(r => setPublications(r.publications)).catch(() => {});
+    } catch (err) {
+      setBanner({ kind: 'error', message: `Instagram publish failed: ${describeError(err)}` });
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  /** DM rules are stored server-side; the webhook is what actually fires them. */
+  const handleAddDMRule = async () => {
     if (!newKeyword.trim() || !newReplyMessage.trim() || !brand) return;
-    const rule: InstagramDMAutomation = {
-      id: 'ig_dm_' + Date.now(),
-      brandId: brand.id,
-      keyword: newKeyword.trim().toUpperCase(),
-      replyMessage: newReplyMessage.trim(),
-      captureEmail,
-      status: 'ACTIVE',
-      triggeredCount: 0,
-      leadsCaptured: 0,
-      createdAt: new Date().toISOString()
-    };
-    saveInstagramDMAutomation(rule);
-    setDmRules([rule, ...dmRules]);
-    setNewKeyword('');
-    setNewReplyMessage('');
+    setBanner(null);
+    try {
+      const res = await instagramApi.saveDmRule({
+        brandId: brand.id,
+        keyword: newKeyword.trim().toUpperCase(),
+        replyMessage: newReplyMessage.trim(),
+        captureEmail
+      });
+      const refreshed = await instagramApi.dmRules(brand.id);
+      setDmRules(refreshed.rules as InstagramDMAutomation[]);
+      setNewKeyword('');
+      setNewReplyMessage('');
+
+      if (res.warning) setBanner({ kind: 'info', message: res.warning });
+      else setBanner({ kind: 'success', message: `Rule saved. Incoming DMs containing "${newKeyword.trim().toUpperCase()}" will now get an automatic reply.` });
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    }
+  };
+
+  const handleDeleteDMRule = async (id: string) => {
+    if (!brand) return;
+    try {
+      await instagramApi.deleteDmRule(id);
+      setDmRules(dmRules.filter(r => r.id !== id));
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    }
   };
 
   if (loading) return <div className="p-8 font-sans text-gray-500 animate-pulse">Loading Instagram Marketing Studio...</div>;
@@ -210,14 +359,45 @@ export function InstagramStudio() {
             }}
           />
 
-          <div className="bg-purple-50 border border-purple-200 px-3.5 py-1.5 rounded-xl flex items-center gap-2 text-xs font-semibold text-purple-900">
-            <Instagram className="w-4 h-4 text-pink-600" />
-            <span>@{igAccount?.handle || 'instagram'}</span>
-          </div>
+          {connected ? (
+            <div className="bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-900">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Live · @{profile?.username}</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setActiveTab('settings')}
+              className="bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-amber-900 transition-colors"
+            >
+              <Instagram className="w-4 h-4 text-amber-600" />
+              <span>{connection ? 'Reconnect Instagram' : 'Connect Instagram'}</span>
+            </button>
+          )}
         </div>
       </header>
 
       {/* Main Tabs Navigation */}
+      {banner && (
+        <div
+          className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${
+            banner.kind === 'error'
+              ? 'bg-red-50 border-red-200 text-red-900'
+              : banner.kind === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}
+        >
+          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-bold break-words">{banner.message}</p>
+            {banner.detail && <p className="text-[11px] opacity-80 break-words">{banner.detail}</p>}
+          </div>
+          <button onClick={() => setBanner(null)} className="ml-auto text-xs font-bold opacity-60 hover:opacity-100">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 gap-1">
         <button
           onClick={() => setActiveTab('content')}
@@ -355,7 +535,7 @@ export function InstagramStudio() {
                         {brand?.name.charAt(0)}
                       </div>
                     </div>
-                    <span className="text-xs font-bold truncate">@{igAccount?.handle}</span>
+                    <span className="text-xs font-bold truncate">@{profile?.username || igHandle || 'not_connected'}</span>
                   </div>
                 </div>
 
@@ -377,7 +557,7 @@ export function InstagramStudio() {
                     <Send className="w-4 h-4" />
                   </div>
                   <p className="text-[11px] text-gray-300 line-clamp-3 leading-snug">
-                    <span className="font-bold text-white mr-1.5">@{igAccount?.handle}</span>
+                    <span className="font-bold text-white mr-1.5">@{profile?.username || igHandle || 'not_connected'}</span>
                     {caption || 'Your caption preview will appear here.'}
                   </p>
                 </div>
@@ -403,7 +583,73 @@ export function InstagramStudio() {
                   ))}
                 </div>
               </div>
+
+              {/* Publish for real through the Graph API */}
+              <div className="space-y-2 pt-3 border-t border-gray-100">
+                <button
+                  onClick={handlePublishToInstagram}
+                  disabled={publishing || !connected || !mediaUrl}
+                  className="w-full py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:opacity-90 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  {publishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {publishing
+                    ? (postType === 'REELS' ? 'Uploading Reel to Instagram…' : 'Publishing to Instagram…')
+                    : `Publish ${postType} to @${profile?.username || 'Instagram'}`}
+                </button>
+
+                {publishing && postType === 'REELS' && (
+                  <p className="text-[11px] text-gray-500 text-center">
+                    Instagram transcodes video before publishing — this can take a minute or two. Keep this tab open.
+                  </p>
+                )}
+
+                {!connected && (
+                  <button onClick={() => setActiveTab('settings')} className="w-full text-[11px] font-bold text-amber-700 underline">
+                    Connect an Instagram Business account first
+                  </button>
+                )}
+
+                {publishResult?.permalink && (
+                  <a
+                    href={publishResult.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center text-[11px] font-bold text-pink-700 underline"
+                  >
+                    View the live post on Instagram
+                  </a>
+                )}
+              </div>
             </div>
+
+            {/* Publish history straight from the server's audit table */}
+            {publications.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">Publish history</h4>
+                <div className="space-y-2 max-h-56 overflow-y-auto">
+                  {publications.slice(0, 8).map((p) => (
+                    <div key={p.id} className="flex items-start justify-between gap-3 text-[11px] border-b border-gray-50 pb-2">
+                      <div className="min-w-0">
+                        <div className="font-bold text-gray-800">{p.mediaType}</div>
+                        <div className="text-gray-500 truncate">{p.caption || '(no caption)'}</div>
+                        {p.error && <div className="text-red-600 font-semibold">{p.error}</div>}
+                      </div>
+                      <span
+                        className={`shrink-0 px-2 py-0.5 rounded-full font-bold ${
+                          p.status === 'PUBLISHED'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : p.status === 'FAILED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -475,6 +721,11 @@ export function InstagramStudio() {
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Active Keyword Automation Rules ({dmRules.length})</h4>
               <div className="space-y-3">
+                {dmRules.length === 0 && (
+                  <p className="text-xs text-gray-500 py-6 text-center border border-dashed border-gray-200 rounded-xl">
+                    No keyword rules yet. Add one above — replies are sent automatically when Instagram delivers a matching DM.
+                  </p>
+                )}
                 {dmRules.map((rule) => (
                   <div key={rule.id} className="p-4 bg-white border border-gray-200 rounded-xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
@@ -498,6 +749,14 @@ export function InstagramStudio() {
                         <div className="text-[10px] text-gray-400 font-bold uppercase">Leads Captured</div>
                         <div className="font-bold text-purple-600">{rule.leadsCaptured} Leads</div>
                       </div>
+                      <div>
+                        <button
+                          onClick={() => handleDeleteDMRule(rule.id)}
+                          className="px-3 py-1.5 bg-gray-100 hover:bg-red-50 hover:text-red-700 text-gray-700 text-[11px] font-bold rounded-lg transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -507,38 +766,94 @@ export function InstagramStudio() {
         </div>
       )}
 
-      {/* Tab 3: Instagram Analytics */}
+      {/* Tab 3: Instagram Analytics — read live from the Graph API */}
       {activeTab === 'analytics' && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Instagram Followers</div>
-            <div className="text-2xl font-bold text-gray-900">{igAccount?.followersCount.toLocaleString()}</div>
-            <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +12.4% this month
+        <div className="space-y-6">
+          {!connected ? (
+            <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center space-y-3">
+              <p className="text-sm font-bold text-gray-800">Not connected to Instagram.</p>
+              <p className="text-xs text-gray-500">Connect a Business account to see real reach, impressions and profile activity.</p>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl"
+              >
+                Connect Instagram
+              </button>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Followers</div>
+                  <div className="text-2xl font-bold text-gray-900">{(profile?.followersCount ?? 0).toLocaleString()}</div>
+                  <div className="text-[10px] text-gray-500 font-semibold">Live from the Graph API</div>
+                </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Reel Plays</div>
-            <div className="text-2xl font-bold text-gray-900">148,200</div>
-            <div className="text-[10px] text-gray-500 font-semibold">Across {igAccount?.mediaCount} published posts</div>
-          </div>
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Published posts</div>
+                  <div className="text-2xl font-bold text-gray-900">{(profile?.mediaCount ?? 0).toLocaleString()}</div>
+                  <div className="text-[10px] text-gray-500 font-semibold">On @{profile?.username}</div>
+                </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avg Engagement Rate</div>
-            <div className="text-2xl font-bold text-purple-600">4.82%</div>
-            <div className="text-[10px] text-gray-500 font-semibold">Benchmark: 2.1%</div>
-          </div>
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Reach (30 days)</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {insights?.reach ? Number(insights.reach.total).toLocaleString() : '—'}
+                  </div>
+                  <div className="text-[10px] text-gray-500 font-semibold">
+                    {insights?.reach ? 'Accounts reached' : 'Not reported for this account'}
+                  </div>
+                </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Bio Link Clicks</div>
-            <div className="text-2xl font-bold text-pink-600">1,840</div>
-            <div className="text-[10px] text-pink-700 font-semibold">High Converting Profile</div>
-          </div>
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Impressions (30 days)</div>
+                  <div className="text-2xl font-bold text-pink-600">
+                    {insights?.impressions ? Number(insights.impressions.total).toLocaleString() : '—'}
+                  </div>
+                  <div className="text-[10px] text-gray-500 font-semibold">
+                    {insights?.impressions ? 'Total views' : 'Not reported for this account'}
+                  </div>
+                </div>
+              </div>
+
+              {recentMedia.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-pink-600" />
+                    Recent posts and their real engagement
+                  </h3>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {recentMedia.slice(0, 6).map((m) => (
+                      <a
+                        key={m.id}
+                        href={m.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="border border-gray-200 rounded-xl overflow-hidden hover:border-pink-300 transition-colors"
+                      >
+                        <div className="h-32 bg-gray-100">
+                          {(m.thumbnailUrl || m.mediaUrl) && (
+                            <img src={m.thumbnailUrl || m.mediaUrl} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <div className="p-3 space-y-1">
+                          <p className="text-[11px] text-gray-600 line-clamp-2">{m.caption || '(no caption)'}</p>
+                          <div className="flex items-center gap-3 text-[11px] font-bold text-gray-700">
+                            <span className="flex items-center gap-1"><Heart className="w-3 h-3 text-red-500" /> {m.likeCount}</span>
+                            <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3 text-purple-500" /> {m.commentsCount}</span>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
-      {/* Tab 4: API Settings */}
+      {/* Tab 4: Live connection */}
       {activeTab === 'settings' && (
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm max-w-2xl mx-auto space-y-6">
           <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
@@ -547,51 +862,116 @@ export function InstagramStudio() {
                 <Instagram className="w-5 h-5 text-pink-600" />
                 Instagram Business API Connection
               </h3>
-              <p className="text-xs text-gray-500">Connect your Instagram Business Account ID and Facebook Page Access Token.</p>
+              <p className="text-xs text-gray-500">
+                Your token is verified with Meta and stored encrypted on the server, never in the browser.
+              </p>
             </div>
             {savedSuccess && (
               <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200">
-                Saved!
+                Connected
               </span>
             )}
           </div>
 
+          {connection && (
+            <div className={`rounded-xl border p-4 ${connected ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {profile?.profilePictureUrl && (
+                    <img src={profile.profilePictureUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  )}
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-gray-900">
+                      {connected ? `@${profile?.username}` : 'Connection needs attention'}
+                    </div>
+                    {connected && profile && (
+                      <div className="text-[11px] text-gray-600">
+                        {profile.followersCount.toLocaleString()} followers · {profile.mediaCount.toLocaleString()} posts
+                      </div>
+                    )}
+                    <div className="text-[11px] text-gray-500 font-mono">
+                      {connection.externalId} · token {connection.tokenPreview}
+                    </div>
+                    {connection.lastError && (
+                      <div className="text-[11px] text-red-700 font-semibold">{connection.lastError}</div>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={handleDisconnect}
+                  className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-[11px] font-bold rounded-lg shrink-0"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!webhooksConfigured && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-[11px] text-amber-900 space-y-1">
+              <p className="font-bold">DM automation is inactive.</p>
+              <p>
+                Keyword rules are saved, but Instagram cannot notify this app until webhooks are configured. Set{' '}
+                <span className="font-mono">META_APP_SECRET</span> and{' '}
+                <span className="font-mono">META_WEBHOOK_VERIFY_TOKEN</span> on the server, then subscribe your Meta app
+                to the <span className="font-mono">messages</span> and <span className="font-mono">comments</span> fields.
+              </p>
+            </div>
+          )}
+
+          {oauthConfigured && (
+            <button
+              onClick={handleOAuthConnect}
+              disabled={connecting}
+              className="w-full py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:opacity-90 disabled:opacity-60 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <Instagram className="w-4 h-4" />
+              {connecting ? 'Waiting for Meta…' : 'Connect with Instagram (OAuth)'}
+            </button>
+          )}
+
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Instagram Handle (@)</label>
-              <input
-                type="text"
-                value={igHandle}
-                onChange={(e) => setIgHandle(e.target.value)}
-                className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
-              />
+            <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+              {oauthConfigured ? 'Or connect with an access token' : 'Connect with an access token'}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Instagram Business Account ID</label>
-              <input
-                type="text"
-                value={igAccountId}
-                onChange={(e) => setIgAccountId(e.target.value)}
-                className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Graph API Access Token</label>
+              <label className="text-xs font-bold text-gray-700">Facebook Page access token</label>
               <input
                 type="password"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
+                placeholder="EAA…"
+                className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
+              />
+              <p className="text-[11px] text-gray-500">
+                Needs <span className="font-mono">instagram_basic</span>,{' '}
+                <span className="font-mono">instagram_content_publish</span> and{' '}
+                <span className="font-mono">pages_show_list</span>. Your Instagram account must be a Business or Creator
+                account linked to a Facebook Page — that is a Meta requirement for publishing via the API.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700">
+                Instagram Business account ID <span className="font-normal text-gray-400">(optional — discovered automatically)</span>
+              </label>
+              <input
+                type="text"
+                value={igAccountId}
+                onChange={(e) => setIgAccountId(e.target.value)}
+                placeholder="17841400000000000"
                 className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono"
               />
             </div>
 
             <button
-              onClick={handleSaveAccount}
-              className="w-full py-3 bg-black hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              onClick={handleConnectAccount}
+              disabled={connecting || !accessToken.trim()}
+              className="w-full py-3 bg-black hover:bg-gray-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> Save Instagram API Connection
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              {connecting ? 'Verifying with Meta…' : 'Verify & connect Instagram account'}
             </button>
           </div>
         </div>

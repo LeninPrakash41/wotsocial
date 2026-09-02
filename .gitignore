@@ -20,3 +20,6 @@ npm-debug.log*
 *.db-wal
 *.db-shm
 
+
+# Local token-vault key (dev only; production uses ENCRYPTION_KEY)
+.wotsocial-encryption-key

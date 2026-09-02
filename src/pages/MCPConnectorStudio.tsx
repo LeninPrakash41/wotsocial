@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   getBrands, getBrandById, Brand, getMediaAssets, MediaAsset 
 } from '../dbAdapter';
-import { 
-  getMCPLogs, getMCPAPIKey, generateNewMCPAPIKey, executeMCPToolCall, 
-  receiveImageFromClaude, getClaudeDesktopConfigJSON, MCPLogEvent 
-} from '../services/mcpBridge';
+import { MCPLogEvent, MCP_SERVER_PATH } from '../services/mcpBridge';
+import { mcpApi, describeError } from '../services/integrationsApi';
 import { BrandSelector } from '../components/BrandSelector';
 import { saveDraftMedia } from '../services/mediaStorage';
 import { 
@@ -34,12 +32,26 @@ export function MCPConnectorStudio() {
   const [logs, setLogs] = useState<MCPLogEvent[]>([]);
 
   // Sandbox Tester State
-  const [selectedTool, setSelectedTool] = useState('wotsocial_generate_image');
-  const [sandboxPrompt, setSandboxPrompt] = useState('A modern minimalist isometric 3D logo graphic for AI automation platform');
-  const [sandboxTitle, setSandboxTitle] = useState('Claude AI Generated Brand Artwork');
-  const [sandboxImageUrl, setSandboxImageUrl] = useState('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1000&auto=format&fit=crop&q=80');
+  const [selectedTool, setSelectedTool] = useState('wotsocial_list_brands');
   const [executing, setExecuting] = useState(false);
   const [sandboxResult, setSandboxResult] = useState<any>(null);
+
+  // Keys are issued by the server and stored only as hashes, so the raw value
+  // exists in this page for exactly as long as the user needs to copy it.
+  const [keyRecords, setKeyRecords] = useState<any[]>([]);
+  const [banner, setBanner] = useState<{ kind: 'error' | 'success' | 'info'; message: string } | null>(null);
+  const [tools, setTools] = useState<any[]>([]);
+  const [sandboxArgs, setSandboxArgs] = useState('{}');
+  const [serverUrl, setServerUrl] = useState('http://localhost:3050');
+
+  const refreshLogs = async () => {
+    try {
+      const res = await mcpApi.logs();
+      setLogs(res.logs as any);
+    } catch {
+      setLogs([]);
+    }
+  };
 
   const loadData = async (brandIdToLoad?: string) => {
     setLoading(true);
@@ -47,28 +59,31 @@ export function MCPConnectorStudio() {
       const activeId = brandIdToLoad || localStorage.getItem('activeBrandId');
       let currentBrand: Brand | null = null;
 
-      if (activeId) {
-        currentBrand = await getBrandById(activeId);
-      }
+      if (activeId) currentBrand = await getBrandById(activeId);
       if (!currentBrand) {
         const all = await getBrands();
         if (all.length > 0) currentBrand = all[0];
       }
-
       if (currentBrand) {
         setBrand(currentBrand);
         localStorage.setItem('activeBrandId', currentBrand.id);
       }
 
-      setApiKey(getMCPAPIKey());
-      setLogs(getMCPLogs());
+      setServerUrl(window.location.origin);
 
-      // Filter Ingested Claude Media Assets
+      const keys = await mcpApi.keys();
+      setKeyRecords(keys.keys);
+      const active = keys.keys.filter((k: any) => !k.revoked);
+      if (!active.length) {
+        setBanner({ kind: 'info', message: 'No MCP API key yet. Generate one below to connect Claude Desktop.' });
+      }
+
+      await refreshLogs();
+
       const allMedia = getMediaAssets();
-      const claudeAssets = allMedia.filter(m => m.source === 'ai-generated' || m.title.toLowerCase().includes('claude'));
-      setIngestedAssets(claudeAssets.length > 0 ? claudeAssets : allMedia);
+      setIngestedAssets(allMedia);
     } catch (err) {
-      console.error("Error loading MCP Studio:", err);
+      setBanner({ kind: 'error', message: `Failed to load the MCP Studio: ${describeError(err)}` });
     } finally {
       setLoading(false);
     }
@@ -84,9 +99,26 @@ export function MCPConnectorStudio() {
     return () => window.removeEventListener('activeBrandChanged', handleBrandChange);
   }, []);
 
+  /**
+   * The config points Claude Desktop at the stdio bridge, which forwards every
+   * tool call to this server. The absolute path matters — Claude Desktop runs
+   * the command with no shell and no working directory of ours.
+   */
+  const buildConfigJson = (key: string) => JSON.stringify({
+    mcpServers: {
+      wotsocial: {
+        command: 'node',
+        args: [`${MCP_SERVER_PATH}`],
+        env: {
+          WOTSOCIAL_API_KEY: key || '<generate a key first>',
+          WOTSOCIAL_API_ENDPOINT: `${serverUrl}/api/mcp`
+        }
+      }
+    }
+  }, null, 2);
+
   const handleCopyConfig = () => {
-    const json = getClaudeDesktopConfigJSON(apiKey);
-    navigator.clipboard.writeText(json);
+    navigator.clipboard.writeText(buildConfigJson(apiKey));
     setCopiedConfig(true);
     setTimeout(() => setCopiedConfig(false), 2500);
   };
@@ -97,45 +129,85 @@ export function MCPConnectorStudio() {
     setTimeout(() => setCopiedKey(false), 2500);
   };
 
-  const handleRegenerateKey = () => {
-    if (!window.confirm("Regenerate MCP API Key? Previous Claude connections will need to update their config.")) return;
-    const newKey = generateNewMCPAPIKey();
-    setApiKey(newKey);
+  /** Issues a server-side key. The raw value is returned exactly once. */
+  const handleGenerateKey = async (revokeExisting: boolean) => {
+    if (revokeExisting && !window.confirm(
+      'Revoke every existing MCP key and issue a new one? Any Claude Desktop config using an old key will stop working.'
+    )) return;
+
+    try {
+      const res = await mcpApi.issueKey('Claude Desktop', revokeExisting);
+      setApiKey(res.key);
+      const keys = await mcpApi.keys();
+      setKeyRecords(keys.keys);
+      setBanner({ kind: 'success', message: res.warning });
+
+      // Load the live tool list using the key we just issued.
+      try {
+        const toolsRes = await fetch('/api/mcp/tools', { headers: { Authorization: `Bearer ${res.key}` } });
+        if (toolsRes.ok) {
+          const body = await toolsRes.json();
+          setTools(body.tools || []);
+          if (body.tools?.length) setSelectedTool(body.tools[0].name);
+        }
+      } catch { /* the catalogue is a convenience, not a requirement */ }
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    }
   };
 
+  const handleRevokeAll = async () => {
+    if (!window.confirm('Revoke all MCP API keys? Claude will lose access until you issue a new one.')) return;
+    try {
+      await mcpApi.revokeKeys();
+      setApiKey('');
+      const keys = await mcpApi.keys();
+      setKeyRecords(keys.keys);
+      setBanner({ kind: 'info', message: 'All MCP keys revoked.' });
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    }
+  };
+
+  /**
+   * Runs the tool through the exact endpoint and auth Claude uses, so what
+   * happens here is what happens in Claude Desktop — not a simulation.
+   */
   const handleRunSandboxTest = async () => {
-    setExecuting(true);
-    setSandboxResult(null);
-
-    const args: any = {
-      brand_name: brand?.name || 'Active Brand'
-    };
-
-    if (selectedTool === 'wotsocial_generate_image') {
-      args.prompt = sandboxPrompt;
-    } else if (selectedTool === 'wotsocial_receive_image') {
-      args.title = sandboxTitle;
-      args.image_url = sandboxImageUrl;
-      args.media_type = 'image';
-    } else if (selectedTool === 'wotsocial_publish_post') {
-      args.content = `🚀 Post generated via Claude MCP Connector for ${brand?.name || 'Active Brand'}!`;
+    if (!apiKey) {
+      setBanner({ kind: 'error', message: 'Generate an API key first — the playground authenticates the same way Claude does.' });
+      return;
     }
 
-    const res = await executeMCPToolCall(selectedTool, args);
-    setSandboxResult(res);
-    setExecuting(false);
-    setLogs(getMCPLogs());
+    setExecuting(true);
+    setSandboxResult(null);
+    setBanner(null);
 
-    // Refresh Media Assets if image generated
-    if (selectedTool === 'wotsocial_generate_image' || selectedTool === 'wotsocial_receive_image') {
-      const allMedia = getMediaAssets();
-      setIngestedAssets(allMedia);
+    let args: any;
+    try {
+      args = JSON.parse(sandboxArgs || '{}');
+    } catch {
+      setExecuting(false);
+      setBanner({ kind: 'error', message: 'Arguments must be valid JSON.' });
+      return;
+    }
+    if (!args.brand_name && brand) args.brand_name = brand.name;
+
+    try {
+      const res = await mcpApi.callTool(apiKey, selectedTool, args);
+      setSandboxResult({ success: true, message: `${selectedTool} executed.`, data: res.result });
+    } catch (err) {
+      setSandboxResult({ success: false, message: describeError(err) });
+    } finally {
+      setExecuting(false);
+      await refreshLogs();
+      setIngestedAssets(getMediaAssets());
     }
   };
 
   if (loading) return <div className="p-8 font-sans text-gray-500 animate-pulse">Loading Claude MCP Connector Studio...</div>;
 
-  const configJson = getClaudeDesktopConfigJSON(apiKey);
+  const configJson = buildConfigJson(apiKey);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16 font-sans">
@@ -170,6 +242,24 @@ export function MCPConnectorStudio() {
       </header>
 
       {/* Main Tabs Navigation */}
+      {banner && (
+        <div
+          className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${
+            banner.kind === 'error'
+              ? 'bg-red-50 border-red-200 text-red-900'
+              : banner.kind === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}
+        >
+          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+          <p className="text-xs font-bold break-words">{banner.message}</p>
+          <button onClick={() => setBanner(null)} className="ml-auto text-xs font-bold opacity-60 hover:opacity-100">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap bg-gray-100 p-1.5 rounded-2xl border border-gray-200 gap-1">
         <button
           onClick={() => setActiveTab('config')}
@@ -246,9 +336,18 @@ export function MCPConnectorStudio() {
                   <Sparkles className="w-4 h-4 text-orange-600" /> How Claude MCP Integration Works:
                 </div>
                 <ul className="text-xs text-orange-800 space-y-1 list-disc list-inside font-medium">
-                  <li>In Claude Desktop, ask: <span className="font-bold text-gray-900">"Generate a high-res SaaS hero image for {brand?.name}"</span>.</li>
-                  <li>Claude automatically invokes <span className="font-mono text-black font-bold">wotsocial_generate_image</span> via MCP.</li>
-                  <li>The generated graphic is pushed directly into WotSocial's Digital Media Vault & Scheduler.</li>
+                  <li>
+                    Ask Claude: <span className="font-bold text-gray-900">"How are {brand?.name || 'my'} Meta ads performing this month?"</span> —
+                    it calls <span className="font-mono text-black font-bold">wotsocial_get_campaign_insights</span> and reads your live ad account.
+                  </li>
+                  <li>
+                    Ask it to <span className="font-bold text-gray-900">draft and schedule a week of posts</span> — those land in your
+                    content calendar through <span className="font-mono text-black font-bold">wotsocial_create_post</span>.
+                  </li>
+                  <li>
+                    Publishing and campaign tools act on the real platforms. Meta campaigns are always created paused, so Claude
+                    can never start ad spend on its own.
+                  </li>
                 </ul>
               </div>
             </div>
@@ -320,8 +419,11 @@ export function MCPConnectorStudio() {
             {ingestedAssets.length === 0 ? (
               <div className="p-12 text-center text-gray-500 text-xs space-y-2">
                 <Bot className="w-8 h-8 mx-auto text-gray-400" />
-                <p className="font-bold">No images received from Claude yet.</p>
-                <p>Run <span className="font-mono text-black">wotsocial_generate_image</span> inside Claude Desktop or test it in Tab 3 Sandbox.</p>
+                <p className="font-bold">No media saved from Claude yet.</p>
+                <p>
+                  Ask Claude to save an image with <span className="font-mono text-black">wotsocial_save_media</span>, or try it in
+                  the tool tester tab.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -374,58 +476,60 @@ export function MCPConnectorStudio() {
                   <Play className="w-5 h-5 text-emerald-600" />
                   Claude MCP Tool Execution Sandbox
                 </h3>
-                <p className="text-xs text-gray-500">Simulate how Claude invokes WotSocial tools in real time.</p>
+                <p className="text-xs text-gray-500">
+                  Runs against the same endpoint and API key Claude Desktop uses — these calls are real and their
+                  effects persist.
+                </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-700">Select MCP Tool to Execute</label>
+                <label className="text-xs font-bold text-gray-700">Tool</label>
                 <select
                   value={selectedTool}
-                  onChange={(e) => setSelectedTool(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedTool(e.target.value);
+                    const tool = tools.find((t: any) => t.name === e.target.value);
+                    // Pre-fill the required arguments so the call is runnable.
+                    const required: string[] = tool?.inputSchema?.required || [];
+                    const seed: Record<string, any> = {};
+                    for (const key of required) {
+                      seed[key] = key === 'brand_name' ? (brand?.name || '') : '';
+                    }
+                    setSandboxArgs(JSON.stringify(seed, null, 2));
+                    setSandboxResult(null);
+                  }}
                   className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black bg-white font-mono font-bold"
                 >
-                  <option value="wotsocial_generate_image">wotsocial_generate_image (Generate & Push to Media Vault)</option>
-                  <option value="wotsocial_receive_image">wotsocial_receive_image (Ingest External Image URL)</option>
-                  <option value="wotsocial_get_brand_strategy">wotsocial_get_brand_strategy (Fetch Strategy Blueprint)</option>
-                  <option value="wotsocial_list_brands">wotsocial_list_brands (List Customer Brands)</option>
-                  <option value="wotsocial_publish_post">wotsocial_publish_post (Draft Post to Calendar)</option>
+                  {tools.length === 0 && <option value="">Generate an API key to load the tool list</option>}
+                  {tools.map((t: any) => (
+                    <option key={t.name} value={t.name}>{t.name}</option>
+                  ))}
                 </select>
+                {tools.find((t: any) => t.name === selectedTool)?.description && (
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    {tools.find((t: any) => t.name === selectedTool).description}
+                  </p>
+                )}
               </div>
 
-              {selectedTool === 'wotsocial_generate_image' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Prompt Parameter</label>
-                  <textarea
-                    value={sandboxPrompt}
-                    onChange={(e) => setSandboxPrompt(e.target.value)}
-                    rows={3}
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black leading-relaxed"
-                  />
-                </div>
-              )}
-
-              {selectedTool === 'wotsocial_receive_image' && (
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Image Title</label>
-                    <input
-                      type="text"
-                      value={sandboxTitle}
-                      onChange={(e) => setSandboxTitle(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs border border-gray-300 rounded-xl outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Image URL</label>
-                    <input
-                      type="text"
-                      value={sandboxImageUrl}
-                      onChange={(e) => setSandboxImageUrl(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs border border-gray-300 rounded-xl outline-none"
-                    />
-                  </div>
-                </div>
-              )}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Arguments (JSON)</label>
+                <textarea
+                  value={sandboxArgs}
+                  onChange={(e) => setSandboxArgs(e.target.value)}
+                  rows={7}
+                  spellCheck={false}
+                  className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black font-mono leading-relaxed resize-y"
+                />
+                {(selectedTool === 'wotsocial_publish_instagram' ||
+                  selectedTool === 'wotsocial_send_whatsapp' ||
+                  selectedTool === 'wotsocial_launch_meta_campaign') && (
+                  <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    This tool acts on a live platform. Instagram posts publish immediately, WhatsApp messages are
+                    delivered and billed, and Meta campaigns are created in your ad account (paused).
+                  </p>
+                )}
+              </div>
 
               <button
                 onClick={handleRunSandboxTest}
@@ -433,7 +537,7 @@ export function MCPConnectorStudio() {
                 className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
               >
                 {executing ? <RefreshCw className="w-4 h-4 animate-spin text-amber-300" /> : <Play className="w-4 h-4" />}
-                {executing ? 'Executing MCP Tool Request...' : 'Run MCP Tool Sandbox Execution'}
+                {executing ? 'Calling the tool…' : 'Run tool'}
               </button>
             </div>
           </div>
@@ -460,7 +564,7 @@ export function MCPConnectorStudio() {
                 </div>
               ) : (
                 <div className="p-12 text-center text-xs text-gray-400">
-                  Click "Run MCP Tool Sandbox Execution" to view JSON-RPC response.
+                  Run a tool to see the exact JSON Claude would receive.
                 </div>
               )}
             </div>
@@ -479,32 +583,73 @@ export function MCPConnectorStudio() {
                   <Key className="w-5 h-5 text-amber-500" />
                   WotSocial MCP Secret API Key
                 </h3>
-                <p className="text-xs text-gray-500">Your unique secret key authenticating Claude MCP requests.</p>
+                <p className="text-xs text-gray-500">
+                  Authenticates Claude's requests to this workspace. Only a hash is stored — the key is shown once,
+                  when it is issued.
+                </p>
               </div>
 
-              <button
-                onClick={handleRegenerateKey}
-                className="px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition-all"
-              >
-                Regenerate Key
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleGenerateKey(false)}
+                  className="px-3.5 py-1.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all"
+                >
+                  Generate key
+                </button>
+                {keyRecords.some((k: any) => !k.revoked) && (
+                  <button
+                    onClick={handleRevokeAll}
+                    className="px-3.5 py-1.5 bg-gray-100 hover:bg-red-50 hover:text-red-700 text-gray-800 text-xs font-bold rounded-xl transition-all"
+                  >
+                    Revoke all
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                readOnly
-                value={apiKey}
-                className="w-full px-4 py-2.5 text-xs border border-gray-300 rounded-xl outline-none bg-gray-50 font-mono font-bold text-gray-800"
-              />
-              <button
-                onClick={handleCopyKey}
-                className="px-4 py-2.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0"
-              >
-                {copiedKey ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                {copiedKey ? 'Copied' : 'Copy Key'}
-              </button>
-            </div>
+            {apiKey ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    readOnly
+                    value={apiKey}
+                    className="w-full px-4 py-2.5 text-xs border border-amber-300 rounded-xl outline-none bg-amber-50 font-mono font-bold text-gray-900"
+                  />
+                  <button
+                    onClick={handleCopyKey}
+                    className="px-4 py-2.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+                  >
+                    {copiedKey ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {copiedKey ? 'Copied' : 'Copy key'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-amber-800 font-semibold">
+                  Copy this now — it cannot be shown again. Reload the page and it is gone.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 py-3">
+                No key in this session. Generate one to connect Claude Desktop, or revoke and reissue if you have lost it.
+              </p>
+            )}
+
+            {keyRecords.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-gray-100">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Issued keys</div>
+                {keyRecords.map((k: any) => (
+                  <div key={k.id} className="flex items-center justify-between text-[11px] py-1">
+                    <span className="font-mono text-gray-700">{k.prefix}…</span>
+                    <span className="text-gray-500">
+                      {k.label} · {k.lastUsedAt ? `last used ${new Date(k.lastUsedAt).toLocaleString()}` : 'never used'}
+                    </span>
+                    <span className={`font-bold ${k.revoked ? 'text-red-600' : 'text-emerald-700'}`}>
+                      {k.revoked ? 'REVOKED' : 'ACTIVE'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Live Log Stream Table */}
@@ -525,14 +670,14 @@ export function MCPConnectorStudio() {
                     <th className="px-6 py-3">MCP Tool Name</th>
                     <th className="px-6 py-3">Brand Target</th>
                     <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Ingested Asset</th>
+                    <th className="px-6 py-3">Result</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
                   {logs.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
-                        No MCP tool calls logged yet. Run a test in Tab 3 Sandbox!
+                        No MCP tool calls yet. Every call Claude makes is recorded here.
                       </td>
                     </tr>
                   ) : (
@@ -544,17 +689,26 @@ export function MCPConnectorStudio() {
                         <td className="px-6 py-4 font-bold text-purple-700 font-mono">{log.toolName}</td>
                         <td className="px-6 py-4 font-bold text-gray-900">{log.brandName}</td>
                         <td className="px-6 py-4">
-                          <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200">
+                          <span
+                            className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
+                              log.status === 'SUCCESS'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                : 'bg-red-100 text-red-800 border-red-200'
+                            }`}
+                          >
                             {log.status}
                           </span>
+                          {typeof log.durationMs === 'number' && (
+                            <span className="ml-2 text-[10px] text-gray-400 font-mono">{log.durationMs}ms</span>
+                          )}
                         </td>
-                        <td className="px-6 py-4">
-                          {log.generatedAssetUrl ? (
-                            <a href={log.generatedAssetUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
-                              View Graphic <ExternalLink className="w-3 h-3" />
-                            </a>
+                        <td className="px-6 py-4 max-w-xs">
+                          {log.error ? (
+                            <span className="text-red-700 text-[11px] break-words">{log.error}</span>
                           ) : (
-                            <span className="text-gray-400">N/A</span>
+                            <span className="text-gray-500 text-[11px] font-mono break-words line-clamp-2">
+                              {log.result ? JSON.stringify(log.result).slice(0, 120) : '—'}
+                            </span>
                           )}
                         </td>
                       </tr>

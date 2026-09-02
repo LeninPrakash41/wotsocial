@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { generateGeminiWithRetry } from "./geminiRetry";
+import { safeParseJSON } from "./jsonParser";
 
 const getApiKey = () => {
   return localStorage.getItem('gemini_api_key') as string;
@@ -309,4 +310,28 @@ export const analyzePerformance = async (performanceData: any, audienceSummary: 
   });
 
   return JSON.parse(response.text || '{}');
+};
+
+/**
+ * Generic JSON generation against Gemini.
+ *
+ * Unlike the task-specific helpers above, this throws on failure instead of
+ * returning a fallback — callers that publish or spend need to know when the
+ * model call did not actually happen.
+ */
+export const generateGeminiJSON = async <T>(systemPrompt: string, userPrompt: string, model = 'gemini-3-flash-preview'): Promise<T> => {
+  const apiKey = (getApiKey() || '').trim();
+  if (!apiKey) {
+    throw new Error("Gemini API Key missing. Please set your API key in the Integrations page.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  const response = await generateGeminiWithRetry({
+    ai,
+    model,
+    contents: `${systemPrompt}\n\n${userPrompt}\n\nIMPORTANT: Return ONLY a valid JSON object. Do not wrap it in markdown code fences.`,
+    config: { responseMimeType: 'application/json' }
+  });
+
+  return safeParseJSON<T>(response.text || '{}');
 };

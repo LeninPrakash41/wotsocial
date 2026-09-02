@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
-  getBrands, getBrandById, getLeads, saveLead, updateLeadStatus, 
-  exportLeadsCSV, Brand, Lead, getMetaCampaigns, MetaCampaign 
+  getBrands, getBrandById, exportLeadsCSV, Brand, Lead, MetaCampaign 
 } from '../dbAdapter';
+import { crmApi, metaApi, webhookApi, describeError } from '../services/integrationsApi';
 import { BrandSelector } from '../components/BrandSelector';
 import { 
   UserCheck, Users, Download, Filter, Search, Sparkles, CheckCircle2, 
@@ -32,97 +32,47 @@ export function LeadManagementStudio() {
   const [metaCampaigns, setMetaCampaigns] = useState<MetaCampaign[]>([]);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
+  const [banner, setBanner] = useState<{ kind: 'error' | 'success' | 'info'; message: string } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [webhookInfo, setWebhookInfo] = useState<{ verifyToken: boolean; appSecret: boolean; callbackUrl: string } | null>(null);
+  const [totals, setTotals] = useState<{ count: number; bySource: Record<string, number>; byStatus: Record<string, number> }>({
+    count: 0, bySource: {}, byStatus: {}
+  });
+
   const loadData = async (brandIdToLoad?: string) => {
     setLoading(true);
+    setBanner(null);
     try {
       const activeId = brandIdToLoad || localStorage.getItem('activeBrandId');
       let currentBrand: Brand | null = null;
 
-      if (activeId) {
-        currentBrand = await getBrandById(activeId);
-      }
+      if (activeId) currentBrand = await getBrandById(activeId);
       if (!currentBrand) {
         const all = await getBrands();
         if (all.length > 0) currentBrand = all[0];
       }
+      if (!currentBrand) { setBrand(null); return; }
 
-      if (currentBrand) {
-        setBrand(currentBrand);
-        localStorage.setItem('activeBrandId', currentBrand.id);
+      setBrand(currentBrand);
+      localStorage.setItem('activeBrandId', currentBrand.id);
 
-        const camps = getMetaCampaigns(currentBrand.id);
-        setMetaCampaigns(camps);
+      // Leads come from the server, where the Meta / Instagram / WhatsApp
+      // webhooks write them as they arrive.
+      const res = await crmApi.leads(currentBrand.id);
+      setLeads(res.leads as Lead[]);
+      setTotals(res.totals);
 
-        // Load Leads
-        const allLeads = getLeads(currentBrand.id);
-        if (allLeads.length === 0) {
-          // Seed Initial High Intent Meta & IG Leads
-          const seedLeads: Lead[] = [
-            {
-              id: 'lead_1',
-              brandId: currentBrand.id,
-              name: 'Sarah Jenkins',
-              email: 'sarah.j@growthlabs.io',
-              phone: '+1 (555) 234-5678',
-              company: 'GrowthLabs Agency',
-              source: 'Meta Ads Lead Form',
-              campaignId: camps[0]?.id || 'meta_camp_seed_1',
-              campaignName: camps[0]?.name || `${currentBrand.name} - Direct Response Lead Gen`,
-              adSetName: 'AdSet 1 - Advantage+ Interest Targeting',
-              status: 'QUALIFIED',
-              costPerLead: 4.07,
-              createdAt: new Date(Date.now() - 2 * 86400000).toISOString()
-            },
-            {
-              id: 'lead_2',
-              brandId: currentBrand.id,
-              name: 'Marcus Vance',
-              email: 'marcus@vancemedia.co',
-              phone: '+1 (555) 876-5432',
-              company: 'Vance Media',
-              source: 'Instagram DM Automation',
-              campaignName: 'Instagram Keyword: PROMO',
-              status: 'NEW',
-              costPerLead: 0,
-              createdAt: new Date(Date.now() - 1 * 86400000).toISOString()
-            },
-            {
-              id: 'lead_3',
-              brandId: currentBrand.id,
-              name: 'Elena Rostova',
-              email: 'elena@techflow.app',
-              phone: '+1 (555) 432-1098',
-              company: 'TechFlow SaaS',
-              source: 'Meta Ads Lead Form',
-              campaignId: camps[0]?.id || 'meta_camp_seed_1',
-              campaignName: camps[0]?.name || `${currentBrand.name} - Direct Response Lead Gen`,
-              adSetName: 'AdSet 1 - Advantage+ Interest Targeting',
-              status: 'CONVERTED',
-              costPerLead: 4.07,
-              createdAt: new Date(Date.now() - 4 * 86400000).toISOString()
-            },
-            {
-              id: 'lead_4',
-              brandId: currentBrand.id,
-              name: 'David Miller',
-              email: 'david.m@millergroup.com',
-              phone: '+1 (555) 345-6789',
-              company: 'Miller & Co',
-              source: 'WhatsApp Broadcast',
-              campaignName: 'VIP Customers Q3 Flash Discount',
-              status: 'CONTACTED',
-              costPerLead: 0.02,
-              createdAt: new Date(Date.now() - 3 * 86400000).toISOString()
-            }
-          ];
-          seedLeads.forEach(l => saveLead(l));
-          setLeads(seedLeads);
-        } else {
-          setLeads(allLeads);
-        }
+      webhookApi.events().then(r => setWebhookInfo(r.configured)).catch(() => setWebhookInfo(null));
+
+      // Campaign filter options come from the live ad account when connected.
+      try {
+        const camps = await metaApi.campaigns(currentBrand.id);
+        setMetaCampaigns(camps.campaigns as unknown as MetaCampaign[]);
+      } catch {
+        setMetaCampaigns([]);
       }
     } catch (err) {
-      console.error("Error loading Lead Studio:", err);
+      setBanner({ kind: 'error', message: `Failed to load leads: ${describeError(err)}` });
     } finally {
       setLoading(false);
     }
@@ -138,6 +88,25 @@ export function LeadManagementStudio() {
     return () => window.removeEventListener('activeBrandChanged', handleBrandChange);
   }, []);
 
+  /** Pulls historical lead-form submissions that predate the webhook. */
+  const handleSyncMetaLeads = async () => {
+    if (!brand) return;
+    setSyncing(true);
+    setBanner(null);
+    try {
+      const res = await metaApi.syncLeads(brand.id);
+      setBanner({
+        kind: 'success',
+        message: `Checked ${res.forms} lead form(s) on Meta and imported ${res.imported} submission(s).`
+      });
+      await loadData(brand.id);
+    } catch (err) {
+      setBanner({ kind: 'error', message: `Lead sync failed: ${describeError(err)}` });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleExportCSV = () => {
     const csvContent = exportLeadsCSV(brand?.id);
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -150,9 +119,16 @@ export function LeadManagementStudio() {
     document.body.removeChild(link);
   };
 
-  const handleStatusChange = (id: string, newStatus: Lead['status']) => {
-    updateLeadStatus(id, newStatus);
+  const handleStatusChange = async (id: string, newStatus: Lead['status']) => {
+    const previous = leads;
     setLeads(leads.map(l => l.id === id ? { ...l, status: newStatus } : l));
+    try {
+      await crmApi.setLeadStatus(id, newStatus);
+    } catch (err) {
+      setLeads(previous);
+      setBanner({ kind: 'error', message: `Could not update the lead: ${describeError(err)}` });
+      return;
+    }
   };
 
   const handleCopyEmail = (email: string) => {
@@ -199,6 +175,15 @@ export function LeadManagementStudio() {
           />
 
           <button
+            onClick={handleSyncMetaLeads}
+            disabled={syncing}
+            className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 text-gray-700 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
+          >
+            <TrendingUp className={`w-4 h-4 text-blue-600 ${syncing ? 'animate-pulse' : ''}`} />
+            {syncing ? 'Syncing from Meta…' : 'Sync Meta lead forms'}
+          </button>
+
+          <button
             onClick={handleExportCSV}
             className="px-4 py-2 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
           >
@@ -239,6 +224,38 @@ export function LeadManagementStudio() {
           3. Meta Lead Gen Webhook & Form Mapping
         </button>
       </div>
+
+      {banner && (
+        <div
+          className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${
+            banner.kind === 'error'
+              ? 'bg-red-50 border-red-200 text-red-900'
+              : banner.kind === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}
+        >
+          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+          <p className="text-xs font-bold break-words">{banner.message}</p>
+          <button onClick={() => setBanner(null)} className="ml-auto text-xs font-bold opacity-60 hover:opacity-100">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {webhookInfo && !(webhookInfo.verifyToken && webhookInfo.appSecret) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-[11px] text-amber-900 space-y-1">
+          <p className="text-xs font-bold">Real-time lead capture is inactive.</p>
+          <p>
+            New leads will not arrive automatically until the Meta webhook is configured. Set{' '}
+            <span className="font-mono">META_APP_SECRET</span> and{' '}
+            <span className="font-mono">META_WEBHOOK_VERIFY_TOKEN</span> on the server, then point your Meta app's{' '}
+            <span className="font-mono">leadgen</span> webhook at{' '}
+            <span className="font-mono">{webhookInfo.callbackUrl}</span>. You can still pull existing submissions with
+            "Sync Meta lead forms".
+          </p>
+        </div>
+      )}
 
       {/* Tab 1: Captured Leads Directory */}
       {activeTab === 'directory' && (

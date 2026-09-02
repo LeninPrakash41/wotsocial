@@ -3,8 +3,21 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 import apiApp from "./api/index.ts";
 import dbApiRoutes from "./src/db/apiRoutes.ts";
+import metaRoutes from "./src/server/metaRoutes.ts";
+import instagramRoutes from "./src/server/instagramRoutes.ts";
+import whatsappRoutes from "./src/server/whatsappRoutes.ts";
+import webhookRoutes from "./src/server/webhookRoutes.ts";
+import oauthRoutes from "./src/server/oauthRoutes.ts";
+import mcpRoutes from "./src/server/mcpRoutes.ts";
+import crmRoutes from "./src/server/crmRoutes.ts";
+import { integrationErrorHandler } from "./src/server/http.ts";
+import { ensureStoreReady } from "./src/server/store.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,71 +26,46 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3050;
 
+  // Webhooks mount FIRST and bring their own body parser: verifying Meta's
+  // X-Hub-Signature-256 requires the exact bytes that were signed, which a
+  // shared upstream JSON parser would have already consumed.
+  app.use("/api/webhooks", webhookRoutes);
+
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
 
-  // Mount API routes
+  // Existing API surface
   app.use(apiApp);
   app.use("/api", dbApiRoutes);
 
-  // API routes
+  // Live platform integrations
+  app.use("/api/meta", metaRoutes);
+  app.use("/api/instagram", instagramRoutes);
+  app.use("/api/whatsapp", whatsappRoutes);
+  app.use("/api/oauth", oauthRoutes);
+  app.use("/api/mcp", mcpRoutes);
+  app.use("/api/crm", crmRoutes);
+
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    res.json({
+      status: "ok",
+      integrations: {
+        metaOAuth: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET),
+        metaWebhooks: Boolean(process.env.META_WEBHOOK_VERIFY_TOKEN && process.env.META_APP_SECRET),
+        tokenVault: Boolean(process.env.ENCRYPTION_KEY) ? "env-key" : "local-dev-key",
+        graphVersion: process.env.META_GRAPH_VERSION || "v21.0"
+      }
+    });
   });
 
-  // OAuth Endpoints
-  app.get("/api/auth/url/:platform", (req, res) => {
-    const { platform } = req.params;
-    const redirectUri = `${process.env.APP_URL}/api/auth/callback/${platform}`;
-    
-    let authUrl = '';
-    switch (platform) {
-      case 'twitter':
-        authUrl = `https://twitter.com/i/oauth2/authorize?client_id=${process.env.TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=tweet.read%20tweet.write%20users.read`;
-        break;
-      case 'linkedin':
-        authUrl = `https://www.linkedin.com/oauth/v2/authorization?client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=w_member_social`;
-        break;
-      case 'facebook':
-        authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.META_APP_ID || process.env.FACEBOOK_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=pages_manage_posts,pages_read_engagement`;
-        break;
-      case 'instagram':
-        authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.META_APP_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement`;
-        break;
-    }
-    res.json({ url: authUrl });
-  });
-
-  app.get("/api/auth/callback/:platform", async (req, res) => {
-    const { platform } = req.params;
-    const { code } = req.query;
-    // Exchange code for tokens, store in Firestore
-    // ...
-    res.send(`
-      <html>
-        <body>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', platform: '${platform}' }, '*');
-              window.close();
-            }
-          </script>
-          <p>Authentication successful. You can close this window.</p>
-        </body>
-      </html>
-    `);
-  });
-
-  app.post("/api/post", async (req, res) => {
-    // Handle posting to social media
-    // ...
-    res.json({ success: true });
-  });
+  // Turns MetaApiError / HttpError into consistent JSON. Must sit after the
+  // API routes and before the SPA catch-all.
+  app.use("/api", integrationErrorHandler);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { 
+      server: {
         middlewareMode: true,
         host: '0.0.0.0',
         port: PORT
@@ -85,7 +73,7 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
-    
+
     // Catch-all route for SPA
     app.get("*", async (req, res, next) => {
       try {
@@ -104,8 +92,16 @@ async function startServer() {
     });
   }
 
+  await ensureStoreReady();
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    if (!process.env.META_APP_ID) {
+      console.log("ℹ️  META_APP_ID / META_APP_SECRET not set — OAuth is disabled; connect with manual access tokens.");
+    }
+    if (!process.env.META_WEBHOOK_VERIFY_TOKEN) {
+      console.log("ℹ️  META_WEBHOOK_VERIFY_TOKEN not set — inbound webhooks (IG DM automation, WhatsApp delivery receipts, lead forms) are inactive.");
+    }
   });
 }
 
