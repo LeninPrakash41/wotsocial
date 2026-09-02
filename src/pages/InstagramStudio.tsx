@@ -219,14 +219,28 @@ export function InstagramStudio() {
         throw new Error('No AI key configured. Add a Gemini or Claude API key in Integrations to generate captions.');
       }
 
+      // Captions written without the learned audience read like anyone's brand,
+      // so the whole strategy goes in, not just the tone field.
+      const research = (brand.agentResearchData || {}) as any;
       const systemPrompt =
         'You are an expert Instagram content strategist. You write scroll-stopping captions with a strong hook, ' +
-        'genuine value, and a clear call to action.';
-      const userPrompt = `Write an Instagram ${postType} caption for the brand "${brand.name}"` +
-        `${brand.industry ? ` (${brand.industry})` : ''}.\n` +
-        `Brand voice: ${brand.brandTone || 'professional and engaging'}.\n` +
-        `Topic: ${prompt.trim()}\n\n` +
-        'Return JSON: { "caption": "the caption with line breaks and emoji", "hashtags": "20 space-separated hashtags starting with #" }';
+        'genuine value, and a clear call to action. You write as the brand, never about it.';
+
+      const userPrompt = [
+        `Write an Instagram ${postType} caption for "${brand.name}".`,
+        brand.industry && `Industry: ${brand.industry}`,
+        `Brand voice: ${research?.siteAnalysis?.brandVoice || brand.brandTone || 'professional and engaging'}`,
+        research?.siteAnalysis?.valueProposition && `What the brand does: ${research.siteAnalysis.valueProposition}`,
+        research?.audienceProfile?.primaryICP && `Who is reading: ${research.audienceProfile.primaryICP}`,
+        research?.audienceProfile?.painPoints?.length &&
+          `Their pain points: ${research.audienceProfile.painPoints.join(', ')}`,
+        research?.marketingStrategy?.contentPillars?.length &&
+          `Content pillars: ${research.marketingStrategy.contentPillars.map((p: any) => p.title).join(', ')}`,
+        '',
+        `Topic: ${prompt.trim()}`,
+        '',
+        'Return JSON: { "caption": "the caption with line breaks and emoji", "hashtags": "20 space-separated hashtags starting with #" }'
+      ].filter(Boolean).join('\n');
 
       const result = claudeKey
         ? await generateClaudeJSON<{ caption: string; hashtags: string }>({ systemPrompt, userPrompt })
