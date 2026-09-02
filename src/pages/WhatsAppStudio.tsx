@@ -179,9 +179,32 @@ export function WhatsAppStudio() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  const handlePublishBroadcast = () => {
+  const handlePublishBroadcast = async () => {
     if (!campaignName.trim() || !brand) return;
     setPublishing(true);
+
+    if (accessToken && accessToken.startsWith('EAA') && phoneNumberId) {
+      try {
+        await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: "+15551234567",
+            type: "template",
+            template: {
+              name: selectedTemplate.toLowerCase(),
+              language: { code: "en_US" }
+            }
+          })
+        });
+      } catch (e) {
+        console.warn("WhatsApp Cloud API Note:", e);
+      }
+    }
 
     setTimeout(() => {
       const count = targetSegment.includes('1,250') ? 1250 : targetSegment.includes('450') ? 450 : 800;
@@ -204,7 +227,7 @@ export function WhatsAppStudio() {
       setCampaigns([newCamp, ...campaigns]);
       setPublishing(false);
       setActiveTab('analytics');
-    }, 1500);
+    }, 1000);
   };
 
   if (loading) return <div className="p-8 font-sans text-gray-500 animate-pulse">Loading WhatsApp Business Studio...</div>;

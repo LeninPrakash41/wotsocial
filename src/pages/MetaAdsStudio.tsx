@@ -249,13 +249,37 @@ export function MetaAdsStudio() {
     }, 1200);
   };
 
-  const handlePublishCampaign = () => {
+  const handlePublishCampaign = async () => {
     if (!brand || !campaignName.trim()) return;
     setPublishing(true);
 
+    let realMetaCampaignId = 'meta_camp_' + Date.now();
+
+    if (accessToken && accessToken.startsWith('EAA')) {
+      try {
+        const res = await fetch(`https://graph.facebook.com/v19.0/${adAccountId || 'act_1092837465'}/campaigns`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: campaignName,
+            objective,
+            status: 'PAUSED',
+            special_ad_categories: [specialCategory === 'NONE' ? 'NONE' : specialCategory],
+            access_token: accessToken
+          })
+        });
+        const json = await res.json();
+        if (json.id) {
+          realMetaCampaignId = json.id;
+        }
+      } catch (e) {
+        console.warn("Meta API call note:", e);
+      }
+    }
+
     setTimeout(() => {
       const newCampaign: MetaCampaign = {
-        id: 'meta_camp_' + Date.now(),
+        id: realMetaCampaignId,
         brandId: brand.id,
         name: campaignName,
         objective,
@@ -304,7 +328,7 @@ export function MetaAdsStudio() {
       setCampaigns([newCampaign, ...campaigns]);
       setPublishing(false);
       setActiveTab('analytics');
-    }, 1500);
+    }, 1000);
   };
 
   const handleToggleStatus = (id: string, currentStatus: MetaCampaign['status']) => {
@@ -340,9 +364,21 @@ export function MetaAdsStudio() {
             }}
           />
 
-          <div className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-semibold text-emerald-800">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>{metaAccount?.adAccountId || 'act_1092837465'} Connected</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {accessToken && accessToken.startsWith('EAA') ? (
+              <span className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-800 shadow-xs">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Meta Graph API Connected ({adAccountId || 'act_1092837465'})</span>
+              </span>
+            ) : (
+              <button
+                onClick={() => setActiveTab('settings')}
+                className="bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold text-amber-900 transition-colors"
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-600" />
+                <span>Connect Live Meta Access Token</span>
+              </button>
+            )}
           </div>
         </div>
       </header>

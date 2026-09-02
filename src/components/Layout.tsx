@@ -16,24 +16,49 @@ export function Layout() {
     navigate('/');
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Agent Studio', path: '/agents', icon: Bot },
-    { name: 'Brands', path: '/brands', icon: Briefcase },
-    { name: 'Brand Strategy Hub', path: '/brand-strategy', icon: Layers },
-    { name: 'Content Generator', path: '/generate', icon: PenTool },
-    { name: 'Meta Ads Manager', path: '/meta-ads', icon: Megaphone },
-    { name: 'Lead Management CRM', path: '/leads', icon: UserCheck },
-    { name: 'Instagram Studio', path: '/instagram-marketing', icon: Instagram },
-    { name: 'WhatsApp Business', path: '/whatsapp-marketing', icon: MessageSquare },
-    { name: 'Claude MCP Connector', path: '/mcp-connector', icon: Cpu },
-    { name: 'AI Video Studio', path: '/video-studio', icon: Film },
-    { name: 'Media Library', path: '/media-library', icon: Folder },
-    { name: 'Trends Vault', path: '/trends-vault', icon: Bookmark },
-    { name: 'Scheduler', path: '/schedule', icon: Calendar },
-    { name: 'Analytics', path: '/analytics', icon: BarChart3 },
-    { name: 'Integrations', path: '/integrations', icon: Plug },
-    { name: 'Profile', path: '/profile', icon: User },
+  const navGroups = [
+    {
+      category: 'CORE STUDIO',
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Agent Studio', path: '/agents', icon: Bot },
+        { name: 'Brands Hub', path: '/brands', icon: Briefcase },
+        { name: 'Brand Strategy', path: '/brand-strategy', icon: Layers },
+        { name: 'Content Studio', path: '/generate', icon: PenTool },
+        { name: 'AI Video Studio', path: '/video-studio', icon: Film },
+      ]
+    },
+    {
+      category: 'GROWTH & MARKETING',
+      items: [
+        { name: 'Meta Ads Manager', path: '/meta-ads', icon: Megaphone },
+        { name: 'Lead Management CRM', path: '/leads', icon: UserCheck },
+        { name: 'Instagram Studio', path: '/instagram-marketing', icon: Instagram },
+        { name: 'WhatsApp Business', path: '/whatsapp-marketing', icon: MessageSquare },
+      ]
+    },
+    {
+      category: 'CONNECTORS & AI',
+      items: [
+        { name: 'Claude MCP Connector', path: '/mcp-connector', icon: Cpu },
+        { name: 'Integrations & APIs', path: '/integrations', icon: Plug },
+      ]
+    },
+    {
+      category: 'ASSETS & SCHEDULER',
+      items: [
+        { name: 'Media Vault', path: '/media-library', icon: Folder },
+        { name: 'Trends Vault', path: '/trends-vault', icon: Bookmark },
+        { name: 'Content Schedule', path: '/schedule', icon: Calendar },
+        { name: 'Analytics', path: '/analytics', icon: BarChart3 },
+      ]
+    },
+    {
+      category: 'SETTINGS',
+      items: [
+        { name: 'Profile & Security', path: '/profile', icon: User },
+      ]
+    }
   ];
 
   // Close mobile menu on navigation
@@ -107,34 +132,44 @@ export function Layout() {
           </button>
         </div>
         
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                title={isDesktopCollapsed ? item.name : undefined}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                  isActive 
-                    ? "bg-gray-100 text-black" 
-                    : "text-gray-600 hover:bg-gray-50 hover:text-black",
-                  isDesktopCollapsed && "md:justify-center md:px-0"
-                )}
-              >
-                <Icon className="w-5 h-5 shrink-0" />
-                <span className={cn(
-                  "transition-opacity duration-300",
-                  isDesktopCollapsed ? "md:hidden" : "md:block",
-                  "block" // always block on mobile
-                )}>
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
+        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+          {navGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-1">
+              {!isDesktopCollapsed && (
+                <div className="px-3 text-[10px] font-bold tracking-wider uppercase text-gray-400 mb-1">
+                  {group.category}
+                </div>
+              )}
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    title={isDesktopCollapsed ? item.name : undefined}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200",
+                      isActive 
+                        ? "bg-black text-white shadow-sm" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-black",
+                      isDesktopCollapsed && "md:justify-center md:px-0"
+                    )}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className={cn(
+                      "transition-opacity duration-300 truncate",
+                      isDesktopCollapsed ? "md:hidden" : "md:inline",
+                      "inline" // always show on mobile
+                    )}>
+                      {item.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="p-4 border-t border-gray-100">
