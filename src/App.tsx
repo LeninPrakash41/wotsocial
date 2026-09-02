@@ -23,6 +23,7 @@ import { BrandStrategy } from './pages/BrandStrategy';
 import { TrendsVault } from './pages/TrendsVault';
 import { VideoStudio } from './pages/VideoStudio';
 import { MediaLibrary } from './pages/MediaLibrary';
+import { MetaAdsStudio } from './pages/MetaAdsStudio';
 import { Login } from './pages/Login';
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/trends-vault" element={<TrendsVault />} />
             <Route path="/video-studio" element={<VideoStudio />} />
             <Route path="/media-library" element={<MediaLibrary />} />
+            <Route path="/meta-ads" element={<MetaAdsStudio />} />
             <Route path="/brand-setup" element={<BrandSetup />} />
             <Route path="/brand-setup/:brandId" element={<BrandSetup />} />
             <Route path="/profile" element={<Profile />} />

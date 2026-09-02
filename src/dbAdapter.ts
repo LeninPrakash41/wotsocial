@@ -460,3 +460,126 @@ export const deletePost = async (id: string): Promise<void> => {
   const current = getLocalPosts();
   saveLocalPosts(current.filter(p => p.id !== id));
 };
+
+// Meta Ads Integration Schemas & Helper API
+export interface MetaAdAccount {
+  id: string;
+  brandId: string;
+  adAccountId: string; // e.g. act_1092837465
+  accessToken: string;
+  pageId: string;
+  pixelId?: string;
+  instagramAccountId?: string;
+  currency: string;
+  timezone: string;
+  connectedAt: string;
+  status: 'CONNECTED' | 'DISCONNECTED' | 'SANDBOX';
+}
+
+export interface MetaCampaign {
+  id: string;
+  brandId: string;
+  name: string;
+  objective: 'OUTCOME_LEADS' | 'OUTCOME_SALES' | 'OUTCOME_TRAFFIC' | 'OUTCOME_ENGAGEMENT' | 'OUTCOME_AWARENESS' | 'OUTCOME_APP_PROMOTION';
+  specialAdCategory: 'NONE' | 'CREDIT' | 'EMPLOYMENT' | 'HOUSING' | 'ISSUES_ELECTIONS_POLITICS';
+  buyingType: 'AUCTION' | 'RESERVATION';
+  status: 'ACTIVE' | 'PAUSED' | 'IN_PROCESS' | 'REJECTED' | 'COMPLETED';
+  dailyBudget: number;
+  lifetimeBudget?: number;
+  spent: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  ctr: number; // e.g. 3.45%
+  cpc: number; // e.g. $1.20
+  cpa: number; // Cost Per Action e.g. $14.50
+  roas: number; // Return on Ad Spend e.g. 4.2
+  startDate: string;
+  endDate?: string;
+  adSetDetails: {
+    name: string;
+    conversionLocation: 'WEBSITE' | 'MESSENGER' | 'INSTAGRAM_DIRECT' | 'CALLS';
+    optimizationGoal: 'CONVERSIONS' | 'LINK_CLICKS' | 'IMPRESSIONS' | 'LANDING_PAGE_VIEWS';
+    targetAgeMin: number;
+    targetAgeMax: number;
+    targetGenders: string[];
+    locations: string[];
+    detailedInterests: string[];
+    placements: string[];
+  };
+  adDetails: {
+    name: string;
+    primaryText: string;
+    headline: string;
+    description: string;
+    callToAction: 'LEARN_MORE' | 'SHOP_NOW' | 'SIGN_UP' | 'BOOK_NOW' | 'CONTACT_US' | 'GET_OFFER';
+    mediaUrl?: string;
+    mediaType?: 'image' | 'video';
+    destinationUrl: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+  };
+  createdAt: string;
+}
+
+const META_ACCOUNTS_KEY = 'wot_meta_accounts_v1';
+const META_CAMPAIGNS_KEY = 'wot_meta_campaigns_v1';
+
+export const getMetaAccount = (brandId?: string): MetaAdAccount | null => {
+  try {
+    const raw = localStorage.getItem(META_ACCOUNTS_KEY);
+    const list: MetaAdAccount[] = raw ? JSON.parse(raw) : [];
+    if (brandId) {
+      return list.find(a => a.brandId === brandId) || list[0] || null;
+    }
+    return list[0] || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const saveMetaAccount = (acc: MetaAdAccount): void => {
+  try {
+    const raw = localStorage.getItem(META_ACCOUNTS_KEY);
+    const list: MetaAdAccount[] = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter(a => a.brandId !== acc.brandId);
+    localStorage.setItem(META_ACCOUNTS_KEY, JSON.stringify([acc, ...filtered]));
+  } catch (e) {
+    console.error("Error saving meta account:", e);
+  }
+};
+
+export const getMetaCampaigns = (brandId?: string): MetaCampaign[] => {
+  try {
+    const raw = localStorage.getItem(META_CAMPAIGNS_KEY);
+    const list: MetaCampaign[] = raw ? JSON.parse(raw) : [];
+    if (brandId) {
+      return list.filter(c => !c.brandId || c.brandId === brandId);
+    }
+    return list;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const saveMetaCampaign = (campaign: MetaCampaign): void => {
+  try {
+    const raw = localStorage.getItem(META_CAMPAIGNS_KEY);
+    const list: MetaCampaign[] = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter(c => c.id !== campaign.id);
+    localStorage.setItem(META_CAMPAIGNS_KEY, JSON.stringify([campaign, ...filtered]));
+  } catch (e) {
+    console.error("Error saving meta campaign:", e);
+  }
+};
+
+export const updateMetaCampaignStatus = (id: string, status: MetaCampaign['status']): void => {
+  try {
+    const campaigns = getMetaCampaigns();
+    const updated = campaigns.map(c => c.id === id ? { ...c, status } : c);
+    localStorage.setItem(META_CAMPAIGNS_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.error("Error updating meta campaign status:", e);
+  }
+};
