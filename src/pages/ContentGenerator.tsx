@@ -375,6 +375,33 @@ export function ContentGenerator() {
     );
   };
 
+  /**
+   * Quick-search chips come from the brand's own content pillars and audience
+   * once the strategy agents have run. Before that there is nothing brand-
+   * specific to offer, so a generic starter set stands in and is labelled as
+   * such rather than pretending to be tailored.
+   */
+  const brandTopicChips = (() => {
+    const research = (brand?.agentResearchData || {}) as any;
+    const pillars: string[] = (research?.marketingStrategy?.contentPillars || [])
+      .map((p: any) => p?.title)
+      .filter(Boolean);
+    const pains: string[] = (research?.audienceProfile?.painPoints || []).slice(0, 2);
+    const offerings: string[] = (research?.siteAnalysis?.keyOfferings || []).slice(0, 2);
+
+    const fromBrand = [...pillars, ...offerings, ...pains]
+      .filter(Boolean)
+      .map(t => String(t).trim())
+      .filter((t, i, arr) => t.length > 2 && arr.indexOf(t) === i)
+      .slice(0, 7);
+
+    if (fromBrand.length >= 3) return { chips: fromBrand, fromBrand: true };
+    return {
+      chips: ['AI & Future Trends', 'Growth Tactics', 'Customer Stories', 'Industry News', 'Seasonal Offers'],
+      fromBrand: false
+    };
+  })();
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   if (!brand) {
@@ -389,8 +416,8 @@ export function ContentGenerator() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto w-full pb-16 font-sans">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-semibold tracking-tight text-ink">Content Studio</h1>
           <p className="text-ink-3 mt-1">Generate multi-platform posts, images, videos, and PPC ad campaigns for your brand.</p>
         </div>
@@ -450,7 +477,7 @@ export function ContentGenerator() {
         <div className="space-y-6">
           <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
-              <div>
+              <div className="min-w-0 flex-1">
                 <h2 className="text-base font-bold text-ink flex items-center gap-2">
                   <Repeat className="w-5 h-5 text-accent" />
                   1-to-Many Multi-Channel Content Repurposer
@@ -497,7 +524,7 @@ export function ContentGenerator() {
           {repurposedPackage && (
             <div className="bg-sunk border border-line rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="font-bold text-ink text-sm flex items-center gap-2">
                     Repurposed Asset Package: {repurposedPackage.title}
                     <span className="text-xs font-semibold bg-accent-soft text-accent-ink px-2.5 py-0.5 rounded-full">Source: {repurposedPackage.sourceType}</span>
@@ -587,26 +614,32 @@ export function ContentGenerator() {
 
       {/* Suggestions & Trend Discovery Section */}
       <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-4">
-          <div>
+        {/*
+          The controls here are a search field plus three buttons — far too wide
+          to sit beside a heading, so they get their own row rather than
+          squeezing the title into a ribbon.
+        */}
+        <div className="space-y-4 border-b border-line pb-4">
+          <div className="min-w-0">
             <h2 className="text-base font-bold text-ink flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-accent" />
-              AI Trend Discovery Engine & Quick Topics
+              Trend discovery
             </h2>
-            <p className="text-xs text-ink-3 mt-0.5">
-              Discover viral industry trends, seasonal news hooks, and high-performing audience topics tailored to {brand?.name || 'your brand'}. Click any topic or chip to auto-generate content packages ready for approval & calendar grid publishing.
+            <p className="text-xs text-ink-3 mt-0.5 max-w-[75ch]">
+              Current trends and audience topics for {brand?.name || 'your brand'}. Pick one and it becomes a
+              ready-to-review content package.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
               <input 
                 type="text"
                 placeholder="Search trends (e.g. AI, Growth)..."
                 value={trendSearchQuery}
                 onChange={(e) => setTrendSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchSuggestions(brand, trendSearchQuery)}
-                className="pl-8 pr-3 py-2 text-xs border border-line-strong rounded-xl focus:ring-2 focus:ring-ink outline-none w-56 sm:w-72"
+                className="w-full pl-8 pr-3 py-2 text-xs border border-line-strong rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none"
               />
               <TrendingUp className="w-4 h-4 text-ink-4 absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
@@ -639,16 +672,11 @@ export function ContentGenerator() {
         </div>
 
         {/* Quick Search Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <span className="text-[11px] font-bold text-ink-4 uppercase tracking-wider shrink-0">Quick Search:</span>
-          {[
-            '#AI & Future Trends',
-            '#Growth & Viral Hacks',
-            '#SaaS & Productivity',
-            '#Customer Success',
-            '#Industry Insights',
-            '#Seasonal Offers'
-          ].map((chip) => (
+        <div className="scroll-slim flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="text-[11px] font-bold text-ink-4 uppercase tracking-wider shrink-0">
+            {brandTopicChips.fromBrand ? 'Your pillars:' : 'Quick search:'}
+          </span>
+          {brandTopicChips.chips.map((chip) => (
             <button
               key={chip}
               onClick={() => {
@@ -794,7 +822,7 @@ export function ContentGenerator() {
                   }
                 }}
                 disabled={generatingAds || !topic}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-accent to-black text-white font-semibold rounded-xl hover:opacity-95 transition-all shadow-md disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:opacity-95 transition-all shadow-md disabled:opacity-50"
               >
                 {generatingAds ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-warn-line" />}
                 {generatingAds ? 'Crafting High-Converting Ads...' : 'Generate Meta & Google Ad Campaign'}
@@ -840,7 +868,7 @@ export function ContentGenerator() {
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <span className="font-bold text-ink-4 uppercase text-[10px]">Description:</span>
                           <p className="text-ink-3 text-xs">{generatedAdCampaign.metaAd.description}</p>
                         </div>

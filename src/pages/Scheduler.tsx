@@ -131,8 +131,8 @@ export function Scheduler() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-semibold tracking-tight text-ink">Content Schedule Calendar</h1>
           <p className="text-ink-3 mt-1">Review, approve, preview, and manage scheduled posts across all your connected social accounts.</p>
         </div>
@@ -170,7 +170,7 @@ export function Scheduler() {
       </header>
 
       {/* Search & Custom Filter Bar */}
-      <div className="bg-surface border border-line rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-surface border border-line rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-72">
           <Search className="w-4 h-4 text-ink-4 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -361,7 +361,7 @@ export function Scheduler() {
 
                   {/* Content Details */}
                   <div className="flex-1 flex flex-col justify-between">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <div className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${post.status === 'suggested' ? 'bg-warn-soft text-warn' : 'bg-accent-soft text-accent-ink'}`}>

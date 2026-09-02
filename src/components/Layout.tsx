@@ -69,7 +69,7 @@ export function Layout() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex flex-col md:flex-row">
+    <div className="min-h-screen bg-canvas flex flex-col md:h-screen md:flex-row md:overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden bg-surface border-b border-line px-4 py-3 flex items-center justify-between sticky top-0 z-50">
         <Link to="/dashboard" className="flex items-center gap-2">

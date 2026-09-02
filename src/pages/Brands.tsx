@@ -47,7 +47,7 @@ export function Brands() {
   return (
     <div className="space-y-8 max-w-5xl">
       <header className="flex items-center justify-between">
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-semibold tracking-tight text-ink">Brand Identities</h1>
           <p className="text-ink-3 mt-1">Manage multiple brands and their content strategies.</p>
         </div>
@@ -80,7 +80,7 @@ export function Brands() {
           {brands.map((brand) => (
             <div 
               key={brand.id}
-              className="bg-surface border border-line rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group"
+              className="flex h-full flex-col bg-surface border border-line rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 bg-sunk rounded-xl flex items-center justify-center overflow-hidden border border-line">
@@ -90,7 +90,7 @@ export function Brands() {
                     <span className="text-xl font-bold text-ink-4">{brand.name.charAt(0)}</span>
                   )}
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                   <button
                     onClick={() => navigate(`/brand-setup/${brand.id}`)}
                     className="p-2 text-ink-4 hover:text-ink hover:bg-sunk rounded-lg transition-colors"
@@ -126,7 +126,7 @@ export function Brands() {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-1.5 mb-6">
+              <div className="flex flex-wrap gap-1.5 mb-3">
                 {brand.industry && (
                   <span className="px-2 py-0.5 bg-sunk text-ink-3 text-[10px] font-medium rounded-full uppercase tracking-wider">
                     {brand.industry}
@@ -139,16 +139,36 @@ export function Brands() {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              {(() => {
+                const voice = (brand.agentResearchData as any)?.siteAnalysis?.brandVoice || brand.brandTone;
+                const hasStrategy = Boolean((brand.agentResearchData as any)?.siteAnalysis);
+                return (
+                  <div className="mb-5 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        hasStrategy ? 'border-ok-line bg-ok-soft text-ok' : 'border-warn-line bg-warn-soft text-warn'
+                      }`}>
+                        {hasStrategy ? 'Voice learned' : 'Voice not learned'}
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 text-xs leading-relaxed text-ink-3">
+                      {voice || 'Run the Brand DNA Analyst to learn this brand’s voice — every agent writes from it.'}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Pinned to the bottom so cards of different heights still line up. */}
+              <div className="mt-auto grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
                     localStorage.setItem('activeBrandId', brand.id);
                     navigate(`/brand-strategy/${brand.id}`);
                   }}
-                  className="py-2 bg-ink text-white text-xs font-semibold rounded-xl hover:bg-ink-2 transition-all flex items-center justify-center gap-1 shadow-sm"
+                  className="col-span-2 py-2 bg-ink text-white text-xs font-semibold rounded-xl hover:bg-ink-2 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                   title="View saved AI brand positioning, competitor research, and content pillars"
                 >
-                  <Layers className="w-3.5 h-3.5 text-warn" />
+                  <Layers className="w-3.5 h-3.5" />
                   Strategy Hub
                 </button>
                 <button

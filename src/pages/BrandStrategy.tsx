@@ -51,8 +51,8 @@ export function BrandStrategy() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider text-ink bg-sunk border border-line px-2.5 py-0.5 rounded-full flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-ok" />
@@ -85,7 +85,7 @@ export function BrandStrategy() {
 
       {/* Brand Summary Card */}
       {brand && (
-        <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-sunk border border-line flex items-center justify-center overflow-hidden shrink-0">
               {brand.logoUrl ? (
@@ -135,14 +135,14 @@ export function BrandStrategy() {
       )}
 
       {/* How To Use Guidance Banner */}
-      <div className="bg-accent via-black to-accent-ink text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-accent text-white rounded-2xl p-6 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-warn" />
             <h3 className="font-bold text-sm text-white">How to Use Your AI Strategy Hub</h3>
           </div>
-          <p className="text-xs text-ink-4 max-w-2xl leading-relaxed">
-            Every insight below is connected to your content pipeline. Click <span className="text-warn-line font-bold">"Use Insight in Studio"</span> on any persona, competitor gap, or content pillar to auto-generate social posts, paid ad campaigns, or video scripts tailored to this brand strategy.
+          <p className="text-xs text-white/75 max-w-2xl leading-relaxed">
+            Every insight below is connected to your content pipeline. Click <span className="font-bold text-white">“Use Insight in Studio”</span> on any persona, competitor gap, or content pillar to auto-generate social posts, paid ad campaigns, or video scripts tailored to this brand strategy.
           </p>
         </div>
 
@@ -218,7 +218,7 @@ export function BrandStrategy() {
           {activeTab === 'site' && (
             <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="text-base font-bold text-ink flex items-center gap-2">
                     <Globe className="w-5 h-5 text-accent" />
                     Site Analysis & Core Brand Positioning
@@ -282,7 +282,7 @@ export function BrandStrategy() {
           {activeTab === 'competitors' && (
             <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="text-base font-bold text-ink flex items-center gap-2">
                     <Target className="w-5 h-5 text-ok" />
                     Competitor Intelligence & Market Gaps
@@ -339,7 +339,7 @@ export function BrandStrategy() {
           {activeTab === 'audience' && (
             <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="text-base font-bold text-ink flex items-center gap-2">
                     <Users className="w-5 h-5 text-accent" />
                     Target Audience Profiling & ICP
@@ -397,7 +397,7 @@ export function BrandStrategy() {
           {activeTab === 'pillars' && (
             <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="text-base font-bold text-ink flex items-center gap-2">
                     <Layers className="w-5 h-5 text-warn" />
                     Strategic Content Pillars & Blueprint

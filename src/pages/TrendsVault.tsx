@@ -39,8 +39,8 @@ export function TrendsVault() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider text-ink bg-sunk border border-line px-2.5 py-0.5 rounded-full flex items-center gap-1">
               <Bookmark className="w-3.5 h-3.5 text-warn fill-warn" />
@@ -127,7 +127,7 @@ export function TrendsVault() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTrends.map((t) => (
             <div key={t.id} className="bg-surface border border-line rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 group">
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between mb-3">
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
                     t.type === 'holiday' ? 'bg-warn-soft text-warn' :

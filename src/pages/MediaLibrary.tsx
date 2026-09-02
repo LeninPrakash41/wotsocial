@@ -75,8 +75,8 @@ export function MediaLibrary() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider text-ink bg-sunk border border-line px-2.5 py-0.5 rounded-full flex items-center gap-1">
               <Folder className="w-3.5 h-3.5 text-accent" />
@@ -159,7 +159,7 @@ export function MediaLibrary() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredAssets.map((asset) => (
             <div key={asset.id} className="bg-surface border border-line rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
-              <div>
+              <div className="min-w-0 flex-1">
                 {/* Media Preview Container */}
                 <div className="relative h-48 bg-ink flex items-center justify-center overflow-hidden border-b border-line">
                   {asset.type === 'image' ? (

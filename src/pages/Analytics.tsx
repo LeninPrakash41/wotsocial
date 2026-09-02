@@ -183,8 +183,8 @@ export function Analytics() {
 
   return (
     <div className="space-y-8 max-w-6xl">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-semibold tracking-tight text-ink">Analytics & Insights</h1>
           <p className="text-ink-3 mt-1">Track audience engagement, growth metrics, and AI performance reports across all connected channels.</p>
         </div>
@@ -311,8 +311,8 @@ export function Analytics() {
 
       {/* Audience Section */}
       <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+          <div className="min-w-0 flex-1">
             <h3 className="text-lg font-semibold">Audience Demographics</h3>
             <p className="text-sm text-ink-3">Understand who is interacting with your brand.</p>
           </div>

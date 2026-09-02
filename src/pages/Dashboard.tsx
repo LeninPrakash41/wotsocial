@@ -75,8 +75,8 @@ export function Dashboard() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16 font-sans">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-semibold tracking-tight text-ink">Dashboard</h1>
           <p className="text-ink-3 mt-1">Overview of {brand?.name || 'your brand'} performance, strategy, trends, and digital assets.</p>
         </div>
@@ -152,7 +152,7 @@ export function Dashboard() {
             </div>
 
             {/* Brand Strategy Hub Widget */}
-            <div className="bg-accent to-black text-white rounded-2xl p-6 shadow-md space-y-4">
+            <div className="bg-accent text-white rounded-2xl p-6 shadow-md space-y-4">
               <div className="flex items-center justify-between border-b border-surface/10 pb-3">
                 <div className="flex items-center gap-2">
                   <Layers className="w-5 h-5 text-accent" />
