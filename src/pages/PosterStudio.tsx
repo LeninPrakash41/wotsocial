@@ -20,6 +20,7 @@ import {
 import { contentApi, PosterTemplate, Poster, PosterBatch } from '../services/studioApi';
 import { generatePosterBatch, planBatch, BatchProgress } from '../services/posterService';
 import { availableProviders } from '../services/agentRuntime';
+import { generatePosterImage } from '../services/geminiService';
 import { describeError } from '../services/integrationsApi';
 import { cn } from '../lib/utils';
 
@@ -53,6 +54,7 @@ export function PosterStudio() {
   const [progress, setProgress] = useState<BatchProgress | null>(null);
   const [banner, setBanner] = useState<{ kind: BannerKind; message: string; detail?: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const [rendering, setRendering] = useState<string | null>(null);
 
   const loadData = async (brandIdToLoad?: string) => {
     setLoading(true);
@@ -197,6 +199,29 @@ export function PosterStudio() {
       setBanner({ kind: 'success', message: 'Added to the content calendar as a draft.' });
     } catch (err) {
       setBanner({ kind: 'error', message: describeError(err) });
+    }
+  };
+
+  /**
+   * Renders the artwork for one poster. Deliberately one at a time rather than
+   * across the whole batch: image generation is the slow, expensive half, and
+   * most posters get their copy revised before anyone wants the picture.
+   */
+  const handleRender = async (poster: Poster) => {
+    const template = templates.find(t => t.key === poster.templateKey);
+    setRendering(poster.id);
+    setBanner(null);
+    try {
+      const imageUrl = await generatePosterImage({
+        prompt: poster.imagePrompt,
+        aspectRatio: template?.ratio === 'story' ? '9:16' : template?.ratio === 'portrait' ? '4:5' : '1:1'
+      });
+      await contentApi.updatePoster(poster.id, { imageUrl });
+      setPosters(prev => prev.map(p => p.id === poster.id ? { ...p, imageUrl } : p));
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    } finally {
+      setRendering(null);
     }
   };
 
@@ -507,11 +532,19 @@ export function PosterStudio() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          icon={Wand2}
+                          loading={rendering === poster.id}
+                          disabled={!poster.imagePrompt || rendering !== null}
+                          onClick={() => handleRender(poster)}
+                        >
+                          {poster.imageUrl ? 'Redo art' : 'Render art'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           icon={Copy}
                           onClick={() => navigator.clipboard.writeText(poster.imagePrompt || '')}
-                        >
-                          Art prompt
-                        </Button>
+                        />
                       </div>
                     </div>
                   </div>
