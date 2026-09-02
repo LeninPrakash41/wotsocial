@@ -195,7 +195,7 @@ export const getClaudeDesktopConfigJSON = (apiKey: string): string => {
         ],
         env: {
           WOTSOCIAL_API_KEY: apiKey,
-          WOTSOCIAL_API_ENDPOINT: "http://localhost:3000/api/mcp"
+          WOTSOCIAL_API_ENDPOINT: "http://localhost:3050/api/mcp"
         }
       }
     }

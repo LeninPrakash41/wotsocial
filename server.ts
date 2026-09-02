@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3050;
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
@@ -80,7 +80,7 @@ async function startServer() {
       server: { 
         middlewareMode: true,
         host: '0.0.0.0',
-        port: 3000
+        port: PORT
       },
       appType: "spa",
     });
