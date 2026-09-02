@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../auth';
-import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot, Layers, Bookmark, Film, Folder, Megaphone, Instagram, MessageSquare, Cpu } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, PenTool, Calendar, BarChart3, Menu, X, ChevronLeft, ChevronRight, Briefcase, User, Plug, Bot, Layers, Bookmark, Film, Folder, Megaphone, Instagram, MessageSquare, Cpu, UserCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useState, useEffect } from 'react';
 import { BrandSelector } from './BrandSelector';
@@ -23,6 +23,7 @@ export function Layout() {
     { name: 'Brand Strategy Hub', path: '/brand-strategy', icon: Layers },
     { name: 'Content Generator', path: '/generate', icon: PenTool },
     { name: 'Meta Ads Manager', path: '/meta-ads', icon: Megaphone },
+    { name: 'Lead Management CRM', path: '/leads', icon: UserCheck },
     { name: 'Instagram Studio', path: '/instagram-marketing', icon: Instagram },
     { name: 'WhatsApp Business', path: '/whatsapp-marketing', icon: MessageSquare },
     { name: 'Claude MCP Connector', path: '/mcp-connector', icon: Cpu },

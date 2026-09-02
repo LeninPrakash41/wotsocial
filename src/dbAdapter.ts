@@ -732,3 +732,68 @@ export const saveWhatsAppCampaign = (campaign: WhatsAppCampaign): void => {
     localStorage.setItem(WHATSAPP_CAMPAIGNS_KEY, JSON.stringify([campaign, ...filtered]));
   } catch (e) {}
 };
+
+// Lead Management CRM Schemas & APIs
+export interface Lead {
+  id: string;
+  brandId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  source: 'Meta Ads Lead Form' | 'Instagram DM Automation' | 'WhatsApp Broadcast' | 'Website Conversion';
+  campaignId?: string;
+  campaignName?: string;
+  adSetName?: string;
+  status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED';
+  costPerLead?: number;
+  notes?: string;
+  createdAt: string;
+}
+
+const LEADS_STORAGE_KEY = 'wot_leads_v1';
+
+export const getLeads = (brandId?: string): Lead[] => {
+  try {
+    const raw = localStorage.getItem(LEADS_STORAGE_KEY);
+    const list: Lead[] = raw ? JSON.parse(raw) : [];
+    if (brandId) return list.filter(l => !l.brandId || l.brandId === brandId);
+    return list;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const saveLead = (lead: Lead): void => {
+  try {
+    const raw = localStorage.getItem(LEADS_STORAGE_KEY);
+    const list: Lead[] = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter(l => l.id !== lead.id);
+    localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify([lead, ...filtered]));
+  } catch (e) {}
+};
+
+export const updateLeadStatus = (id: string, status: Lead['status']): void => {
+  try {
+    const leads = getLeads();
+    const updated = leads.map(l => l.id === id ? { ...l, status } : l);
+    localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(updated));
+  } catch (e) {}
+};
+
+export const exportLeadsCSV = (brandId?: string): string => {
+  const leads = getLeads(brandId);
+  const headers = ['ID', 'Name', 'Email', 'Phone', 'Company', 'Source', 'Campaign Name', 'Status', 'Date Captured'];
+  const rows = leads.map(l => [
+    l.id,
+    `"${l.name}"`,
+    l.email,
+    l.phone || '',
+    `"${l.company || ''}"`,
+    `"${l.source}"`,
+    `"${l.campaignName || ''}"`,
+    l.status,
+    l.createdAt
+  ]);
+  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+};

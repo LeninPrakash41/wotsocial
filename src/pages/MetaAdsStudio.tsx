@@ -10,7 +10,7 @@ import {
   Megaphone, Sparkles, Settings, BarChart3, Play, Pause, RefreshCw, CheckCircle2, 
   AlertTriangle, DollarSign, Target, Eye, MousePointer, ShieldCheck, Globe, 
   Layers, Upload, Image as ImageIcon, Video, ExternalLink, Plus, Copy, Check, ArrowRight,
-  TrendingUp, Activity, Filter, Info
+  TrendingUp, Activity, Filter, Info, UserCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -972,6 +972,13 @@ export function MetaAdsStudio() {
                       <td className="px-6 py-4 font-bold text-purple-600">{camp.roas}x</td>
 
                       <td className="px-6 py-4 text-right space-x-2">
+                        <button
+                          onClick={() => navigate(`/leads?campaign=${encodeURIComponent(camp.name)}`)}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1 border border-blue-200"
+                        >
+                          <UserCheck className="w-3 h-3 text-blue-600" /> View Leads
+                        </button>
+
                         <button
                           onClick={() => handleToggleStatus(camp.id, camp.status)}
                           className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-[11px] font-bold rounded-lg transition-colors inline-flex items-center gap-1"
