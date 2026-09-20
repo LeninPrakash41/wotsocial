@@ -8,8 +8,8 @@ export function Login() {
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
-  const [email, setEmail] = useState('admin@wotsocial.com');
-  const [password, setPassword] = useState('Admin@123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,22 +24,6 @@ export function Login() {
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err.message || "Invalid email or password. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickAdminLogin = async () => {
-    setEmail('admin@wotsocial.com');
-    setPassword('Admin@123456');
-    setError(null);
-    setLoading(true);
-
-    try {
-      await auth.login('admin@wotsocial.com', 'Admin@123456');
-      navigate(from, { replace: true });
-    } catch (err: any) {
-      setError(err.message || "Quick admin sign in failed");
     } finally {
       setLoading(false);
     }
@@ -138,26 +122,10 @@ export function Login() {
             </div>
           </div>
 
-          {/* Quick Admin Access Button */}
-          <button
-            type="button"
-            onClick={handleQuickAdminLogin}
-            disabled={loading}
-            className="w-full py-3 bg-sunk hover:bg-line text-ink border border-line font-semibold rounded-xl transition-all text-sm flex items-center justify-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4 text-ink" />
-            Quick Admin Sign In (1-Click)
-          </button>
-
-          {/* Credentials Info Badge */}
-          <div className="bg-sunk border border-line rounded-2xl p-3.5 text-center text-xs text-ink-3 space-y-1">
-            <div className="font-semibold text-ink-2 flex items-center justify-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-ink" />
-              Seeded Admin Credentials
-            </div>
-            <p>Email: <code className="bg-line/60 px-1.5 py-0.5 rounded text-ink-2 font-mono text-[11px]">admin@wotsocial.com</code></p>
-            <p>Password: <code className="bg-line/60 px-1.5 py-0.5 rounded text-ink-2 font-mono text-[11px]">Admin@123456</code></p>
-          </div>
+          <p className="text-center text-xs leading-relaxed text-ink-3">
+            First time here? The administrator password is printed in the server log when the
+            database is first created, and must be changed at first sign-in.
+          </p>
         </div>
       </div>
 

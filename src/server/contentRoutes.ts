@@ -13,6 +13,7 @@ import {
   q, saveRow, selectRows, ensureStoreReady, parseJson, stringifyJson, timestamp, num
 } from './store';
 import { asyncHandler, badRequest, notFound, requireParam, currentUserId, HttpError } from './http';
+import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId, encryptSecret, decryptSecret, maskSecret } from './crypto';
 import { POSTER_TEMPLATES, templatesForIndustry, PosterTemplate } from './posterTemplates';
 
@@ -136,7 +137,7 @@ router.delete('/poster-templates/:key', asyncHandler(async (req: Request, res: R
 /** Opens a batch. The client generates into it and closes it when done. */
 router.post('/poster-batches', asyncHandler(async (req: Request, res: Response) => {
   const userId = currentUserId(req);
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const requested = num(req.body.requested, 0);
 
   if (requested < 1) throw badRequest('Ask for at least one poster.');
@@ -168,7 +169,7 @@ router.post('/poster-batches', asyncHandler(async (req: Request, res: Response) 
 
 /** Saves generated posters into an open batch. */
 router.post('/poster-batches/:id/posters', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const items: any[] = Array.isArray(req.body.posters) ? req.body.posters : [];
   if (!items.length) throw badRequest('No posters were supplied.');
 
@@ -213,7 +214,7 @@ router.post('/poster-batches/:id/complete', asyncHandler(async (req: Request, re
 }));
 
 router.get('/poster-batches', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const rows = await selectRows<any>('poster_batches', 'brand_id = $1', [brandId], 'ORDER BY created_at DESC LIMIT 50');
   res.json({
     batches: rows.map(b => ({
@@ -226,7 +227,7 @@ router.get('/poster-batches', asyncHandler(async (req: Request, res: Response) =
 }));
 
 router.get('/posters', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const batchId = req.query.batchId as string | undefined;
 
   const where = batchId ? 'brand_id = $1 AND batch_id = $2' : 'brand_id = $1';
@@ -316,7 +317,7 @@ const fetchJson = async (url: string, init: RequestInit, timeoutMs = 20_000) => 
 };
 
 router.get('/connections', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const [wordpress, shopify] = await Promise.all([
     loadContentConnection(brandId, 'wordpress'),
     loadContentConnection(brandId, 'shopify')
@@ -334,7 +335,7 @@ router.get('/connections', asyncHandler(async (req: Request, res: Response) => {
  */
 router.post('/connections/wordpress', asyncHandler(async (req: Request, res: Response) => {
   const userId = currentUserId(req);
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const siteUrl = normalizeSite(requireParam(req.body.siteUrl, 'siteUrl'));
   const username = requireParam(req.body.username, 'username');
   const appPassword = requireParam(req.body.applicationPassword, 'applicationPassword').replace(/\s+/g, '');
@@ -387,7 +388,7 @@ router.post('/connections/wordpress', asyncHandler(async (req: Request, res: Res
 
 /** Publishes an article. Defaults to a draft so nothing goes live unreviewed. */
 router.post('/wordpress/publish', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await loadContentConnection(brandId, 'wordpress');
   if (!conn) throw new HttpError(409, 'No WordPress site is connected for this brand.', { code: 'NOT_CONNECTED' });
 
@@ -452,7 +453,7 @@ router.post('/wordpress/publish', asyncHandler(async (req: Request, res: Respons
 }));
 
 router.get('/blog-articles', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const rows = await selectRows<any>('blog_articles', 'brand_id = $1', [brandId], 'ORDER BY created_at DESC LIMIT 100');
   res.json({
     articles: rows.map(a => ({
@@ -469,7 +470,7 @@ router.get('/blog-articles', asyncHandler(async (req: Request, res: Response) =>
  */
 router.post('/connections/shopify', asyncHandler(async (req: Request, res: Response) => {
   const userId = currentUserId(req);
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const accessToken = requireParam(req.body.accessToken, 'accessToken').trim();
 
   let domain = requireParam(req.body.storeDomain, 'storeDomain').trim()
@@ -516,7 +517,7 @@ router.post('/connections/shopify', asyncHandler(async (req: Request, res: Respo
 
 /** Products for the promo generator, normalised to what the agent needs. */
 router.get('/shopify/products', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await loadContentConnection(brandId, 'shopify');
   if (!conn) throw new HttpError(409, 'No Shopify store is connected for this brand.', { code: 'NOT_CONNECTED' });
 
@@ -560,7 +561,7 @@ router.get('/shopify/products', asyncHandler(async (req: Request, res: Response)
 }));
 
 router.delete('/connections/:kind', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId || req.body?.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const kind = req.params.kind;
   if (kind !== 'wordpress' && kind !== 'shopify') throw badRequest('Unknown connection type.');
   await ensureStoreReady();

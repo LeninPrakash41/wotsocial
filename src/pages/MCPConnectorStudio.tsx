@@ -145,6 +145,7 @@ export function MCPConnectorStudio() {
 
       // Load the live tool list using the key we just issued.
       try {
+        // Authenticates with the MCP key itself, exactly as Claude Desktop does.
         const toolsRes = await fetch('/api/mcp/tools', { headers: { Authorization: `Bearer ${res.key}` } });
         if (toolsRes.ok) {
           const body = await toolsRes.json();

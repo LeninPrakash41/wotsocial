@@ -6,12 +6,13 @@
 import { Router, Request, Response } from 'express';
 import { saveRow, selectRows, q, listConnections, toPublicConnection, stringifyJson, timestamp, num, ensureStoreReady } from './store';
 import { asyncHandler, badRequest, requireParam, currentUserId } from './http';
+import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
 
 const router = Router();
 
 router.get('/leads', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const rows = await selectRows<any>('crm_leads', 'brand_id = $1', [brandId], 'ORDER BY created_at DESC LIMIT 500');
 
   const leads = rows.map(l => ({
@@ -33,7 +34,7 @@ router.get('/leads', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.post('/leads', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const id = req.body.id || randomId('lead');
   await saveRow('crm_leads', {
     id,
@@ -68,7 +69,7 @@ router.patch('/leads/:id', asyncHandler(async (req: Request, res: Response) => {
 
 /** One call the dashboard uses to show what is actually live for a brand. */
 router.get('/connections', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const connections = await listConnections(brandId);
 
   res.json({

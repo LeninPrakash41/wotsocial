@@ -11,6 +11,7 @@ import crypto from 'crypto';
 import { graphGet, graphGetAll, graphRequest, exchangeForLongLivedToken, debugToken } from './graphClient';
 import { upsertConnection, q, ensureStoreReady, timestamp } from './store';
 import { asyncHandler, badRequest, requireParam, currentUserId, HttpError } from './http';
+import { requireOwnedBrand, audit } from './authMiddleware';
 
 const router = Router();
 
@@ -44,7 +45,7 @@ const requireAppCredentials = () => {
 router.get('/meta/start', asyncHandler(async (req: Request, res: Response) => {
   const { appId } = requireAppCredentials();
   const userId = currentUserId(req);
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const platform = (req.query.platform as string) || 'meta_ads';
 
   if (!SCOPES[platform]) throw badRequest(`Unknown platform "${platform}".`);

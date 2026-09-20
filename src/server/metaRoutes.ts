@@ -16,6 +16,7 @@ import {
   parseJson, stringifyJson, timestamp, num, ensureStoreReady
 } from './store';
 import { asyncHandler, badRequest, notFound, notConnected, requireParam, currentUserId, HttpError } from './http';
+import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
 
 const router = Router();
@@ -223,7 +224,7 @@ const INSIGHT_FIELDS =
 
 /** Reports connection state plus what the token can actually do. */
 router.get('/connection', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await getConnection(brandId, 'meta_ads');
   if (!conn) return res.json({ connected: false, connection: null });
 
@@ -253,7 +254,7 @@ router.get('/connection', asyncHandler(async (req: Request, res: Response) => {
  */
 router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
   const userId = currentUserId(req);
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const rawToken = requireParam(req.body.accessToken, 'accessToken');
   const adAccountId = normalizeActId(requireParam(req.body.adAccountId, 'adAccountId'));
 
@@ -320,7 +321,7 @@ router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.delete('/connection', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId || req.body?.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   await deleteConnection(brandId, 'meta_ads');
   res.json({ success: true });
 }));
@@ -354,7 +355,7 @@ router.post('/discover', asyncHandler(async (req: Request, res: Response) => {
 
 /** Pixels available on the connected ad account, for conversion optimisation. */
 router.get('/pixels', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireMetaConnection(brandId);
   const pixels = await graphGetAll<any>(`${conn.externalId}/adspixels`, conn.accessToken, {
     fields: 'id,name,last_fired_time'
@@ -367,7 +368,7 @@ router.get('/pixels', asyncHandler(async (req: Request, res: Response) => {
 /* ------------------------------------------------------------------ */
 
 router.get('/targeting/search', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const query = requireParam(req.query.q, 'q');
   const type = (req.query.type as string) === 'geo' ? 'adgeolocation' : 'adinterest';
   const conn = await requireMetaConnection(brandId);
@@ -615,7 +616,7 @@ export const launchMetaCampaign = async (brandId: string, input: CampaignLaunchI
 };
 
 router.post('/campaigns', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const result = await launchMetaCampaign(brandId, req.body as CampaignLaunchInput);
   res.json(result);
 }));
@@ -626,7 +627,7 @@ router.post('/campaigns', asyncHandler(async (req: Request, res: Response) => {
 
 /** Reads campaigns live from Meta and merges the locally stored config. */
 router.get('/campaigns', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireMetaConnection(brandId);
   const datePreset = (req.query.datePreset as string) || 'last_30d';
 
@@ -714,7 +715,7 @@ router.get('/campaigns', asyncHandler(async (req: Request, res: Response) => {
  * the campaign, otherwise an "active" campaign delivers nothing.
  */
 router.post('/campaigns/:id/status', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const status = String(requireParam(req.body.status, 'status')).toUpperCase();
   if (!['ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED'].includes(status)) {
     throw badRequest('Status must be ACTIVE, PAUSED, ARCHIVED or DELETED.');
@@ -747,7 +748,7 @@ router.post('/campaigns/:id/status', asyncHandler(async (req: Request, res: Resp
 
 /** Time-series insights for the whole account or one campaign. */
 router.get('/insights', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireMetaConnection(brandId);
   const objectId = (req.query.campaignId as string) || conn.externalId;
   const level = (req.query.level as string) || (req.query.campaignId ? 'campaign' : 'account');
@@ -812,7 +813,7 @@ router.get('/insights', asyncHandler(async (req: Request, res: Response) => {
 
 /** Lead-gen forms submitted against this account's campaigns. */
 router.post('/leads/sync', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireMetaConnection(brandId);
   await ensureStoreReady();
 

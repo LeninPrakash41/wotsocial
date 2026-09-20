@@ -451,6 +451,44 @@ const DDL = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_blog_brand ON blog_articles (brand_id)`,
 
+  `CREATE TABLE IF NOT EXISTS sessions (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL,
+     token_hash TEXT NOT NULL,
+     user_agent TEXT,
+     ip TEXT,
+     created_at TEXT,
+     last_seen_at TEXT,
+     expires_at TEXT,
+     revoked TEXT DEFAULT '0'
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_session_token ON sessions (token_hash)`,
+  `CREATE INDEX IF NOT EXISTS idx_session_user ON sessions (user_id)`,
+
+  `CREATE TABLE IF NOT EXISTS login_attempts (
+     id TEXT PRIMARY KEY,
+     email TEXT NOT NULL,
+     ip TEXT,
+     succeeded TEXT DEFAULT '0',
+     attempted_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_login_email ON login_attempts (email)`,
+
+  `CREATE TABLE IF NOT EXISTS audit_log (
+     id TEXT PRIMARY KEY,
+     user_id TEXT,
+     actor TEXT,
+     action TEXT NOT NULL,
+     target_type TEXT,
+     target_id TEXT,
+     brand_id TEXT,
+     detail TEXT,
+     ip TEXT,
+     created_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log (created_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log (user_id)`,
+
   `CREATE TABLE IF NOT EXISTS oauth_states (
      state TEXT PRIMARY KEY,
      user_id TEXT,

@@ -20,6 +20,9 @@ import agentRoutes from "./src/server/agentRoutes.ts";
 import contentRoutes from "./src/server/contentRoutes.ts";
 import { integrationErrorHandler } from "./src/server/http.ts";
 import { ensureStoreReady } from "./src/server/store.ts";
+import authRoutes from "./src/server/authRoutes.ts";
+import { requireAuth } from "./src/server/authMiddleware.ts";
+import { pruneExpired } from "./src/server/sessions.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +38,12 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
+
+  // Authentication gates everything under /api except a small allowlist
+  // (sign-in, webhooks, the OAuth callback, health). Mounting it here rather
+  // than per-route means a new endpoint is protected by default.
+  app.use("/api", requireAuth);
+  app.use("/api/auth", authRoutes);
 
   // Existing API surface
   app.use(apiApp);
@@ -97,6 +106,10 @@ async function startServer() {
   }
 
   await ensureStoreReady();
+
+  // Expired sessions and stale sign-in attempts are cleared on boot and daily.
+  await pruneExpired();
+  setInterval(() => { void pruneExpired(); }, 24 * 60 * 60 * 1000).unref();
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
