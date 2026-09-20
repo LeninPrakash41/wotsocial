@@ -144,7 +144,7 @@ export function VideoStudio() {
     }
   };
 
-  if (loading) return <div className="p-8 font-sans text-gray-500">Loading AI Video Studio...</div>;
+  if (loading) return <div className="p-8 font-sans text-ink-3">Loading AI Video Studio...</div>;
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 font-sans">
@@ -152,13 +152,13 @@ export function VideoStudio() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-black bg-gray-100 border border-gray-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <Film className="w-3.5 h-3.5 text-purple-600" />
+            <span className="text-xs font-bold uppercase tracking-wider text-ink bg-sunk border border-line px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <Film className="w-3.5 h-3.5 text-accent" />
               AI Video Generation Engine
             </span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">AI Video Studio</h1>
-          <p className="text-gray-500 mt-1">Generate cinematic 4K videos, product promos, and Reel scripts aligned with {brand?.name || 'your brand'} voice.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">AI Video Studio</h1>
+          <p className="text-ink-3 mt-1">Generate cinematic 4K videos, product promos, and Reel scripts aligned with {brand?.name || 'your brand'} voice.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -177,30 +177,30 @@ export function VideoStudio() {
         
         {/* Left Column: Video Controls */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6">
             
             {/* Input Mode Switcher */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Video Script Mode</label>
-              <div className="grid grid-cols-2 bg-gray-100 p-1 rounded-xl border border-gray-200">
+              <label className="text-xs font-bold text-ink-3 uppercase tracking-wider">Video Script Mode</label>
+              <div className="grid grid-cols-2 bg-sunk p-1 rounded-xl border border-line">
                 <button
                   type="button"
                   onClick={() => setInputMode('prompt')}
                   className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                    inputMode === 'prompt' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-gray-900'
+                    inputMode === 'prompt' ? 'bg-surface text-ink shadow-xs' : 'text-ink-3 hover:text-ink'
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <Sparkles className="w-3.5 h-3.5 text-warn" />
                   Text Prompt & Voice
                 </button>
                 <button
                   type="button"
                   onClick={() => setInputMode('scenes')}
                   className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                    inputMode === 'scenes' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-gray-900'
+                    inputMode === 'scenes' ? 'bg-surface text-ink shadow-xs' : 'text-ink-3 hover:text-ink'
                   }`}
                 >
-                  <Clapperboard className="w-3.5 h-3.5 text-purple-500" />
+                  <Clapperboard className="w-3.5 h-3.5 text-accent" />
                   Scene-by-Scene Script (JSON/MD)
                 </button>
               </div>
@@ -209,26 +209,26 @@ export function VideoStudio() {
             {/* Input Form */}
             {inputMode === 'prompt' ? (
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-700">Video Prompt & Visual Concept *</label>
+                <label className="text-xs font-bold text-ink-2">Video Prompt & Visual Concept *</label>
                 <textarea
                   rows={4}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Describe your video visual scene, camera movement, lighting, subject action, and brand tone..."
-                  className="w-full p-3.5 border border-gray-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-black leading-relaxed"
+                  className="w-full p-3.5 border border-line-strong rounded-xl text-xs outline-none focus:ring-2 focus:ring-ink leading-relaxed"
                 />
               </div>
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-gray-700">Scene Script (JSON / Markdown Format) *</label>
-                  <span className="text-[10px] text-gray-400 font-mono">3 Scenes Template</span>
+                  <label className="text-xs font-bold text-ink-2">Scene Script (JSON / Markdown Format) *</label>
+                  <span className="text-[10px] text-ink-4 font-mono">3 Scenes Template</span>
                 </div>
                 <textarea
                   rows={8}
                   value={scenesMarkdown}
                   onChange={(e) => setScenesMarkdown(e.target.value)}
-                  className="w-full p-3.5 border border-gray-300 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-black leading-relaxed bg-gray-50/50"
+                  className="w-full p-3.5 border border-line-strong rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-ink leading-relaxed bg-sunk/50"
                 />
               </div>
             )}
@@ -236,11 +236,11 @@ export function VideoStudio() {
             {/* AI Engine & Style Controls */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">AI Video Engine</label>
+                <label className="text-xs font-bold text-ink-2">AI Video Engine</label>
                 <select
                   value={engineModel}
                   onChange={(e) => setEngineModel(e.target.value as any)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none"
+                  className="w-full p-2.5 bg-sunk border border-line rounded-xl text-xs font-medium outline-none"
                 >
                   <option value="veo">Google Veo 3.1 AI Engine</option>
                   <option value="seedance">SeeDance AI Hyper-Real Video</option>
@@ -249,11 +249,11 @@ export function VideoStudio() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Visual Aesthetic Style</label>
+                <label className="text-xs font-bold text-ink-2">Visual Aesthetic Style</label>
                 <select
                   value={videoStyle}
                   onChange={(e) => setVideoStyle(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none"
+                  className="w-full p-2.5 bg-sunk border border-line rounded-xl text-xs font-medium outline-none"
                 >
                   <option value="cinematic">Cinematic 4K Film</option>
                   <option value="photorealistic">Photorealistic Commercial</option>
@@ -265,11 +265,11 @@ export function VideoStudio() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Aspect Ratio</label>
+                <label className="text-xs font-bold text-ink-2">Aspect Ratio</label>
                 <select
                   value={aspectRatio}
                   onChange={(e) => setAspectRatio(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none"
+                  className="w-full p-2.5 bg-sunk border border-line rounded-xl text-xs font-medium outline-none"
                 >
                   <option value="16:9">16:9 Widescreen (YouTube / TV)</option>
                   <option value="9:16">9:16 Vertical (Reels / Shorts / TikTok)</option>
@@ -278,11 +278,11 @@ export function VideoStudio() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Resolution</label>
+                <label className="text-xs font-bold text-ink-2">Resolution</label>
                 <select
                   value={resolution}
                   onChange={(e) => setResolution(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none"
+                  className="w-full p-2.5 bg-sunk border border-line rounded-xl text-xs font-medium outline-none"
                 >
                   <option value="720p">720p HD</option>
                   <option value="1080p">1080p Full HD</option>
@@ -295,9 +295,9 @@ export function VideoStudio() {
             <button
               onClick={handleGenerateVideo}
               disabled={generating}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-md text-sm shrink-0 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-ink text-white font-bold rounded-xl hover:bg-ink-2 transition-all shadow-md text-sm shrink-0 disabled:opacity-50"
             >
-              {generating ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Film className="w-5 h-5 text-purple-400" />}
+              {generating ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Film className="w-5 h-5 text-accent" />}
               {generating ? 'Rendering AI Video Frames...' : 'Generate AI Video Post'}
             </button>
           </div>
@@ -305,36 +305,36 @@ export function VideoStudio() {
 
         {/* Right Column: Player & Preview Panel */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm min-h-[480px] flex flex-col justify-between space-y-4">
+          <div className="bg-sunk border border-line rounded-2xl p-6 shadow-sm min-h-[480px] flex flex-col justify-between space-y-4">
             <div>
-              <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
-                <h3 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Video Output & Player</h3>
-                <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded">{videoStyle.toUpperCase()}</span>
+              <div className="flex items-center justify-between border-b border-line pb-3 mb-4">
+                <h3 className="font-bold text-ink text-xs uppercase tracking-wider">Video Output & Player</h3>
+                <span className="text-[10px] font-bold bg-accent-soft text-accent-ink px-2 py-0.5 rounded">{videoStyle.toUpperCase()}</span>
               </div>
 
               {!generatedVideoUrl && !generating ? (
-                <div className="min-h-[300px] bg-white border border-gray-200 rounded-xl flex flex-col items-center justify-center text-center p-6 text-gray-400 space-y-3">
-                  <Film className="w-12 h-12 opacity-20 text-purple-600" />
+                <div className="min-h-[300px] bg-surface border border-line rounded-xl flex flex-col items-center justify-center text-center p-6 text-ink-4 space-y-3">
+                  <Film className="w-12 h-12 opacity-20 text-accent" />
                   <p className="text-xs max-w-xs">Your rendered AI video preview will appear here in high definition.</p>
                 </div>
               ) : generating ? (
-                <div className="min-h-[300px] bg-white border border-gray-200 rounded-xl flex flex-col items-center justify-center text-center p-6 text-gray-500 space-y-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                <div className="min-h-[300px] bg-surface border border-line rounded-xl flex flex-col items-center justify-center text-center p-6 text-ink-3 space-y-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-accent" />
                   <p className="text-xs font-semibold">Synthesizing frames & camera motion...</p>
-                  <p className="text-[10px] text-gray-400">Rendering multi-pass video. This may take up to 30-60 seconds.</p>
+                  <p className="text-[10px] text-ink-4">Rendering multi-pass video. This may take up to 30-60 seconds.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-black rounded-xl overflow-hidden shadow-md max-h-[320px] flex items-center justify-center">
+                  <div className="bg-ink rounded-xl overflow-hidden shadow-md max-h-[320px] flex items-center justify-center">
                     <video src={generatedVideoUrl} controls autoPlay className="w-full max-h-[320px] object-contain" />
                   </div>
 
-                  <div className="p-3 bg-white rounded-xl border border-gray-200 space-y-1 text-xs">
-                    <div className="font-bold text-gray-900 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <div className="p-3 bg-surface rounded-xl border border-line space-y-1 text-xs">
+                    <div className="font-bold text-ink flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-ok" />
                       Video Generation Complete
                     </div>
-                    <p className="text-[11px] text-gray-500 truncate">Engine: {engineModel.toUpperCase()} • Style: {videoStyle} • {aspectRatio}</p>
+                    <p className="text-[11px] text-ink-3 truncate">Engine: {engineModel.toUpperCase()} • Style: {videoStyle} • {aspectRatio}</p>
                   </div>
                 </div>
               )}
@@ -348,7 +348,7 @@ export function VideoStudio() {
                   download="ai-video.mp4"
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 border border-gray-200"
+                  className="px-4 py-2.5 bg-sunk hover:bg-line text-ink text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 border border-line"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Download MP4
@@ -357,9 +357,9 @@ export function VideoStudio() {
                 <button
                   onClick={handleSendToScheduler}
                   disabled={scheduling}
-                  className="px-4 py-2.5 bg-black hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                  className="px-4 py-2.5 bg-ink hover:bg-ink-2 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
                 >
-                  {scheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5 text-amber-400" />}
+                  {scheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5 text-warn" />}
                   {scheduling ? 'Scheduling...' : 'Schedule Video'}
                 </button>
               </div>

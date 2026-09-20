@@ -80,19 +80,19 @@ export function Profile() {
     }
   };
 
-  if (loading) return <div className="p-8 font-sans text-gray-500">Loading Profile Hub...</div>;
+  if (loading) return <div className="p-8 font-sans text-ink-3">Loading Profile Hub...</div>;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16 font-sans">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Account Profile & Workspace Settings</h1>
-          <p className="text-gray-500 mt-1">Manage your identity, organization team credentials, and API connections.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Account Profile & Workspace Settings</h1>
+          <p className="text-ink-3 mt-1">Manage your identity, organization team credentials, and API connections.</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="text-xs font-bold uppercase tracking-wider bg-ok-soft text-ok border border-ok-line px-3 py-1 rounded-full flex items-center gap-1.5">
+            <Shield className="w-3.5 h-3.5 text-ok" />
             Enterprise Admin Active
           </span>
         </div>
@@ -100,33 +100,33 @@ export function Profile() {
 
       {/* Usage Stats Overview Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+        <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-accent-soft text-accent rounded-xl">
             <Briefcase className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900">{brandCount}</div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Active Brands</div>
+            <div className="text-2xl font-bold text-ink">{brandCount}</div>
+            <div className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Active Brands</div>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+        <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-accent-soft text-accent rounded-xl">
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900">{postCount}</div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Posts & Assets Created</div>
+            <div className="text-2xl font-bold text-ink">{postCount}</div>
+            <div className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Posts & Assets Created</div>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+        <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-warn-soft text-warn rounded-xl">
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900">{trendCount}</div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Saved Trend Ideas</div>
+            <div className="text-2xl font-bold text-ink">{trendCount}</div>
+            <div className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Saved Trend Ideas</div>
           </div>
         </div>
       </div>
@@ -136,69 +136,69 @@ export function Profile() {
         
         {/* Left Column: Personal Identity & Info */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6">
-            <div className="flex items-center gap-6 border-b border-gray-100 pb-6">
+          <div className="bg-surface border border-line rounded-2xl p-8 shadow-sm space-y-6">
+            <div className="flex items-center gap-6 border-b border-line pb-6">
               <div className="relative group shrink-0">
-                <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 rounded-full bg-sunk border-2 border-line flex items-center justify-center overflow-hidden">
                   {photoURL ? (
                     <img src={photoURL} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-10 h-10 text-gray-400" />
+                    <User className="w-10 h-10 text-ink-4" />
                   )}
                 </div>
-                <label className="absolute inset-0 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <label className="absolute inset-0 flex items-center justify-center bg-ink/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                   <Camera className="w-5 h-5" />
                   <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                 </label>
               </div>
 
               <div>
-                <h3 className="font-bold text-xl text-gray-900">{displayName || 'Admin User'}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{user?.email || 'admin@wotsocial.ai'}</p>
+                <h3 className="font-bold text-xl text-ink">{displayName || 'Admin User'}</h3>
+                <p className="text-xs text-ink-3 mt-0.5">{user?.email || 'admin@wotsocial.ai'}</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-black text-white px-2.5 py-0.5 rounded">Workspace Owner</span>
-                  <span className="text-[10px] text-gray-400 font-mono">ID: {user?.uid?.slice(0, 10) || 'usr_001'}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-ink text-white px-2.5 py-0.5 rounded">Workspace Owner</span>
+                  <span className="text-[10px] text-ink-4 font-mono">ID: {user?.uid?.slice(0, 10) || 'usr_001'}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Display Full Name</label>
+                <label className="text-xs font-bold text-ink-2">Display Full Name</label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Email Address (Primary Login)</label>
+                <label className="text-xs font-bold text-ink-2">Email Address (Primary Login)</label>
                 <input
                   type="email"
                   value={user?.email || 'admin@wotsocial.ai'}
                   disabled
-                  className="w-full px-3.5 py-2.5 text-xs border border-gray-200 bg-gray-50 text-gray-500 rounded-xl cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 text-xs border border-line bg-sunk text-ink-3 rounded-xl cursor-not-allowed"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700">Organization Name</label>
+                <label className="text-xs font-bold text-ink-2">Organization Name</label>
                 <input
                   type="text"
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3.5 py-2.5 text-xs border border-line-strong rounded-xl outline-none focus:ring-2 focus:ring-ink"
                 />
               </div>
 
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-3 bg-black hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+                className="w-full py-3 bg-ink hover:bg-ink-2 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                {saved ? <Check className="w-4 h-4 text-emerald-400" /> : null}
+                {saved ? <Check className="w-4 h-4 text-ok" /> : null}
                 {saved ? 'Changes Saved!' : 'Save Profile Changes'}
               </button>
             </div>
@@ -207,45 +207,45 @@ export function Profile() {
 
         {/* Right Column: API Keys & Integration Status */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="font-bold text-gray-900 text-xs uppercase tracking-wider flex items-center gap-2">
-                <Key className="w-4 h-4 text-amber-500" />
+          <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="font-bold text-ink text-xs uppercase tracking-wider flex items-center gap-2">
+                <Key className="w-4 h-4 text-warn" />
                 API Connection Status
               </h3>
               <button
                 onClick={() => navigate('/integrations')}
-                className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                className="text-xs font-bold text-accent hover:text-accent-ink flex items-center gap-1"
               >
                 Manage <ArrowRight className="w-3 h-3" />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="font-semibold text-gray-800">Google Gemini 3.1 AI</span>
-                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasGemini ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+              <div className="flex items-center justify-between p-3 bg-sunk rounded-xl border border-line">
+                <span className="font-semibold text-ink-2">Google Gemini 3.1 AI</span>
+                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasGemini ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`}>
                   {hasGemini ? 'Connected' : 'Missing Key'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="font-semibold text-gray-800">Anthropic Claude AI</span>
-                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasClaude ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+              <div className="flex items-center justify-between p-3 bg-sunk rounded-xl border border-line">
+                <span className="font-semibold text-ink-2">Anthropic Claude AI</span>
+                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasClaude ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`}>
                   {hasClaude ? 'Connected' : 'Optional'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="font-semibold text-gray-800">SeeDance Video Engine</span>
-                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasSeeDance ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+              <div className="flex items-center justify-between p-3 bg-sunk rounded-xl border border-line">
+                <span className="font-semibold text-ink-2">SeeDance Video Engine</span>
+                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasSeeDance ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`}>
                   {hasSeeDance ? 'Connected' : 'Optional'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="font-semibold text-gray-800">OpenArt Image Engine</span>
-                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasOpenArt ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+              <div className="flex items-center justify-between p-3 bg-sunk rounded-xl border border-line">
+                <span className="font-semibold text-ink-2">OpenArt Image Engine</span>
+                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${hasOpenArt ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`}>
                   {hasOpenArt ? 'Connected' : 'Optional'}
                 </span>
               </div>
@@ -254,7 +254,7 @@ export function Profile() {
             <div className="pt-2">
               <button
                 onClick={() => navigate('/integrations')}
-                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs rounded-xl border border-gray-200 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-sunk hover:bg-line text-ink font-bold text-xs rounded-xl border border-line transition-all flex items-center justify-center gap-1.5"
               >
                 <Key className="w-3.5 h-3.5" /> Configure All API Credentials
               </button>

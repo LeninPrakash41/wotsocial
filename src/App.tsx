@@ -24,6 +24,8 @@ import { TrendsVault } from './pages/TrendsVault';
 import { VideoStudio } from './pages/VideoStudio';
 import { MediaLibrary } from './pages/MediaLibrary';
 import { MetaAdsStudio } from './pages/MetaAdsStudio';
+import { PosterStudio } from './pages/PosterStudio';
+import { BlogStudio } from './pages/BlogStudio';
 import { InstagramStudio } from './pages/InstagramStudio';
 import { WhatsAppStudio } from './pages/WhatsAppStudio';
 import { MCPConnectorStudio } from './pages/MCPConnectorStudio';
@@ -52,6 +54,8 @@ export default function App() {
             <Route path="/trends-vault" element={<TrendsVault />} />
             <Route path="/video-studio" element={<VideoStudio />} />
             <Route path="/media-library" element={<MediaLibrary />} />
+            <Route path="/poster-studio" element={<PosterStudio />} />
+            <Route path="/blog-studio" element={<BlogStudio />} />
             <Route path="/meta-ads" element={<MetaAdsStudio />} />
             <Route path="/leads" element={<LeadManagementStudio />} />
             <Route path="/instagram-marketing" element={<InstagramStudio />} />

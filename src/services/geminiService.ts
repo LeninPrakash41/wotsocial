@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { generateGeminiWithRetry } from "./geminiRetry";
+import { safeParseJSON } from "./jsonParser";
 
 const getApiKey = () => {
   return localStorage.getItem('gemini_api_key') as string;
@@ -309,4 +310,64 @@ export const analyzePerformance = async (performanceData: any, audienceSummary: 
   });
 
   return JSON.parse(response.text || '{}');
+};
+
+/**
+ * Generic JSON generation against Gemini.
+ *
+ * Unlike the task-specific helpers above, this throws on failure instead of
+ * returning a fallback — callers that publish or spend need to know when the
+ * model call did not actually happen.
+ */
+export const generateGeminiJSON = async <T>(systemPrompt: string, userPrompt: string, model = 'gemini-3-flash-preview'): Promise<T> => {
+  const apiKey = (getApiKey() || '').trim();
+  if (!apiKey) {
+    throw new Error("Gemini API Key missing. Please set your API key in the Integrations page.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  const response = await generateGeminiWithRetry({
+    ai,
+    model,
+    contents: `${systemPrompt}\n\n${userPrompt}\n\nIMPORTANT: Return ONLY a valid JSON object. Do not wrap it in markdown code fences.`,
+    config: { responseMimeType: 'application/json' }
+  });
+
+  return safeParseJSON<T>(response.text || '{}');
+};
+
+/**
+ * Renders a single image from an art-direction prompt.
+ *
+ * Used by the Poster Studio, where the prompt has already been written by the
+ * art director agent. Text is deliberately kept out of the image — headlines
+ * are overlaid as real type, because image models cannot spell reliably.
+ */
+export const generatePosterImage = async (params: {
+  prompt: string;
+  aspectRatio?: '1:1' | '4:5' | '9:16' | '16:9';
+  model?: string;
+}): Promise<string> => {
+  const apiKey = (getApiKey() || '').trim();
+  if (!apiKey) {
+    throw new Error("Gemini API Key missing. Add one in Integrations to render poster images.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  const response = await ai.models.generateContent({
+    model: params.model || 'gemini-3-pro-image-preview',
+    contents: {
+      parts: [{
+        text: `${params.prompt}\n\nCRITICAL: Render no text, letters, words or numbers anywhere in the image. Leave clear negative space where a headline will be overlaid.`
+      }]
+    },
+    config: {
+      imageConfig: { aspectRatio: (params.aspectRatio || '1:1') as any }
+    }
+  });
+
+  for (const part of response.candidates?.[0]?.content?.parts || []) {
+    if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+  }
+  throw new Error('The image model returned no image. Try rephrasing the art direction.');
 };
