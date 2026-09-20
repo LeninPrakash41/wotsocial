@@ -10,12 +10,18 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setIsAuthenticated(!!user);
     });
+
+    // A stored token may have expired or been revoked while the tab was
+    // closed. Ask the server rather than trusting what is in localStorage —
+    // the gate itself is only a redirect; the API is the real boundary.
+    void auth.refresh();
+
     return () => unsubscribe();
   }, []);
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
+      <div className="min-h-screen flex items-center justify-center bg-canvas">
         <div className="w-8 h-8 border-4 border-ink border-t-transparent rounded-full animate-spin"></div>
       </div>
     );

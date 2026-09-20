@@ -14,6 +14,7 @@ import {
   stringifyJson, timestamp, num, ensureStoreReady
 } from './store';
 import { asyncHandler, badRequest, notConnected, requireParam, currentUserId, HttpError } from './http';
+import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
 
 const router = Router();
@@ -71,7 +72,7 @@ export const waitForContainer = async (
 /* ------------------------------------------------------------------ */
 
 router.get('/connection', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await getConnection(brandId, 'instagram');
   if (!conn) return res.json({ connected: false, connection: null, profile: null });
 
@@ -127,7 +128,7 @@ router.get('/connection', asyncHandler(async (req: Request, res: Response) => {
  */
 router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
   const userId = currentUserId(req);
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const accessToken = requireParam(req.body.accessToken, 'accessToken').trim();
   let igUserId = (req.body.instagramAccountId || '').trim();
 
@@ -189,7 +190,7 @@ router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.delete('/connection', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId || req.body?.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   await deleteConnection(brandId, 'instagram');
   res.json({ success: true });
 }));
@@ -204,7 +205,7 @@ router.delete('/connection', asyncHandler(async (req: Request, res: Response) =>
  * than reported as a success.
  */
 router.post('/publish', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireIgConnection(brandId);
   const token = conn.accessToken;
   const ig = conn.externalId;
@@ -344,7 +345,7 @@ router.post('/publish', asyncHandler(async (req: Request, res: Response) => {
 
 /** Publication history straight from our own audit table. */
 router.get('/publications', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const rows = await selectRows<any>(
     'instagram_publications', 'brand_id = $1', [brandId], 'ORDER BY created_at DESC LIMIT 100'
   );
@@ -367,7 +368,7 @@ router.get('/publications', asyncHandler(async (req: Request, res: Response) => 
 
 /** Recent posts with their live engagement counts. */
 router.get('/media', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireIgConnection(brandId);
 
   const media = await graphGetAll<any>(`${conn.externalId}/media`, conn.accessToken, {
@@ -387,7 +388,7 @@ router.get('/media', asyncHandler(async (req: Request, res: Response) => {
 
 /** Account-level insights. Instagram caps most metrics at a 30-day window. */
 router.get('/insights', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireIgConnection(brandId);
   const period = (req.query.period as string) || 'day';
   const days = Math.min(30, Math.max(1, num(req.query.days, 30)));
@@ -426,7 +427,7 @@ router.get('/insights', asyncHandler(async (req: Request, res: Response) => {
 /* ------------------------------------------------------------------ */
 
 router.get('/dm-rules', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const rows = await selectRows<any>('instagram_dm_rules', 'brand_id = $1', [brandId], 'ORDER BY created_at DESC');
   res.json({
     rules: rows.map(r => ({
@@ -439,7 +440,7 @@ router.get('/dm-rules', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.post('/dm-rules', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const keyword = requireParam(req.body.keyword, 'keyword').toUpperCase();
   const replyMessage = requireParam(req.body.replyMessage, 'replyMessage');
 

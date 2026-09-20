@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import pg from 'pg';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
@@ -30,6 +31,7 @@ export const initDatabase = async () => {
     initSqliteSchema();
   }
 
+  await migrateUsersTable();
   await seedDefaultAdmin();
 };
 
@@ -46,6 +48,7 @@ const initPostgresSchema = async () => {
         password_hash VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
         role VARCHAR(32) DEFAULT 'user',
+        must_change_password VARCHAR(1) DEFAULT '0',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -117,6 +120,7 @@ const initSqliteSchema = () => {
       password_hash TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT DEFAULT 'user',
+      must_change_password TEXT DEFAULT '0',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -174,31 +178,81 @@ const initSqliteSchema = () => {
   `);
 };
 
-// Seed Default Admin Account: admin@wotsocial.com / Admin@123456
+// Creates the first administrator account on an empty database.
+/**
+ * Creates the first administrator, once.
+ *
+ * This used to seed a fixed password that was also printed on the sign-in
+ * screen, so every deployment shipped with a publicly known administrator
+ * credential. The password is now either supplied through the environment or
+ * generated, shown once in the server log, and flagged for mandatory change at
+ * first sign-in.
+ */
 const seedDefaultAdmin = async () => {
-  const adminEmail = 'admin@wotsocial.com';
-  const defaultPassword = 'Admin@123456';
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@wotsocial.com').toLowerCase();
   const adminId = 'admin-user-001';
-  const adminName = 'WotSocial Admin';
+  const adminName = process.env.ADMIN_NAME || 'WotSocial Admin';
 
-  const passwordHash = await bcrypt.hash(defaultPassword, 10);
+  const existing = dbMode === 'postgres' && pgPool
+    ? (await pgPool.query('SELECT id FROM users WHERE LOWER(email) = $1', [adminEmail])).rows
+    : sqliteDb
+      ? [sqliteDb.prepare('SELECT id FROM users WHERE LOWER(email) = ?').get(adminEmail)].filter(Boolean)
+      : [];
+
+  if (existing.length) return;
+
+  const supplied = (process.env.ADMIN_PASSWORD || '').trim();
+  const password = supplied || crypto.randomBytes(18).toString('base64url');
+  // A supplied password is the operator's own choice; a generated one must be
+  // replaced by the person who first signs in with it.
+  const mustChange = supplied ? '0' : '1';
+  const passwordHash = await bcrypt.hash(password, 12);
 
   if (dbMode === 'postgres' && pgPool) {
-    const res = await pgPool.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
-    if (res.rows.length === 0) {
-      await pgPool.query(
-        'INSERT INTO users (id, email, password_hash, name, role) VALUES ($1, $2, $3, $4, $5)',
-        [adminId, adminEmail, passwordHash, adminName, 'admin']
-      );
-      console.log(`✅ Default Admin Account Seeded into PostgreSQL: ${adminEmail}`);
-    }
+    await pgPool.query(
+      `INSERT INTO users (id, email, password_hash, name, role, must_change_password)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [adminId, adminEmail, passwordHash, adminName, 'admin', mustChange]
+    );
   } else if (sqliteDb) {
-    const row = sqliteDb.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
-    if (!row) {
-      sqliteDb.prepare(
-        'INSERT INTO users (id, email, password_hash, name, role) VALUES (?, ?, ?, ?, ?)'
-      ).run(adminId, adminEmail, passwordHash, adminName, 'admin');
-      console.log(`✅ Default Admin Account Seeded into SQLite: ${adminEmail}`);
+    sqliteDb.prepare(
+      `INSERT INTO users (id, email, password_hash, name, role, must_change_password)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(adminId, adminEmail, passwordHash, adminName, 'admin', mustChange);
+  }
+
+  if (supplied) {
+    console.log(`✅ Administrator created: ${adminEmail} (password taken from ADMIN_PASSWORD)`);
+    return;
+  }
+
+  console.log('');
+  console.log('  ┌─────────────────────────────────────────────────────────────┐');
+  console.log('  │  Administrator account created                              │');
+  console.log('  ├─────────────────────────────────────────────────────────────┤');
+  console.log(`  │  Email:    ${adminEmail.padEnd(48)} │`);
+  console.log(`  │  Password: ${password.padEnd(48)} │`);
+  console.log('  │                                                             │');
+  console.log('  │  Shown once. You must change it at first sign-in.           │');
+  console.log('  │  Set ADMIN_PASSWORD to choose your own instead.             │');
+  console.log('  └─────────────────────────────────────────────────────────────┘');
+  console.log('');
+};
+
+/** Adds columns to a users table created before they existed. */
+const migrateUsersTable = async () => {
+  const additions = [{ name: 'must_change_password', sqlite: "TEXT DEFAULT '0'", postgres: "VARCHAR(1) DEFAULT '0'" }];
+
+  for (const column of additions) {
+    try {
+      if (dbMode === 'postgres' && pgPool) {
+        await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${column.name} ${column.postgres}`);
+      } else if (sqliteDb) {
+        const present = sqliteDb.prepare('PRAGMA table_info(users)').all().some((c: any) => c.name === column.name);
+        if (!present) sqliteDb.exec(`ALTER TABLE users ADD COLUMN ${column.name} ${column.sqlite}`);
+      }
+    } catch (err) {
+      console.error(`users.${column.name} migration failed:`, (err as Error).message);
     }
   }
 };

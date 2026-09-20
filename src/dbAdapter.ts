@@ -1,4 +1,5 @@
 import { auth } from './auth';
+import { authFetch } from './apiClient';
 import { saveMediaAssetToIDB, loadMediaAssetsFromIDB, deleteMediaAssetFromIDB } from './services/mediaStorage';
 
 export interface Brand {
@@ -195,7 +196,7 @@ export const parseLocalDatetimeString = (dtStr: string): Date => {
 // Helper to safely parse API response or return fallback
 const safeApiFetch = async (url: string, options?: RequestInit): Promise<any> => {
   try {
-    const res = await fetch(url, options);
+    const res = await authFetch(url, options);
     const contentType = res.headers.get('content-type') || '';
     if (res.ok && contentType.includes('application/json')) {
       return await res.json();
@@ -258,7 +259,7 @@ const saveLocalPosts = (posts: Post[]) => {
 // Brands API Client
 export const getBrands = async (): Promise<Brand[]> => {
   const userId = auth.currentUser?.uid || 'admin-user-001';
-  const data = await safeApiFetch(`/api/brands?userId=${encodeURIComponent(userId)}`);
+  const data = await safeApiFetch('/api/brands');
   
   if (Array.isArray(data)) {
     saveLocalBrands(data);

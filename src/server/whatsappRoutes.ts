@@ -13,6 +13,7 @@ import {
   parseJson, stringifyJson, timestamp, num, ensureStoreReady
 } from './store';
 import { asyncHandler, badRequest, notConnected, requireParam, currentUserId, HttpError } from './http';
+import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
 
 const router = Router();
@@ -36,7 +37,7 @@ const normalizePhone = (raw: string): string => String(raw || '').replace(/[^\d]
 /* ------------------------------------------------------------------ */
 
 router.get('/connection', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await getConnection(brandId, 'whatsapp');
   if (!conn) return res.json({ connected: false, connection: null, phoneNumber: null });
 
@@ -71,7 +72,7 @@ router.get('/connection', asyncHandler(async (req: Request, res: Response) => {
 
 router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
   const userId = currentUserId(req);
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const accessToken = requireParam(req.body.accessToken, 'accessToken').trim();
   const phoneNumberId = requireParam(req.body.phoneNumberId, 'phoneNumberId').trim();
   const wabaId = (req.body.wabaId || '').trim();
@@ -122,7 +123,7 @@ router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.delete('/connection', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId || req.body?.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   await deleteConnection(brandId, 'whatsapp');
   res.json({ success: true });
 }));
@@ -133,7 +134,7 @@ router.delete('/connection', asyncHandler(async (req: Request, res: Response) =>
 
 /** Pulls the real approved/pending/rejected templates from the WABA. */
 router.get('/templates', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireWaConnection(brandId);
   const wabaId = conn.metadata?.wabaId;
 
@@ -170,7 +171,7 @@ router.get('/templates', asyncHandler(async (req: Request, res: Response) => {
 
 /** Submits a new template for Meta review. Approval is not instant. */
 router.post('/templates', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireWaConnection(brandId);
   const wabaId = conn.metadata?.wabaId;
   if (!wabaId) throw badRequest('A WhatsApp Business Account ID is required to create templates.');
@@ -251,7 +252,7 @@ export const buildTemplatePayload = (
 
 /** Sends one template message. Returns the real `wamid` from Meta. */
 router.post('/send', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireWaConnection(brandId);
   const to = normalizePhone(requireParam(req.body.to, 'to'));
   const templateName = requireParam(req.body.templateName, 'templateName');
@@ -280,7 +281,7 @@ router.post('/send', asyncHandler(async (req: Request, res: Response) => {
  * actual API acknowledgements, and delivered/read arrive later via webhook.
  */
 router.post('/broadcasts', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.body.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   const conn = await requireWaConnection(brandId);
   const name = requireParam(req.body.name, 'name');
   const templateName = requireParam(req.body.templateName, 'templateName');
@@ -366,7 +367,7 @@ router.post('/broadcasts', asyncHandler(async (req: Request, res: Response) => {
 
 /** Broadcast list with counts derived from the per-message table. */
 router.get('/broadcasts', asyncHandler(async (req: Request, res: Response) => {
-  const brandId = requireParam(req.query.brandId, 'brandId');
+  const brandId = await requireOwnedBrand(req);
   await ensureStoreReady();
 
   const rows = await selectRows<any>('whatsapp_broadcasts', 'brand_id = $1', [brandId], 'ORDER BY created_at DESC LIMIT 50');

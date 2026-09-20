@@ -59,6 +59,15 @@ export const requireParam = (value: any, name: string): string => {
   return String(v);
 };
 
-/** Auth is header/query based today; centralised so real sessions drop in here. */
-export const currentUserId = (req: Request): string =>
-  (req.header('x-user-id') || (req.query.userId as string) || (req.body && req.body.userId) || 'admin-user-001').trim();
+/**
+ * The signed-in user's id, set by requireAuth.
+ *
+ * This previously fell back to a header, a query parameter and finally the
+ * seeded administrator, which meant an unauthenticated request was served with
+ * full privileges. There is no fallback now: no session, no identity.
+ */
+export const currentUserId = (req: Request): string => {
+  const id = (req as any).user?.id;
+  if (!id) throw new HttpError(401, 'Sign in to continue.', { code: 'UNAUTHENTICATED' });
+  return id;
+};

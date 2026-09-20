@@ -1,3 +1,5 @@
+import { authFetch } from '../apiClient';
+
 /**
  * Client for the live platform integrations.
  *
@@ -39,7 +41,7 @@ export class IntegrationError extends Error {
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   let res: Response;
   try {
-    res = await fetch(path, {
+    res = await authFetch(path, {
       ...init,
       headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) }
     });

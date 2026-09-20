@@ -1,49 +1,19 @@
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
 import { queryDb, initDatabase } from './db';
+import { currentUserId } from '../server/http';
+import { assertOwnsBrand, forgetBrandOwner, audit } from '../server/authMiddleware';
 
 const router = Router();
 
 // Ensure DB is initialized
 initDatabase().catch(err => console.error("Database initialization error:", err));
 
-// 1. Auth Endpoints
-router.post('/auth/login', async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
-
-    const rows = await queryDb('SELECT * FROM users WHERE email = $1', [email.trim()]);
-    if (rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const user = rows[0];
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    res.json({
-      success: true,
-      user: {
-        uid: user.id,
-        email: user.email,
-        displayName: user.name,
-        role: user.role
-      }
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || 'Login failed' });
-  }
-});
+// Sign-in lives in src/server/authRoutes.ts, which issues a session token.
 
 // 2. Brands Endpoints
 router.get('/brands', async (req: Request, res: Response) => {
   try {
-    const userId = (req.query.userId as string) || 'admin-user-001';
+    const userId = currentUserId(req);
     const rows = await queryDb('SELECT * FROM brands WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
 
     const brands = rows.map(b => ({
@@ -76,7 +46,7 @@ router.post('/brands', async (req: Request, res: Response) => {
   try {
     const data = req.body;
     const id = `brand-${Date.now()}`;
-    const userId = data.userId || 'admin-user-001';
+    const userId = currentUserId(req);
 
     await queryDb(
       `INSERT INTO brands (
@@ -134,7 +104,7 @@ router.put('/brands/:id', async (req: Request, res: Response) => {
         automation_settings = COALESCE($14, automation_settings),
         agent_research_data = COALESCE($15, agent_research_data),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $16`,
+      WHERE id = $16 AND user_id = $17`,
       [
         data.name,
         data.websiteUrl,
@@ -151,7 +121,8 @@ router.put('/brands/:id', async (req: Request, res: Response) => {
         data.brandColors ? JSON.stringify(data.brandColors) : null,
         data.automationSettings ? JSON.stringify(data.automationSettings) : null,
         data.agentResearchData ? JSON.stringify(data.agentResearchData) : null,
-        id
+        id,
+        currentUserId(req)
       ]
     );
 
@@ -164,7 +135,11 @@ router.put('/brands/:id', async (req: Request, res: Response) => {
 router.delete('/brands/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await queryDb('DELETE FROM brands WHERE id = $1', [id]);
+    const userId = currentUserId(req);
+    await assertOwnsBrand(req, id);
+    await queryDb('DELETE FROM brands WHERE id = $1 AND user_id = $2', [id, userId]);
+    forgetBrandOwner(id);
+    audit(req, { action: 'brand.delete', targetType: 'brand', targetId: id });
     res.json({ success: true, id });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -197,7 +172,7 @@ const parseSafeISOString = (val: any): string | null => {
 // 3. Posts Endpoints
 router.get('/posts', async (req: Request, res: Response) => {
   try {
-    const userId = (req.query.userId as string) || 'admin-user-001';
+    const userId = currentUserId(req);
     const brandId = req.query.brandId as string;
 
     let text = 'SELECT * FROM posts WHERE user_id = $1';
@@ -234,7 +209,7 @@ router.post('/posts', async (req: Request, res: Response) => {
   try {
     const data = req.body;
     const id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
-    const userId = data.userId || 'admin-user-001';
+    const userId = currentUserId(req);
     const scheduledISO = parseSafeISOString(data.scheduledTime);
 
     await queryDb(
@@ -275,12 +250,13 @@ router.put('/posts/:id', async (req: Request, res: Response) => {
         status = COALESCE($2, status),
         scheduled_time = COALESCE($3, scheduled_time),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4`,
+      WHERE id = $4 AND user_id = $5`,
       [
         data.content,
         data.status,
         scheduledISO,
-        id
+        id,
+        currentUserId(req)
       ]
     );
 
@@ -294,7 +270,8 @@ router.put('/posts/:id', async (req: Request, res: Response) => {
 router.delete('/posts/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await queryDb('DELETE FROM posts WHERE id = $1', [id]);
+    const userId = currentUserId(req);
+    await queryDb('DELETE FROM posts WHERE id = $1 AND user_id = $2', [id, userId]);
     res.json({ success: true, id });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
