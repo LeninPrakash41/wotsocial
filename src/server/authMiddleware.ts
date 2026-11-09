@@ -40,7 +40,10 @@ const PUBLIC_PATHS: { method: string; pattern: RegExp; why: string }[] = [
   { method: 'GET', pattern: /^\/oauth\/meta\/callback$/, why: 'Meta redirect, state-verified' },
   // The MCP bridge authenticates with its own hashed API key.
   { method: 'POST', pattern: /^\/mcp\/?$/, why: 'MCP API key' },
-  { method: 'GET', pattern: /^\/mcp\/tools$/, why: 'MCP API key' }
+  { method: 'GET', pattern: /^\/mcp\/tools$/, why: 'MCP API key' },
+  // The scheduler is invoked by the platform's cron, which presents
+  // CRON_SECRET rather than a user session; the handler checks it.
+  { method: 'GET', pattern: /^\/cron$/, why: 'CRON_SECRET' }
 ];
 
 const isPublic = (req: Request): boolean => {

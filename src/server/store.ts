@@ -285,9 +285,12 @@ const DDL = [
      type TEXT,
      source TEXT,
      mime_type TEXT,
+     bytes TEXT,
+     storage_key TEXT,
      created_at TEXT
    )`,
   `CREATE INDEX IF NOT EXISTS idx_media_brand ON media_assets (brand_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_media_key ON media_assets (storage_key)`,
 
   `CREATE TABLE IF NOT EXISTS mcp_tool_calls (
      id TEXT PRIMARY KEY,

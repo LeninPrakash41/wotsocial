@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getBrands, getBrandById, addPost, Brand, saveTrendToVault, toLocalDatetimeString, parseLocalDatetimeString } from '../dbAdapter';
 import { getDraftMedia } from '../services/mediaStorage';
 import { auth } from '../auth';
 import { BrandSelector } from '../components/BrandSelector';
 import { Loader2, Image as ImageIcon, Video, Type as TypeIcon, Calendar, PenTool, Sparkles, TrendingUp, PartyPopper, RefreshCw, Twitter, Linkedin, Instagram, Facebook, Megaphone, Download, ExternalLink, Tag, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ensureHostedUrl, isLocalMedia } from '../services/mediaLibrary';
+import { describeError } from '../services/integrationsApi';
 import { cn } from '../lib/utils';
 import * as geminiService from '../services/geminiService';
 import { generateOpenArtVideo, generateOpenArtImage, generateSeedanceVideo } from '../services/mediaService';
@@ -39,6 +41,9 @@ export function ContentGenerator() {
   const [generatedContent, setGeneratedContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [generatedMediaUrl, setGeneratedMediaUrl] = useState('');
+  const [hostingMedia, setHostingMedia] = useState(false);
+  const [mediaWarning, setMediaWarning] = useState<string | null>(null);
+  const finalTopicRef = useRef<string>('');
   const [videoDownloadLink, setVideoDownloadLink] = useState('');
   
   const [scheduling, setScheduling] = useState(false);
@@ -108,7 +113,7 @@ export function ContentGenerator() {
     const checkDraftMedia = async () => {
       const media = await getDraftMedia();
       if (media && media.url) {
-        setGeneratedMediaUrl(media.url);
+        hostAndSetMedia(media.url);
         setMediaType(media.type as any || 'image');
         setTopic('Selected Media Asset Post');
         setGeneratedContent('Selected Media Asset from Library. Click "Generate Content" to write copy or "Save for Approval / Schedule Post" to add to your Calendar Grid.');
@@ -245,7 +250,7 @@ export function ContentGenerator() {
       if (mediaType === 'image') {
         if (selectedModel === 'openart-image') {
           const openArtUrl = await generateOpenArtImage({ prompt: finalTopic, aspectRatio });
-          setGeneratedMediaUrl(openArtUrl);
+          hostAndSetMedia(openArtUrl);
         } else if (data.mediaUrl) {
           if (brand.logoUrl) {
             // Overlay logo using Canvas
@@ -273,20 +278,20 @@ export function ContentGenerator() {
             const padding = 20;
             ctx?.drawImage(logo, canvas.width - logoWidth - padding, canvas.height - logoHeight - padding, logoWidth, logoHeight);
             
-            setGeneratedMediaUrl(canvas.toDataURL('image/png'));
+            hostAndSetMedia(canvas.toDataURL('image/png'));
           } else {
-            setGeneratedMediaUrl(data.mediaUrl);
+            hostAndSetMedia(data.mediaUrl);
           }
         }
       } else if (mediaType === 'video') {
         if (selectedModel === 'seedance-video') {
           const seedanceUrl = await generateSeedanceVideo({ prompt: finalTopic, aspectRatio, resolution: videoResolution });
-          setGeneratedMediaUrl(seedanceUrl);
+          hostAndSetMedia(seedanceUrl);
         } else if (selectedModel === 'openart-video') {
           const openArtVidUrl = await generateOpenArtVideo({ prompt: finalTopic, aspectRatio });
-          setGeneratedMediaUrl(openArtVidUrl);
+          hostAndSetMedia(openArtVidUrl);
         } else if (data.videoDownloadLink) {
-          setGeneratedMediaUrl(data.videoDownloadLink);
+          hostAndSetMedia(data.videoDownloadLink);
         }
       }
 
@@ -401,6 +406,39 @@ export function ContentGenerator() {
       fromBrand: false
     };
   })();
+
+  /**
+   * Shows the generated media immediately, then replaces it with a hosted URL.
+   *
+   * The generators return base64 data URLs, which render fine in the browser
+   * but cannot be fetched by Instagram, Meta or WhatsApp. Uploading in the
+   * background keeps the preview instant while making the asset publishable.
+   */
+  const hostAndSetMedia = (url: string, title?: string) => {
+    setGeneratedMediaUrl(url);
+    setMediaWarning(null);
+    if (!url || !isLocalMedia(url) || !brand) return;
+
+    setHostingMedia(true);
+    void (async () => {
+      try {
+        const hosted = await ensureHostedUrl({
+          brandId: brand.id,
+          url,
+          title: title || finalTopicRef.current || 'Generated media',
+          source: 'ai-generated'
+        });
+        setGeneratedMediaUrl(hosted.url);
+        if (hosted.warning) setMediaWarning(hosted.warning);
+      } catch (err) {
+        setMediaWarning(
+          `Saved locally but not uploaded: ${describeError(err)}. It can be previewed but not published.`
+        );
+      } finally {
+        setHostingMedia(false);
+      }
+    })();
+  };
 
   if (loading) return <div className="p-8">Loading...</div>;
 
@@ -1154,6 +1192,16 @@ export function ContentGenerator() {
                     </div>
                   )}
 
+                  {hostingMedia && (
+                    <p className="mb-2 text-[11px] font-semibold text-ink-3">
+                      Saving the asset so it can be published…
+                    </p>
+                  )}
+                  {mediaWarning && (
+                    <p className="mb-2 rounded-lg border border-warn-line bg-warn-soft px-3 py-2 text-[11px] leading-relaxed text-warn">
+                      {mediaWarning}
+                    </p>
+                  )}
                   {generatedMediaUrl && mediaType === 'image' && (
                     <div className="border border-line rounded-lg overflow-hidden">
                       <img src={generatedMediaUrl} alt="Generated content" className="w-full h-64 object-cover" />

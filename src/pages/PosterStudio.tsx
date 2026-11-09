@@ -21,6 +21,7 @@ import { contentApi, PosterTemplate, Poster, PosterBatch } from '../services/stu
 import { generatePosterBatch, planBatch, BatchProgress } from '../services/posterService';
 import { availableProviders } from '../services/agentRuntime';
 import { generatePosterImage } from '../services/geminiService';
+import { ensureHostedUrl } from '../services/mediaLibrary';
 import { describeError } from '../services/integrationsApi';
 import { AgentCredit } from '../components/AgentCredit';
 import { TemplatePreview, paletteFromBrand } from '../components/TemplatePreview';
@@ -214,12 +215,24 @@ export function PosterStudio() {
     setRendering(poster.id);
     setBanner(null);
     try {
-      const imageUrl = await generatePosterImage({
+      const generated = await generatePosterImage({
         prompt: poster.imagePrompt,
         aspectRatio: template?.ratio === 'story' ? '9:16' : template?.ratio === 'portrait' ? '4:5' : '1:1'
       });
-      await contentApi.updatePoster(poster.id, { imageUrl });
-      setPosters(prev => prev.map(p => p.id === poster.id ? { ...p, imageUrl } : p));
+
+      // The generator returns a data URL, which no platform can fetch. Store it
+      // and keep the hosted URL, so the poster is publishable the moment it
+      // renders rather than failing later at publish time.
+      const hosted = await ensureHostedUrl({
+        brandId: brand!.id,
+        url: generated,
+        title: poster.headline || 'Poster artwork',
+        source: 'ai-generated'
+      });
+
+      await contentApi.updatePoster(poster.id, { imageUrl: hosted.url });
+      setPosters(prev => prev.map(p => p.id === poster.id ? { ...p, imageUrl: hosted.url } : p));
+      if (hosted.warning) setBanner({ kind: 'warning', message: 'Artwork saved, but not publishable yet.', detail: hosted.warning });
     } catch (err) {
       setBanner({ kind: 'error', message: describeError(err) });
     } finally {
