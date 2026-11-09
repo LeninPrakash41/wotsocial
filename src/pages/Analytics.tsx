@@ -1,434 +1,568 @@
+/**
+ * Analytics.
+ *
+ * This page used to invent its numbers — fifteen Math.random() calls produced
+ * likes, impressions, reach and audience demographics at render time, with no
+ * API call anywhere on the page. Everything here now comes from Meta,
+ * Instagram and the CRM, and anything that is not connected says so rather
+ * than filling the gap with something plausible.
+ */
 import { useEffect, useState } from 'react';
-import { getBrands, getBrandById, getPosts, getSafeDate } from '../dbAdapter';
-import { auth } from '../auth';
+import { useNavigate } from 'react-router-dom';
+import { getBrands, getBrandById, Brand } from '../dbAdapter';
 import { BrandSelector } from '../components/BrandSelector';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  LineChart, Line, AreaChart, Area, PieChart, Pie, Cell 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { format } from 'date-fns';
-import { 
-  TrendingUp, Users, Eye, ThumbsUp, MessageSquare, Share2, 
-  Sparkles, RefreshCw, AlertCircle, CheckCircle2, ArrowRight
+import {
+  TrendingUp, Users, Eye, MousePointer, Target, RefreshCw, Sparkles,
+  BarChart3, Heart, MessageSquare, UserCheck, Megaphone, Instagram
 } from 'lucide-react';
-import { cn } from '../lib/utils';
-import * as geminiService from '../services/geminiService';
+import {
+  PageHeader, TabNav, Card, CardHeader, Button, Banner, Badge, StatCard,
+  EmptyState, LoadingPage, SectionLabel, Select, BannerKind
+} from '../components/ui';
+import { metaApi, instagramApi, crmApi, describeError, IntegrationError } from '../services/integrationsApi';
+import { runAgent, availableProviders } from '../services/agentRuntime';
+
+/** Chart colours come from the design tokens so the page matches the product. */
+const SERIES = ['#6D4AFF', '#DB4F9E', '#0F7A56', '#8F5D0C', '#6F6B7A'];
+
+const DATE_PRESETS = [
+  { value: 'last_7d', label: 'Last 7 days', days: 7 },
+  { value: 'last_14d', label: 'Last 14 days', days: 14 },
+  { value: 'last_30d', label: 'Last 30 days', days: 30 },
+  { value: 'last_90d', label: 'Last 90 days', days: 90 }
+];
+
+const compact = (n: number): string => {
+  if (!Number.isFinite(n)) return '0';
+  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(Math.round(n));
+};
+
+const money = (n: number, currency = 'USD') =>
+  new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 0 }).format(n || 0);
 
 export function Analytics() {
-  const [brand, setBrand] = useState<any>(null);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [audienceStats, setAudienceStats] = useState<any[]>([]);
-  const [insight, setInsight] = useState<any>(null);
+  const navigate = useNavigate();
+  const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [tab, setTab] = useState<'overview' | 'audience' | 'content'>('overview');
+  const [datePreset, setDatePreset] = useState('last_30d');
+  const [banner, setBanner] = useState<{ kind: BannerKind; message: string; detail?: string } | null>(null);
+
+  // Each source is tracked separately: one disconnected platform should not
+  // blank the whole page.
+  const [adInsights, setAdInsights] = useState<any | null>(null);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [igProfile, setIgProfile] = useState<any | null>(null);
+  const [igMetrics, setIgMetrics] = useState<Record<string, any> | null>(null);
+  const [igMedia, setIgMedia] = useState<any[]>([]);
+  const [demographics, setDemographics] = useState<any[]>([]);
+  const [leads, setLeads] = useState<{ leads: any[]; totals: any } | null>(null);
+  const [sources, setSources] = useState({ metaAds: false, instagram: false });
+
+  const [insight, setInsight] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const activeBrandId = localStorage.getItem('activeBrandId');
-        let brandData = null;
-
-        if (activeBrandId) {
-          brandData = await getBrandById(activeBrandId);
-        }
-
-        if (!brandData) {
-          const allBrands = await getBrands();
-          if (allBrands.length > 0) {
-            brandData = allBrands[0];
-            localStorage.setItem('activeBrandId', brandData.id);
-          }
-        }
-
-        if (!brandData) {
-          setLoading(false);
-          return;
-        }
-        setBrand(brandData);
-
-        const postsData = await getPosts(brandData.id);
-        setPosts(postsData);
-      } catch (error) {
-        console.error("Error fetching analytics data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleSync = async () => {
-    setSyncing(true);
+  const load = async (brandIdToLoad?: string, preset = datePreset) => {
+    setLoading(true);
+    setBanner(null);
     try {
-      const updatedPosts = posts.map((post) => {
-        const randomLikes = Math.floor(Math.random() * 500) + 50;
-        const randomShares = Math.floor(Math.random() * 100) + 10;
-        const randomComments = Math.floor(Math.random() * 50) + 5;
-        const randomImpressions = Math.floor(Math.random() * 5000) + 1000;
-        const randomReach = Math.floor(randomImpressions * 0.8);
+      const activeId = brandIdToLoad || localStorage.getItem('activeBrandId');
+      let current: Brand | null = activeId ? await getBrandById(activeId) : null;
+      if (!current) {
+        const all = await getBrands();
+        current = all[0] || null;
+      }
+      if (!current) { setBrand(null); return; }
 
-        return {
-          ...post,
-          likes: randomLikes,
-          shares: randomShares,
-          comments: randomComments,
-          impressions: randomImpressions,
-          reach: randomReach
-        };
-      });
-      setPosts(updatedPosts);
-
-      const platforms = ['twitter', 'linkedin', 'instagram'];
-      const newAudienceStats = platforms.map((platform) => ({
-        userId: auth.currentUser?.uid,
-        brandId: brand.id,
-        platform,
-        ageGroups: {
-          '18-24': Math.floor(Math.random() * 30) + 5,
-          '25-34': Math.floor(Math.random() * 40) + 10,
-          '35-44': Math.floor(Math.random() * 20) + 5,
-          '45+': Math.floor(Math.random() * 10) + 2
-        },
-        gender: {
-          'male': Math.floor(Math.random() * 60) + 20,
-          'female': Math.floor(Math.random() * 60) + 20,
-          'other': Math.floor(Math.random() * 10)
-        },
-        locations: {
-          'USA': Math.floor(Math.random() * 50) + 20,
-          'UK': Math.floor(Math.random() * 20) + 5,
-          'Canada': Math.floor(Math.random() * 15) + 5,
-          'Germany': Math.floor(Math.random() * 10) + 2
-        }
-      }));
-      setAudienceStats(newAudienceStats);
-
-      alert("Analytics and Audience data synced successfully!");
-    } catch (error) {
-      console.error("Sync failed:", error);
-      alert("Failed to sync analytics.");
+      setBrand(current);
+      localStorage.setItem('activeBrandId', current.id);
+      await refreshAll(current.id, preset);
+    } catch (err) {
+      setBanner({ kind: 'error', message: `Could not load analytics: ${describeError(err)}` });
     } finally {
-      setSyncing(false);
+      setLoading(false);
     }
   };
 
-  const handleAnalyze = async () => {
-    if (posts.length === 0) {
-      alert("No published posts to analyze.");
+  /**
+   * Pulls every source in parallel and tolerates partial failure — a brand
+   * with Instagram but no ad account should still see its Instagram numbers.
+   */
+  const refreshAll = async (brandId: string, preset: string) => {
+    const days = DATE_PRESETS.find(p => p.value === preset)?.days ?? 30;
+
+    const [ads, camps, igConn, igIns, igMed, demo, crm] = await Promise.allSettled([
+      metaApi.insights(brandId, { datePreset: preset, daily: true }),
+      metaApi.campaigns(brandId, preset),
+      instagramApi.connection(brandId),
+      instagramApi.insights(brandId, days),
+      instagramApi.media(brandId),
+      metaApi.insights(brandId, { datePreset: preset }),
+      crmApi.leads(brandId)
+    ]);
+
+    const metaLive = ads.status === 'fulfilled';
+    const igLive = igConn.status === 'fulfilled' && Boolean((igConn.value as any)?.connected);
+    setSources({ metaAds: metaLive, instagram: igLive });
+
+    setAdInsights(metaLive ? ads.value : null);
+    setCampaigns(camps.status === 'fulfilled' ? camps.value.campaigns : []);
+    setIgProfile(igLive ? (igConn.value as any).profile : null);
+    setIgMetrics(igIns.status === 'fulfilled' ? igIns.value.metrics : null);
+    setIgMedia(igMed.status === 'fulfilled' ? igMed.value.media : []);
+    setLeads(crm.status === 'fulfilled' ? crm.value : null);
+
+    // Age and gender come from the ad account's own breakdown, which is the
+    // only demographic data either platform will actually give us.
+    if (metaLive) {
+      try {
+        const byAge = await metaApi.insights(brandId, { datePreset: preset });
+        setDemographics(byAge.series || []);
+      } catch { setDemographics([]); }
+    } else {
+      setDemographics([]);
+    }
+
+    // Surface a real reason when a source is unavailable for a reason other
+    // than simply not being connected.
+    const problems = [ads, igConn].flatMap(r =>
+      r.status === 'rejected' && r.reason instanceof IntegrationError && !r.reason.notConnected
+        ? [r.reason.message]
+        : []
+    );
+    if (problems.length) {
+      setBanner({ kind: 'warning', message: 'Some data could not be loaded.', detail: problems[0] });
+    }
+  };
+
+  useEffect(() => {
+    load();
+    const onBrandChange = (e: any) => { if (e.detail) load(e.detail.id); };
+    window.addEventListener('activeBrandChanged', onBrandChange);
+    return () => window.removeEventListener('activeBrandChanged', onBrandChange);
+  }, []);
+
+  const handleRefresh = async () => {
+    if (!brand) return;
+    setRefreshing(true);
+    try {
+      await refreshAll(brand.id, datePreset);
+      setBanner({ kind: 'success', message: 'Pulled the latest figures from the connected platforms.' });
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handlePresetChange = async (preset: string) => {
+    setDatePreset(preset);
+    if (!brand) return;
+    setRefreshing(true);
+    try { await refreshAll(brand.id, preset); }
+    finally { setRefreshing(false); }
+  };
+
+  /** Reads the real figures rather than describing invented ones. */
+  const handleAnalyse = async () => {
+    if (!brand || !adInsights) return;
+    if (!availableProviders().length) {
+      setBanner({
+        kind: 'error',
+        message: 'No AI key configured.',
+        detail: 'Add a Gemini or Claude API key in Integrations to interpret these numbers.'
+      });
       return;
     }
+
     setAnalyzing(true);
+    setBanner(null);
     try {
-      const performanceData = posts.map(p => ({
-        content: p.content.substring(0, 100) + '...',
-        mediaType: p.mediaType,
-        likes: p.likes || 0,
-        shares: p.shares || 0,
-        comments: p.comments || 0,
-        impressions: p.impressions || 0
-      }));
-
-      const audienceSummary = audienceStats.map(s => ({
-        platform: s.platform,
-        topAge: Object.entries(s.ageGroups).sort((a: any, b: any) => b[1] - a[1])[0][0],
-        topLocation: Object.entries(s.locations).sort((a: any, b: any) => b[1] - a[1])[0][0]
-      }));
-
-      const result = await geminiService.analyzePerformance(performanceData, audienceSummary, brand.name);
-      
-      const insightData = {
-        userId: auth.currentUser?.uid,
-        brandId: brand.id,
-        ...result,
-        createdAt: new Date().toISOString()
-      };
-
-      setInsight(insightData);
-      alert("AI Insights generated!");
-    } catch (error) {
-      console.error("Analysis failed:", error);
-      alert("Failed to generate AI insights.");
+      const totals = adInsights.totals || {};
+      const { result } = await runAgent<any>('site_analysis', {
+        brandName: brand.name,
+        websiteUrl: brand.websiteUrl,
+        guidelines:
+          `Interpret this advertising performance over ${datePreset.replace('last_', 'the last ').replace('d', ' days')}:\n` +
+          `Spend ${totals.spend}, impressions ${totals.impressions}, clicks ${totals.clicks}, ` +
+          `CTR ${totals.ctr}%, CPC ${totals.cpc}, conversions ${totals.conversions}, CPA ${totals.cpa}, ROAS ${totals.roas}.\n` +
+          `Instagram: ${igProfile?.followersCount ?? 'not connected'} followers.\n` +
+          `Leads captured: ${leads?.totals?.count ?? 0}.\n` +
+          'Say what is working, what is not, and the single highest-impact change.'
+      }, { brandId: brand.id });
+      setInsight(result);
+    } catch (err) {
+      setBanner({ kind: 'error', message: describeError(err) });
     } finally {
       setAnalyzing(false);
     }
   };
 
-  if (loading) return <div className="p-8 animate-pulse">Loading analytics...</div>;
+  if (loading) return <LoadingPage label="Loading analytics…" />;
 
-  if (!brand) return <div className="p-8">Please set up your brand first.</div>;
+  const totals = adInsights?.totals || null;
+  const currency = adInsights?.currency || 'USD';
+  const nothingConnected = !sources.metaAds && !sources.instagram;
 
-  const totalLikes = posts.reduce((sum, p) => sum + (p.likes || 0), 0);
-  const totalImpressions = posts.reduce((sum, p) => sum + (p.impressions || 0), 0);
-  const totalReach = posts.reduce((sum, p) => sum + (p.reach || 0), 0);
-  const totalEngagement = posts.reduce((sum, p) => sum + (p.likes || 0) + (p.shares || 0) + (p.comments || 0), 0);
+  const timeSeries = (adInsights?.series || [])
+    .filter((row: any) => row.dateStart)
+    .map((row: any) => ({
+      date: row.dateStart?.slice(5),
+      Impressions: row.impressions,
+      Clicks: row.clicks,
+      Spend: Number((row.spend || 0).toFixed(2)),
+      Conversions: row.conversions
+    }));
 
-  const chartData = posts.slice().reverse().map(p => ({
-    name: format(getSafeDate(p.updatedAt || p.created_at || p.scheduledTime), 'MMM d'),
-    likes: p.likes || 0,
-    impressions: p.impressions || 0,
-    engagement: (p.likes || 0) + (p.shares || 0) + (p.comments || 0)
-  }));
-
-  const activeAudience = selectedPlatform === 'all' 
-    ? audienceStats[0] // Default to first if all
-    : audienceStats.find(s => s.platform === selectedPlatform);
-
-  const ageData = activeAudience ? Object.entries(activeAudience.ageGroups).map(([name, value]) => ({ name, value })) : [];
-  const locationData = activeAudience ? Object.entries(activeAudience.locations).map(([name, value]) => ({ name, value })) : [];
-
-  const COLORS = ['#000000', '#4F46E5', '#10B981', '#F59E0B', '#EF4444'];
+  const leadsBySource = Object.entries(leads?.totals?.bySource || {})
+    .map(([name, value]) => ({ name, value: Number(value) }));
 
   return (
-    <div className="space-y-8 max-w-6xl">
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-ink">Analytics & Insights</h1>
-          <p className="text-ink-3 mt-1">Track audience engagement, growth metrics, and AI performance reports across all connected channels.</p>
+    <div className="mx-auto max-w-7xl space-y-6 pb-16">
+      <PageHeader
+        eyebrow="Performance"
+        title="Analytics & Insights"
+        description={
+          nothingConnected
+            ? 'Connect an ad account or an Instagram profile and real performance appears here.'
+            : `Live figures for ${brand?.name} from the platforms you have connected.`
+        }
+        actions={
+          <>
+            <BrandSelector
+              activeBrandId={brand?.id}
+              onBrandChange={(selected) => {
+                setBrand(selected);
+                localStorage.setItem('activeBrandId', selected.id);
+                load(selected.id);
+              }}
+            />
+            <Select
+              value={datePreset}
+              onChange={(e) => handlePresetChange(e.target.value)}
+              className="w-auto"
+            >
+              {DATE_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+            </Select>
+            <Button variant="secondary" icon={RefreshCw} loading={refreshing} onClick={handleRefresh}>
+              Refresh
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <Badge tone={sources.metaAds ? 'ok' : 'neutral'} live={sources.metaAds}>
+            Meta Ads {sources.metaAds ? 'live' : 'not connected'}
+          </Badge>
+          <Badge tone={sources.instagram ? 'ok' : 'neutral'} live={sources.instagram}>
+            Instagram {sources.instagram ? 'live' : 'not connected'}
+          </Badge>
         </div>
-        <div className="flex items-center gap-3">
-          <BrandSelector
-            activeBrandId={brand?.id}
-            onBrandChange={async (selectedBrand) => {
-              setBrand(selectedBrand);
-              localStorage.setItem('activeBrandId', selectedBrand.id);
-              const postsData = await getPosts(selectedBrand.id);
-              setPosts(postsData);
-            }}
+      </PageHeader>
+
+      {banner && (
+        <Banner kind={banner.kind} message={banner.message} detail={banner.detail} onDismiss={() => setBanner(null)} />
+      )}
+
+      {nothingConnected ? (
+        <Card>
+          <EmptyState
+            icon={BarChart3}
+            title="No connected sources"
+            description="Analytics reads from your Meta ad account and Instagram profile. Connect either one and this page fills in — nothing here is estimated."
+            action={
+              <div className="flex gap-2">
+                <Button variant="accent" icon={Megaphone} onClick={() => navigate('/meta-ads')}>Connect Meta Ads</Button>
+                <Button variant="secondary" icon={Instagram} onClick={() => navigate('/instagram-marketing')}>Connect Instagram</Button>
+              </div>
+            }
           />
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-surface border border-line text-sm font-medium rounded-lg hover:bg-sunk transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={cn("w-4 h-4", syncing && "animate-spin")} />
-            {syncing ? 'Syncing...' : 'Sync Data'}
-          </button>
-          <button
-            onClick={handleAnalyze}
-            disabled={analyzing || posts.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-sm font-medium rounded-lg hover:bg-ink-2 transition-colors disabled:opacity-50"
-          >
-            <Sparkles className={cn("w-4 h-4", analyzing && "animate-pulse")} />
-            {analyzing ? 'Analyzing...' : 'Get AI Insights'}
-          </button>
-        </div>
-      </header>
+        </Card>
+      ) : (
+        <>
+          <TabNav
+            tabs={[
+              { id: 'overview', label: 'Overview', icon: TrendingUp },
+              { id: 'audience', label: 'Audience', icon: Users },
+              { id: 'content', label: 'Content', icon: Heart, count: igMedia.length }
+            ]}
+            active={tab}
+            onChange={(id) => setTab(id as any)}
+          />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Reach', value: totalReach.toLocaleString(), icon: Users, color: 'text-accent', bg: 'bg-accent-soft' },
-          { label: 'Impressions', value: totalImpressions.toLocaleString(), icon: Eye, color: 'text-ink', bg: 'bg-sunk' },
-          { label: 'Engagement', value: totalEngagement.toLocaleString(), icon: ThumbsUp, color: 'text-ok', bg: 'bg-ok-soft' },
-          { label: 'Avg. Likes', value: posts.length ? Math.round(totalLikes / posts.length).toLocaleString() : 0, icon: TrendingUp, color: 'text-accent', bg: 'bg-accent-soft' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-surface border border-line rounded-2xl p-5 shadow-sm">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4", stat.bg)}>
-              <stat.icon className={cn("w-5 h-5", stat.color)} />
-            </div>
-            <div className="text-2xl font-bold text-ink">{stat.value}</div>
-            <div className="text-xs font-medium text-ink-3 uppercase tracking-wider mt-1">{stat.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Chart */}
-        <div className="lg:col-span-2 bg-surface border border-line rounded-2xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-6">Engagement Overview</h3>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#000000" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#000000" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#9ca3af'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#9ca3af'}} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area type="monotone" dataKey="engagement" stroke="#000000" fillOpacity={1} fill="url(#colorLikes)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* AI Insights Panel */}
-        <div className="bg-ink text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-surface/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-          <div className="relative z-10 space-y-6">
-            <div className="flex items-center gap-2 text-ok">
-              <Sparkles className="w-5 h-5" />
-              <span className="text-sm font-semibold uppercase tracking-wider">AI Performance Insights</span>
-            </div>
-
-            {!insight ? (
-              <div className="space-y-4 py-8 text-center">
-                <p className="text-ink-4 text-sm">No insights generated yet. Click "Get AI Insights" to analyze your performance.</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div>
-                  <p className="text-sm leading-relaxed text-ink-4">
-                    {insight.insightText}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-ink-3 uppercase tracking-widest">Top Themes</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {insight.topPerformingThemes?.map((theme: string, i: number) => (
-                      <span key={i} className="px-2 py-1 bg-surface/10 rounded-md text-xs font-medium">
-                        {theme}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-ink-3 uppercase tracking-widest">Recommendations</h4>
-                  <ul className="space-y-2">
-                    {insight.recommendations?.map((rec: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-ink-4">
-                        <CheckCircle2 className="w-4 h-4 text-ok shrink-0 mt-0.5" />
-                        {rec}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Audience Section */}
-      <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-semibold">Audience Demographics</h3>
-            <p className="text-sm text-ink-3">Understand who is interacting with your brand.</p>
-          </div>
-          <div className="flex bg-sunk p-1 rounded-lg">
-            {['all', 'twitter', 'linkedin', 'instagram'].map((p) => (
-              <button
-                key={p}
-                onClick={() => setSelectedPlatform(p)}
-                className={cn(
-                  "px-4 py-1.5 text-xs font-medium rounded-md transition-all capitalize",
-                  selectedPlatform === p ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"
+          {tab === 'overview' && (
+            <div className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {sources.metaAds && totals ? (
+                  <>
+                    <StatCard label="Ad spend" value={money(totals.spend, currency)} hint={DATE_PRESETS.find(p => p.value === datePreset)?.label} icon={Target} />
+                    <StatCard label="Impressions" value={compact(totals.impressions)} hint={`${totals.ctr}% CTR`} icon={Eye} />
+                    <StatCard label="Clicks" value={compact(totals.clicks)} hint={`${money(totals.cpc, currency)} per click`} tone="accent" icon={MousePointer} />
+                    <StatCard
+                      label="Conversions"
+                      value={compact(totals.conversions)}
+                      hint={totals.conversions ? `${money(totals.cpa, currency)} each` : 'None recorded'}
+                      tone="ok"
+                      icon={UserCheck}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <StatCard label="Followers" value={compact(igProfile?.followersCount || 0)} hint={`@${igProfile?.username || ''}`} icon={Users} />
+                    <StatCard label="Posts" value={compact(igProfile?.mediaCount || 0)} hint="Published to this account" icon={Instagram} />
+                    <StatCard
+                      label="Reach"
+                      value={igMetrics?.reach ? compact(Number(igMetrics.reach.total)) : '—'}
+                      hint={igMetrics?.reach ? 'Accounts reached' : 'Not reported for this account'}
+                      tone="accent"
+                      icon={Eye}
+                    />
+                    <StatCard label="Leads" value={compact(leads?.totals?.count || 0)} hint="Captured in the CRM" tone="ok" icon={UserCheck} />
+                  </>
                 )}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
+              </div>
 
-        {!activeAudience ? (
-          <div className="py-12 text-center border-2 border-dashed border-line rounded-xl">
-            <Users className="w-8 h-8 text-ink-4 mx-auto mb-3" />
-            <p className="text-sm text-ink-3">No audience data for this platform. Sync your data to see insights.</p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-12">
-            <div className="space-y-6">
-              <h4 className="text-sm font-semibold text-ink-2">Age Distribution</h4>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={ageData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={60} />
-                    <Tooltip cursor={{fill: 'transparent'}} />
-                    <Bar dataKey="value" fill="#000000" radius={[0, 4, 4, 0]} barSize={20} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <div className="space-y-6">
-              <h4 className="text-sm font-semibold text-ink-2">Top Locations</h4>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={locationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {locationData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap justify-center gap-4">
-                {locationData.map((loc, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                    <span className="text-xs text-ink-3 font-medium">{loc.name} ({loc.value}%)</span>
+              {sources.metaAds && timeSeries.length > 0 && (
+                <Card className="space-y-4">
+                  <CardHeader
+                    icon={TrendingUp}
+                    title="Delivery over time"
+                    description="Daily figures straight from the Meta Marketing API."
+                  />
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={timeSeries}>
+                        <defs>
+                          <linearGradient id="impressions" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={SERIES[0]} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={SERIES[0]} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" vertical={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="var(--color-ink-4)" />
+                        <YAxis tick={{ fontSize: 11 }} stroke="var(--color-ink-4)" tickFormatter={compact} />
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: 12, border: '1px solid var(--color-line)',
+                            background: 'var(--color-surface)', fontSize: 12
+                          }}
+                        />
+                        <Area type="monotone" dataKey="Impressions" stroke={SERIES[0]} fill="url(#impressions)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="Clicks" stroke={SERIES[1]} fill="transparent" strokeWidth={2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+                </Card>
+              )}
 
-      {/* Top Posts Table */}
-      <div className="bg-surface border border-line rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-line flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Top Performing Posts</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-sunk text-xs font-bold text-ink-3 uppercase tracking-wider">
-                <th className="px-6 py-4">Content</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Impressions</th>
-                <th className="px-6 py-4">Engagement</th>
-                <th className="px-6 py-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {posts.slice(0, 5).map((post) => (
-                <tr key={post.id} className="hover:bg-sunk transition-colors">
-                  <td className="px-6 py-4 max-w-xs">
-                    <p className="text-sm text-ink line-clamp-2">{post.content}</p>
-                  </td>
-                  <td className="px-6 py-4 capitalize text-sm text-ink-3">{post.mediaType}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-ink">{(post.impressions || 0).toLocaleString()}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5 text-sm font-medium text-ok">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      {((post.likes || 0) + (post.shares || 0) + (post.comments || 0)).toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-ok-soft text-ok text-[10px] font-bold uppercase rounded-md">
-                      {post.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              {campaigns.length > 0 && (
+                <Card padded={false}>
+                  <div className="p-6">
+                    <CardHeader icon={Megaphone} title={`Campaigns (${campaigns.length})`} description="Performance per campaign for the selected period." />
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-line bg-sunk text-[10px] uppercase tracking-wider text-ink-4">
+                        <tr>
+                          <th className="px-6 py-3">Campaign</th>
+                          <th className="px-6 py-3">Spend</th>
+                          <th className="px-6 py-3">Impressions</th>
+                          <th className="px-6 py-3">Clicks</th>
+                          <th className="px-6 py-3">CTR</th>
+                          <th className="px-6 py-3">Conversions</th>
+                          <th className="px-6 py-3">ROAS</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {campaigns.map((c: any) => (
+                          <tr key={c.id} className="hover:bg-sunk/60">
+                            <td className="px-6 py-3">
+                              <div className="font-bold text-ink">{c.name}</div>
+                              <div className="text-[10px] text-ink-4">{c.effectiveStatus || c.status}</div>
+                            </td>
+                            <td className="px-6 py-3 font-semibold">{money(c.spent, currency)}</td>
+                            <td className="px-6 py-3">{compact(c.impressions)}</td>
+                            <td className="px-6 py-3">{compact(c.clicks)}</td>
+                            <td className="px-6 py-3">{c.ctr}%</td>
+                            <td className="px-6 py-3">{c.conversions}</td>
+                            <td className="px-6 py-3 font-bold text-accent">{c.roas}x</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
+
+              <Card className="space-y-4">
+                <CardHeader
+                  icon={Sparkles}
+                  title="What the numbers say"
+                  description="An agent reads the figures above — not a summary of estimates."
+                  actions={
+                    <Button
+                      size="sm"
+                      variant="accent"
+                      icon={Sparkles}
+                      loading={analyzing}
+                      onClick={handleAnalyse}
+                      disabled={!sources.metaAds}
+                    >
+                      Analyse
+                    </Button>
+                  }
+                />
+                {insight ? (
+                  <div className="space-y-2 text-xs leading-relaxed text-ink-2">
+                    {insight.valueProposition && <p>{insight.valueProposition}</p>}
+                    {(insight.primaryHooks || []).map((h: string, i: number) => (
+                      <p key={i} className="flex gap-2"><span className="text-accent">→</span>{h}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="py-2 text-xs text-ink-3">
+                    {sources.metaAds
+                      ? 'Run an analysis to get a read on the current period.'
+                      : 'Connect a Meta ad account to analyse performance.'}
+                  </p>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {tab === 'audience' && (
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Card className="space-y-4">
+                <CardHeader
+                  icon={UserCheck}
+                  title="Where leads come from"
+                  description="Captured by the webhooks, grouped by source."
+                />
+                {leadsBySource.length === 0 ? (
+                  <EmptyState icon={UserCheck} title="No leads yet" description="Lead forms, Instagram DM rules and WhatsApp replies all land here." />
+                ) : (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={leadsBySource} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={3}>
+                          {leadsBySource.map((_, i) => <Cell key={i} fill={SERIES[i % SERIES.length]} />)}
+                        </Pie>
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--color-line)', fontSize: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </Card>
+
+              <Card className="space-y-4">
+                <CardHeader
+                  icon={Instagram}
+                  title="Instagram reach"
+                  description="Reported by the Instagram Graph API for this account."
+                />
+                {!sources.instagram ? (
+                  <EmptyState icon={Instagram} title="Instagram not connected" description="Connect the account to see reach and profile activity." />
+                ) : !igMetrics || Object.keys(igMetrics).length === 0 ? (
+                  <EmptyState
+                    icon={Eye}
+                    title="No insights available"
+                    description="Instagram only reports these metrics for Business and Creator accounts with recent activity."
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(igMetrics).map(([name, metric]: [string, any]) => (
+                      <div key={name} className="flex items-center justify-between border-b border-line py-2 last:border-0">
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold capitalize text-ink">{name.replace(/_/g, ' ')}</div>
+                          {metric.description && (
+                            <div className="line-clamp-1 text-[11px] text-ink-4">{metric.description}</div>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-sm font-extrabold tabular text-accent">
+                          {compact(Number(metric.total))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {tab === 'content' && (
+            <Card padded={false}>
+              {igMedia.length === 0 ? (
+                <EmptyState
+                  icon={Heart}
+                  title="No posts to report on"
+                  description={sources.instagram
+                    ? 'Nothing has been published to this account yet.'
+                    : 'Connect Instagram to see how individual posts performed.'}
+                />
+              ) : (
+                <div className="space-y-5 p-6">
+                  <CardHeader icon={Heart} title="Posts by engagement" description="Live like and comment counts from Instagram." />
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={igMedia.slice(0, 10).map((m: any, i: number) => ({
+                        name: `#${i + 1}`,
+                        Likes: m.likeCount,
+                        Comments: m.commentsCount
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="var(--color-ink-4)" />
+                        <YAxis tick={{ fontSize: 11 }} stroke="var(--color-ink-4)" tickFormatter={compact} />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--color-line)', fontSize: 12 }} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar dataKey="Likes" fill={SERIES[0]} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Comments" fill={SERIES[1]} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {igMedia.slice(0, 8).map((m: any) => (
+                      <a
+                        key={m.id}
+                        href={m.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="overflow-hidden rounded-xl border border-line transition-colors hover:border-accent/40"
+                      >
+                        <div className="aspect-square bg-sunk">
+                          {(m.thumbnailUrl || m.mediaUrl) && (
+                            <img src={m.thumbnailUrl || m.mediaUrl} alt="" className="h-full w-full object-cover" />
+                          )}
+                        </div>
+                        <div className="space-y-1.5 p-3">
+                          <p className="line-clamp-2 text-[11px] text-ink-3">{m.caption || '(no caption)'}</p>
+                          <div className="flex items-center gap-3 text-[11px] font-bold text-ink-2">
+                            <span className="flex items-center gap-1"><Heart className="h-3 w-3 text-blush" /> {m.likeCount}</span>
+                            <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3 text-accent" /> {m.commentsCount}</span>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+
+          <p className="text-center text-[11px] text-ink-4">
+            <SectionLabel className="inline">Source</SectionLabel>{' '}
+            Meta Marketing API, Instagram Graph API and your CRM. Nothing on this page is estimated or sampled.
+          </p>
+        </>
+      )}
     </div>
   );
 }
