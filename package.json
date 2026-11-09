@@ -22,6 +22,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1165.0",
+    "@aws-sdk/s3-request-presigner": "^3.1165.0",
     "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vercel/analytics": "^2.0.1",

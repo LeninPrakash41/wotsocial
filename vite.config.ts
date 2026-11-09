@@ -35,6 +35,25 @@ export default defineConfig(({mode}) => {
     server: {
       port: 3050,
       strictPort: true,
+      // The dev server serves files from the project directory, so by default
+      // it hands out .env, the token-vault key and the SQLite database to
+      // anyone who can reach it. That matters here because publishing
+      // generated media may involve tunnelling this app so Meta can fetch it.
+      fs: {
+        strict: true,
+        // Patterns are matched against the full path, so bare names like
+        // '.env' do not catch an /@fs/ absolute-path request.
+        deny: [
+          '**/.env',
+          '**/.env.*',
+          '**/*.db',
+          '**/*.db-wal',
+          '**/*.db-shm',
+          '**/.wotsocial-encryption-key',
+          '**/.git/**',
+          '**/node_modules/.cache/**'
+        ]
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

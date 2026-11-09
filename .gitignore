@@ -23,3 +23,6 @@ npm-debug.log*
 
 # Local token-vault key (dev only; production uses ENCRYPTION_KEY)
 .wotsocial-encryption-key
+
+# Locally stored media (the S3 driver is used in production)
+.media/

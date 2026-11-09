@@ -23,6 +23,8 @@ import { ensureStoreReady } from "./src/server/store.ts";
 import authRoutes from "./src/server/authRoutes.ts";
 import { requireAuth } from "./src/server/authMiddleware.ts";
 import { pruneExpired } from "./src/server/sessions.ts";
+import mediaRoutes from "./src/server/mediaRoutes.ts";
+import { localMediaRoot, storageDriver, checkStorage } from "./src/server/mediaStore.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +32,26 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3050;
+
+  /**
+   * Blocks requests for sensitive project files before anything else sees them.
+   *
+   * In development Vite serves the project directory, including through its
+   * /@fs/ escape hatch, which hands out .env, the token-vault key and the
+   * SQLite database to anyone who can reach the port. That is normally
+   * tolerable because the dev server is local — but publishing generated media
+   * can involve tunnelling this app so Meta can fetch it, at which point the
+   * whole project would be public. Vite's own fs.deny does not reliably match
+   * dotfiles, so this does not depend on it.
+   */
+  const BLOCKED = /(^|\/)(\.env($|\.)|\.wotsocial-encryption-key|\.git\/|wotsocial\.db)/i;
+  app.use((req, res, next) => {
+    const target = decodeURIComponent(req.url.split('?')[0]);
+    if (BLOCKED.test(target)) {
+      return res.status(403).type('text/plain').send('Forbidden');
+    }
+    next();
+  });
 
   // Webhooks mount FIRST and bring their own body parser: verifying Meta's
   // X-Hub-Signature-256 requires the exact bytes that were signed, which a
@@ -56,8 +78,18 @@ async function startServer() {
   app.use("/api/oauth", oauthRoutes);
   app.use("/api/mcp", mcpRoutes);
   app.use("/api/crm", crmRoutes);
+  app.use("/api/media", mediaRoutes);
   app.use("/api/agents", agentRoutes);
   app.use("/api/content", contentRoutes);
+
+  if (storageDriver() === "local") {
+    app.use("/media", express.static(path.join(localMediaRoot(), "media"), {
+      maxAge: "1y",
+      immutable: true,
+      index: false,
+      dotfiles: "deny"
+    }));
+  }
 
   app.get("/api/health", (req, res) => {
     res.json({
