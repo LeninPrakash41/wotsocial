@@ -91,9 +91,13 @@ async function startServer() {
     }));
   }
 
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", async (req, res) => {
+    // Storage health matters operationally: without it, generated media cannot
+    // be published, and that failure would otherwise only surface at publish.
+    const storage = await checkStorage();
     res.json({
-      status: "ok",
+      status: storage.ok ? "ok" : "degraded",
+      storage,
       integrations: {
         metaOAuth: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET),
         metaWebhooks: Boolean(process.env.META_WEBHOOK_VERIFY_TOKEN && process.env.META_APP_SECRET),
