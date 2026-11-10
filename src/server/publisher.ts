@@ -7,6 +7,7 @@
  */
 import { graphGet, graphPost, MetaApiError } from './graphClient';
 import { getConnection, q, ensureStoreReady, timestamp } from './store';
+import { logger } from './logging';
 
 export interface PublishOutcome {
   platform: string;
@@ -226,7 +227,7 @@ export const publishDuePosts = async (options: { limit?: number } = {}): Promise
     if (anySucceeded) published++; else failed++;
     results.push({ postId: post.id, brandId: post.brand_id, outcomes });
 
-    if (errors) console.error(`Scheduled post ${post.id}: ${errors}`);
+    if (errors) logger.error(`Scheduled post ${post.id}: ${errors}`);
   }
 
   return { considered: due.length, published, failed, results };

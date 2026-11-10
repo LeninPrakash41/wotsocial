@@ -9,6 +9,7 @@
  */
 import express from "express";
 import { publishDuePosts } from "../src/server/publisher";
+import { logger } from "../src/server/logging";
 
 const app = express();
 app.use(express.json());
@@ -21,7 +22,7 @@ app.get("/api/cron", async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!secret) {
-    console.warn("⚠️  CRON_SECRET is not set — /api/cron is callable by anyone who can reach it.");
+    logger.warn("CRON_SECRET is not set; /api/cron is callable by anyone who can reach it");
   }
 
   try {
@@ -31,17 +32,18 @@ app.get("/api/cron", async (req, res) => {
       return res.status(200).json({ message: "Nothing due.", ...summary });
     }
 
-    console.log(
-      `Scheduled publishing: ${summary.published} published, ${summary.failed} failed, ` +
-      `${summary.considered} due.`
-    );
+    logger.info('scheduled publishing run', {
+      published: summary.published,
+      failed: summary.failed,
+      considered: summary.considered
+    });
 
     res.status(200).json({
       message: `Published ${summary.published} of ${summary.considered} due post(s).`,
       ...summary
     });
   } catch (error) {
-    console.error("Cron error:", error);
+    logger.error("scheduled publishing failed", { detail: (error as Error).message });
     res.status(500).json({ error: (error as Error).message || "Internal Server Error" });
   }
 });

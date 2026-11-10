@@ -12,6 +12,7 @@ import { graphGet, graphGetAll, graphRequest, exchangeForLongLivedToken, debugTo
 import { upsertConnection, q, ensureStoreReady, timestamp } from './store';
 import { asyncHandler, badRequest, requireParam, currentUserId, HttpError } from './http';
 import { requireOwnedBrand, audit } from './authMiddleware';
+import { logger } from './logging';
 
 const router = Router();
 
@@ -121,7 +122,7 @@ router.get('/meta/callback', asyncHandler(async (req: Request, res: Response) =>
       accessToken = longLived.accessToken;
       expiresAt = longLived.expiresAt;
     } catch (err) {
-      console.warn('Long-lived exchange failed, using short-lived token:', (err as Error).message);
+      logger.warn('Long-lived token exchange failed; using the short-lived token', { detail: (err as Error).message });
     }
 
     const info = await debugToken(accessToken);
@@ -213,7 +214,7 @@ router.get('/meta/callback', asyncHandler(async (req: Request, res: Response) =>
 
     res.send(closingPage({ type: 'OAUTH_RESULT', success: true, platform, summary }));
   } catch (err: any) {
-    console.error('OAuth callback failed:', err);
+    logger.error('OAuth callback failed', { detail: err });
     res.status(500).send(
       closingPage({ type: 'OAUTH_RESULT', success: false, platform, error: err.message || 'Token exchange failed.' })
     );

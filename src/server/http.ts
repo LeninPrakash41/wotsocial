@@ -1,6 +1,7 @@
 /** Shared Express helpers: async error propagation and consistent error shapes. */
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { MetaApiError } from './graphClient';
+import { logger } from './logging';
 
 export const asyncHandler =
   (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
@@ -41,7 +42,7 @@ export const integrationErrorHandler = (
   if (err instanceof MetaApiError) {
     const payload = err.toJSON();
     const status = err.isAuthError ? 401 : err.isPermissionError ? 403 : err.status >= 400 ? err.status : 502;
-    console.error(`[meta] ${err.endpoint} → ${err.message} (code ${err.code}, trace ${err.fbtraceId})`);
+    logger.error(`[meta] ${err.endpoint} → ${err.message} (code ${err.code}, trace ${err.fbtraceId})`);
     return res.status(status).json({ error: payload.message, meta: payload });
   }
 
@@ -49,7 +50,7 @@ export const integrationErrorHandler = (
     return res.status(err.status).json({ error: err.message, details: err.details });
   }
 
-  console.error('[integration] Unhandled error:', err);
+  logger.error('[integration] Unhandled error', { detail: err });
   return res.status(500).json({ error: err?.message || 'Internal server error' });
 };
 

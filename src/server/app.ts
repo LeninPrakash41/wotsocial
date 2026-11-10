@@ -28,6 +28,8 @@ import authRoutes from './authRoutes';
 import { requireAuth } from './authMiddleware';
 import { integrationErrorHandler } from './http';
 import { localMediaRoot, storageDriver, checkStorage } from './mediaStore';
+import { requestLogging, metricsSnapshot, logger } from './logging';
+import { apiLimiter, loginLimiter, costlyLimiter, uploadLimiter } from './rateLimit';
 
 /**
  * Paths that must never be served, whatever is mounted later.
@@ -43,6 +45,9 @@ const BLOCKED = /(^|\/)(\.env($|\.)|\.wotsocial-encryption-key|\.git\/|wotsocial
 
 export const createApiApp = (): Express => {
   const app = express();
+
+  // Correlates every log line for a request and reports its outcome.
+  app.use(requestLogging);
 
   app.use((req, res, next) => {
     let target: string;
@@ -69,8 +74,26 @@ export const createApiApp = (): Express => {
   // Authentication gates everything under /api except a small allowlist.
   // Mounting it here rather than per-route means a new endpoint is protected
   // by default.
+  // Sign-in is limited by address before authentication, since by definition
+  // the caller does not have a session yet.
+  app.use('/api/auth/login', loginLimiter);
+
   app.use('/api', requireAuth);
+
+  // The broad ceiling sits after authentication so it counts per user rather
+  // than per address, which is fairer behind a shared NAT or office IP.
+  app.use('/api', apiLimiter);
+
   app.use('/api/auth', authRoutes);
+
+  // Tighter limits where a call costs money: platform writes, AI generation
+  // and anything that creates ad spend.
+  app.use('/api/meta/campaigns', costlyLimiter);
+  app.use('/api/instagram/publish', costlyLimiter);
+  app.use('/api/whatsapp/broadcasts', costlyLimiter);
+  app.use('/api/whatsapp/send', costlyLimiter);
+  app.use('/api/content/wordpress/publish', costlyLimiter);
+  app.use('/api/media', uploadLimiter);
 
   app.use(apiApp);
   app.use('/api', dbApiRoutes);
@@ -95,6 +118,15 @@ export const createApiApp = (): Express => {
       dotfiles: 'deny'
     }));
   }
+
+  /**
+   * Operational metrics for this instance.
+   *
+   * In-process and approximate — it answers "is this instance healthy",
+   * not "what is the fleet doing". Cross-instance aggregation should come
+   * from the structured logs.
+   */
+  app.get('/api/metrics', (_req, res) => res.json(metricsSnapshot()));
 
   app.get('/api/health', async (_req, res) => {
     // Storage health matters operationally: without it, generated media cannot

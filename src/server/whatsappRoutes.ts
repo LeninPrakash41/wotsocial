@@ -15,6 +15,7 @@ import {
 import { asyncHandler, badRequest, notConnected, requireParam, currentUserId, HttpError } from './http';
 import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
+import { logger } from './logging';
 
 const router = Router();
 
@@ -354,7 +355,7 @@ router.post('/broadcasts', asyncHandler(async (req: Request, res: Response) => {
       `UPDATE whatsapp_broadcasts SET status = 'COMPLETED', sent_count = $1, failed_count = $2, completed_at = $3 WHERE id = $4`,
       [String(sent), String(failed), timestamp(), broadcastId]
     );
-  })().catch(err => console.error('WhatsApp broadcast worker failed:', err));
+  })().catch(err => logger.error('WhatsApp broadcast worker failed', err));
 
   res.json({
     success: true,

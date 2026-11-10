@@ -18,6 +18,7 @@ import {
 } from './store';
 import { asyncHandler } from './http';
 import { randomId } from './crypto';
+import { logger } from './logging';
 
 const router = Router();
 
@@ -31,7 +32,7 @@ const verifySignature = (req: any): boolean => {
   const header = req.header('x-hub-signature-256') || req.header('X-Hub-Signature-256');
 
   if (!appSecret) {
-    console.warn('⚠️  META_APP_SECRET is not set — webhook signatures cannot be verified.');
+    logger.warn('⚠️  META_APP_SECRET is not set — webhook signatures cannot be verified.');
     return false;
   }
   if (!header || !req.rawBody) return false;
@@ -56,7 +57,7 @@ router.get('/meta', (req: Request, res: Response) => {
     return res.status(500).send('META_WEBHOOK_VERIFY_TOKEN is not configured on this server.');
   }
   if (mode === 'subscribe' && token === verifyToken) {
-    console.log('✅ Meta webhook subscription verified.');
+    logger.info('✅ Meta webhook subscription verified.');
     return res.status(200).send(String(challenge));
   }
   res.sendStatus(403);
@@ -136,7 +137,7 @@ const handleInstagramEntry = async (entry: any) => {
   );
   const brandId = rows[0]?.brand_id;
   if (!brandId) {
-    console.warn(`Instagram webhook for unknown account ${igAccountId} — ignoring.`);
+    logger.warn(`Instagram webhook for unknown account ${igAccountId} — ignoring.`);
     return;
   }
 
@@ -208,10 +209,7 @@ const handleInstagramEntry = async (entry: any) => {
         );
       }
     } catch (err: any) {
-      console.error(
-        `Instagram auto-reply for rule ${rule.id} failed:`,
-        err instanceof MetaApiError ? err.toClientMessage() : err.message
-      );
+      logger.error(`Instagram auto-reply for rule ${rule.id} failed`, { detail: err instanceof MetaApiError ? err.toClientMessage() : err.message });
     }
   }
 
@@ -230,7 +228,7 @@ const handleInstagramEntry = async (entry: any) => {
         [String(num(rule.triggered_count) + 1), rule.id]
       );
     } catch (err: any) {
-      console.error('Instagram comment reply failed:', err.message);
+      logger.error('Instagram comment reply failed', { detail: err.message });
     }
   }
 };
@@ -253,7 +251,7 @@ const handlePageEntry = async (entry: any) => {
     });
     const brandId = match?.brand_id;
     if (!brandId) {
-      console.warn(`Lead-gen webhook for unmapped page ${pageId} — ignoring.`);
+      logger.warn(`Lead-gen webhook for unmapped page ${pageId} — ignoring.`);
       continue;
     }
 
@@ -284,9 +282,9 @@ const handlePageEntry = async (entry: any) => {
         raw: stringifyJson(fields),
         created_at: lead.created_time || timestamp()
       });
-      console.log(`📥 Lead ${lead.id} captured for brand ${brandId}.`);
+      logger.info(`📥 Lead ${lead.id} captured for brand ${brandId}.`);
     } catch (err: any) {
-      console.error('Lead-gen fetch failed:', err.message);
+      logger.error('Lead-gen fetch failed', { detail: err.message });
     }
   }
 };
@@ -315,7 +313,7 @@ router.post('/meta', rawBodyJson, asyncHandler(async (req: Request, res: Respons
     const reason = process.env.META_APP_SECRET
       ? 'X-Hub-Signature-256 did not match the app secret'
       : 'META_APP_SECRET is not configured';
-    console.error(`🚫 Rejected unverified Meta webhook (${reason}). Payload stored for audit only.`);
+    logger.error(`🚫 Rejected unverified Meta webhook (${reason}). Payload stored for audit only.`);
     await markWebhookProcessed(eventId, `Unverified: ${reason}`);
     return;
   }
@@ -328,7 +326,7 @@ router.post('/meta', rawBodyJson, asyncHandler(async (req: Request, res: Respons
     }
     await markWebhookProcessed(eventId);
   } catch (err: any) {
-    console.error('Webhook processing error:', err);
+    logger.error('Webhook processing error', { detail: err });
     await markWebhookProcessed(eventId, err.message);
   }
 }));

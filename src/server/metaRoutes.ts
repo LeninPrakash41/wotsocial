@@ -18,6 +18,7 @@ import {
 import { asyncHandler, badRequest, notFound, notConnected, requireParam, currentUserId, HttpError } from './http';
 import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
+import { logger } from './logging';
 
 const router = Router();
 
@@ -268,7 +269,7 @@ router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
       accessToken = exchanged.accessToken;
       tokenExpiresAt = exchanged.expiresAt;
     } catch (err) {
-      console.warn('Long-lived token exchange skipped:', (err as Error).message);
+      logger.warn('Long-lived token exchange skipped', { detail: (err as Error).message });
     }
   }
 
@@ -281,7 +282,7 @@ router.post('/connect', asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (account.account_status !== undefined && account.account_status !== 1) {
-    console.warn(`Meta ad account ${adAccountId} has non-active status ${account.account_status}.`);
+    logger.warn(`Meta ad account ${adAccountId} has non-active status ${account.account_status}.`);
   }
 
   const connection = await upsertConnection({
@@ -602,7 +603,7 @@ export const launchMetaCampaign = async (brandId: string, input: CampaignLaunchI
     const rollback: string[] = [];
     for (const id of [created.adId, created.adSetId, created.campaignId].filter(Boolean)) {
       try { await graphDelete(id as string, token); rollback.push(id as string); }
-      catch (cleanupErr) { console.warn(`Rollback of ${id} failed:`, (cleanupErr as Error).message); }
+      catch (cleanupErr) { logger.warn(`Rollback of ${id} failed`, { detail: (cleanupErr as Error).message }); }
     }
 
     if (err instanceof HttpError) throw err;
@@ -732,7 +733,7 @@ router.post('/campaigns/:id/status', asyncHandler(async (req: Request, res: Resp
   if (status === 'ACTIVE' || status === 'PAUSED') {
     for (const childId of [local?.adset_id, local?.ad_id].filter(Boolean)) {
       try { await graphPost(childId, conn.accessToken, { status }); updated.push(childId); }
-      catch (err) { console.warn(`Could not set status on ${childId}:`, (err as Error).message); }
+      catch (err) { logger.warn(`Could not set status on ${childId}`, { detail: (err as Error).message }); }
     }
   }
 

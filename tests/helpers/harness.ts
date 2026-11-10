@@ -125,6 +125,10 @@ export const startHarness = async (): Promise<Harness> => {
   process.env.NODE_ENV = 'test';
   // The real 5s container poll would dominate the run.
   process.env.IG_CONTAINER_POLL_MS = '20';
+  // Suites create many users from one address, which is exactly what the
+  // limiter exists to stop. It is switched on explicitly by its own tests.
+  process.env.RATE_LIMIT_DISABLED = 'true';
+  process.env.LOG_LEVEL = 'error';
   delete process.env.DATABASE_URL;
   delete process.env.S3_BUCKET;
   delete process.env.CRON_SECRET;

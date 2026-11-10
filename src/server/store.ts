@@ -7,6 +7,7 @@
  */
 import { dbMode, pgPool, sqliteDb, initDatabase } from '../db/db';
 import { encryptSecret, decryptSecret, maskSecret, randomId, sha256 } from './crypto';
+import { logger } from './logging';
 
 export type Platform = 'meta_ads' | 'instagram' | 'whatsapp' | 'facebook_page';
 export type ConnectionStatus = 'connected' | 'expired' | 'revoked' | 'error';
@@ -550,9 +551,9 @@ const migrateColumns = async (): Promise<void> => {
       if (existing.has(column.name)) continue;
       try {
         await q(`ALTER TABLE ${table} ADD COLUMN ${column.name} ${column.definition}`);
-        console.log(`   migrated: ${table}.${column.name}`);
+        logger.info(`   migrated: ${table}.${column.name}`);
       } catch (err) {
-        console.error(`   migration failed for ${table}.${column.name}:`, (err as Error).message);
+        logger.error(`   migration failed for ${table}.${column.name}`, { detail: (err as Error).message });
       }
     }
   }
@@ -568,11 +569,11 @@ export const ensureStoreReady = async (): Promise<void> => {
         try {
           await q(stmt);
         } catch (err) {
-          console.error('Integration schema statement failed:', (err as Error).message);
+          logger.error('Integration schema statement failed', { detail: (err as Error).message });
         }
       }
       await migrateColumns();
-      console.log('🔌 Live integration schema ready.');
+      logger.info('🔌 Live integration schema ready.');
     })();
   }
   return readyPromise;

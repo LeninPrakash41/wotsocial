@@ -20,6 +20,7 @@ import { randomId } from './crypto';
 import { launchMetaCampaign } from './metaRoutes';
 import { requireIgConnection, waitForContainer } from './instagramRoutes';
 import { requireWaConnection, buildTemplatePayload } from './whatsappRoutes';
+import { logger } from './logging';
 
 const router = Router();
 
@@ -336,7 +337,7 @@ const TOOL_HANDLERS: Record<string, (userId: string, args: any) => Promise<any>>
 
     if (args.first_comment) {
       try { await graphPost(`${published.id}/comments`, conn.accessToken, { message: args.first_comment }); }
-      catch (err: any) { console.warn('MCP first comment failed:', err.message); }
+      catch (err: any) { logger.warn('MCP first comment failed', { detail: err.message }); }
     }
 
     await saveRow('instagram_publications', {

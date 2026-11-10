@@ -15,6 +15,7 @@ import { saveRow, selectRows, q, ensureStoreReady, timestamp, num } from './stor
 import { asyncHandler, badRequest, notFound, requireParam, currentUserId, HttpError } from './http';
 import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
+import { logger } from './logging';
 
 const router = Router();
 
@@ -131,8 +132,7 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
 
   if (asset.storage_key) {
     await deleteMedia(asset.storage_key).catch(err =>
-      console.error('Object delete failed, removing the record anyway:', err.message)
-    );
+      logger.error('Object delete failed, removing the record anyway', err.message));
   }
   await q('DELETE FROM media_assets WHERE id = $1', [req.params.id]);
 
