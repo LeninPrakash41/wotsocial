@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { Router, Request, Response, NextFunction } from 'express';
 import { queryDb, initDatabase } from './db';
 import { currentUserId } from '../server/http';
@@ -45,7 +46,7 @@ router.get('/brands', async (req: Request, res: Response, next: NextFunction) =>
 router.post('/brands', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = req.body;
-    const id = `brand-${Date.now()}`;
+    const id = `brand-${Date.now()}-${randomBytes(4).toString('hex')}`;
     const userId = currentUserId(req);
 
     await queryDb(
@@ -208,7 +209,7 @@ router.get('/posts', async (req: Request, res: Response, next: NextFunction) => 
 router.post('/posts', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = req.body;
-    const id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    const id = `post-${Date.now()}-${randomBytes(4).toString('hex')}`;
     const userId = currentUserId(req);
     const scheduledISO = parseSafeISOString(data.scheduledTime);
 

@@ -29,12 +29,29 @@ beforeAll(async () => {
 
 afterAll(async () => { await h?.close(); });
 
+describe('identifiers', () => {
+  it('gives brands created in the same instant distinct ids', async () => {
+    // A millisecond timestamp alone collided on the primary key, which
+    // surfaced here as an intermittent failure creating two brands in a row.
+    const created = await Promise.all(
+      Array.from({ length: 10 }, (_, i) =>
+        api(h, '/api/brands', { method: 'POST', token: alice.token, body: { name: `Burst ${i}` } })
+      )
+    );
+
+    const ids = created.map(r => r.body.id);
+    expect(ids.every(Boolean)).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
 describe('listing is scoped to the caller', () => {
   it('shows each tenant only their own brands', async () => {
     const forAlice = await api(h, '/api/brands', { token: alice.token });
     const forBob = await api(h, '/api/brands', { token: bob.token });
 
-    expect(forAlice.body.map((b: any) => b.name)).toEqual(['Alice Co']);
+    expect(forAlice.body.some((b: any) => b.name === 'Alice Co')).toBe(true);
+    expect(forAlice.body.some((b: any) => b.name === 'Bob Co')).toBe(false);
     expect(forBob.body.map((b: any) => b.name)).toEqual(['Bob Co']);
   });
 
@@ -229,7 +246,9 @@ describe('agents and MCP', () => {
       body: { tool: 'wotsocial_list_brands' }
     });
     expect(viaKey.status).toBe(200);
-    expect(viaKey.body.result.brands.map((b: any) => b.name)).toEqual(['Alice Co']);
+    const names = viaKey.body.result.brands.map((b: any) => b.name);
+    expect(names).toContain('Alice Co');
+    expect(names).not.toContain('Bob Co');
   });
 
   it('does not accept an MCP key for session-protected endpoints', async () => {

@@ -282,7 +282,7 @@ export const addBrand = async (brandData: Partial<Brand>): Promise<Brand> => {
   });
 
   const newBrand: Brand = apiRes || {
-    id: `brand-${Date.now()}`,
+    id: `brand-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     userId,
     name: brandData.name || 'New Brand',
     ...brandData
