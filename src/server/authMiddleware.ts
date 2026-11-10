@@ -13,6 +13,7 @@ import { resolveSession, SessionUser } from './sessions';
 import { q, ensureStoreReady, timestamp, stringifyJson } from './store';
 import { randomId } from './crypto';
 import { HttpError } from './http';
+import { logger } from './logging';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -205,7 +206,7 @@ export const audit = (req: Request, entry: {
         ]
       );
     } catch (err) {
-      console.error('Audit write failed:', (err as Error).message);
+      logger.error('Audit write failed', { detail: (err as Error).message });
     }
   })();
 };

@@ -27,7 +27,8 @@ export interface GraphCall {
   method: string;
   path: string;
   query: Record<string, string>;
-  body: Record<string, string>;
+  /** Form-encoded for Meta, JSON for Google and TikTok. */
+  body: Record<string, any>;
 }
 
 export interface TestUser {
@@ -58,7 +59,7 @@ const createGraphStub = (calls: GraphCall[]): Express => {
       method: req.method,
       path: req.path.replace(/^\/v\d+\.\d+\//, ''),
       query: req.query as Record<string, string>,
-      body: (req.body || {}) as Record<string, string>
+      body: (req.body || {}) as Record<string, any>
     });
     next();
   });
@@ -100,6 +101,138 @@ const createGraphStub = (calls: GraphCall[]): Express => {
   app.post(route('page_1/feed'), (_req, res) => res.json({ id: 'fb_post_1' }));
   app.post(route('page_1/photos'), (_req, res) => res.json({ id: 'fb_photo_1' }));
 
+  // Targeting resolution: names in, Meta ids out.
+  app.get(route('search'), (req, res) => {
+    const q = String(req.query.q || '');
+    if (req.query.type === 'adgeolocation') {
+      return res.json({ data: [{ key: 'US', name: q, type: 'country', country_code: 'US' }] });
+    }
+    res.json({ data: [{ id: '6003', name: q }] });
+  });
+  app.get(route('act_555/adspixels'), (_req, res) => res.json({ data: [{ id: 'pixel_1', name: 'Pixel' }] }));
+
+  // The campaign chain, each step returning the id the next one needs.
+  app.post(route('act_555/campaigns'), (_req, res) => res.json({ id: 'camp_1' }));
+  app.post(route('act_555/adsets'), (_req, res) => res.json({ id: 'adset_1' }));
+  app.post(route('act_555/adcreatives'), (_req, res) => res.json({ id: 'creative_1' }));
+  app.post(route('act_555/ads'), (_req, res) => res.json({ id: 'ad_1' }));
+
+  // Status changes and rollback deletes.
+  app.post(route('(camp_1|adset_1|ad_1)'), (_req, res) => res.json({ success: true }));
+  app.delete(route('(camp_1|adset_1|ad_1)'), (_req, res) => res.json({ success: true }));
+
+  app.get(route('act_555/campaigns'), (_req, res) => res.json({
+    data: [{
+      id: 'camp_1', name: 'Stub Campaign', objective: 'OUTCOME_TRAFFIC', status: 'PAUSED',
+      effective_status: 'PAUSED', buying_type: 'AUCTION', daily_budget: '1000',
+      special_ad_categories: [], created_time: '2026-01-01T00:00:00+0000',
+      insights: { data: [{ impressions: '1000', clicks: '40', spend: '12.50', reach: '800', ctr: '4', cpc: '0.31', actions: [] }] }
+    }]
+  }));
+  app.get(/\/insights$/, (_req, res) => res.json({
+    data: [{ impressions: '1000', clicks: '40', spend: '12.50', reach: '800', ctr: '4', cpc: '0.31',
+             actions: [], date_start: '2026-01-01', date_stop: '2026-01-01' }]
+  }));
+
+  /* ---- Google OAuth ------------------------------------------- */
+  app.post('/token', (req, res) => {
+    if (req.body?.refresh_token === 'BAD_REFRESH') {
+      return res.status(400).json({ error: 'invalid_grant', error_description: 'Token has been revoked.' });
+    }
+    res.json({ access_token: 'stub-access-token', expires_in: 3600 });
+  });
+
+  /* ---- Google Ads ---------------------------------------------- */
+  const adsRoute = (p: string) => new RegExp(`^/v\\d+/${p}$`);
+
+  app.get(adsRoute('customers:listAccessibleCustomers'), (_req, res) =>
+    res.json({ resourceNames: ['customers/1234567890'] }));
+
+  app.post(adsRoute('customers/\\d+/googleAds:search'), (req, res) => {
+    const query = String(req.body?.query || '');
+    if (query.includes('FROM customer')) {
+      return res.json({
+        results: [{
+          customer: {
+            id: '1234567890', descriptiveName: 'Stub Ads Account',
+            currencyCode: 'USD', timeZone: 'UTC',
+            manager: query.includes('customer.manager') ? false : undefined
+          }
+        }]
+      });
+    }
+    res.json({
+      results: [{
+        campaign: { id: '555', name: 'Stub Search Campaign', status: 'PAUSED' },
+        campaignBudget: { amountMicros: '10000000' },
+        metrics: { impressions: '2000', clicks: '80', costMicros: '24000000', conversions: '4', ctr: 0.04, averageCpc: '300000' }
+      }]
+    });
+  });
+
+  let adsMutateFailure: string | null = null;
+  app.post('/__stub/google-ads-fail', express.json(), (req, res) => {
+    adsMutateFailure = req.body?.resource || null;
+    res.json({ ok: true });
+  });
+
+  for (const [resource, prefix] of [
+    ['campaignBudgets', 'campaignBudgets'], ['campaigns', 'campaigns'],
+    ['adGroups', 'adGroups'], ['adGroupAds', 'adGroupAds'], ['adGroupCriteria', 'adGroupCriteria']
+  ]) {
+    app.post(adsRoute(`customers/\\d+/${resource}:mutate`), (req, res) => {
+      if (adsMutateFailure === resource) {
+        return res.status(400).json({
+          error: {
+            message: 'Request contains an invalid argument.',
+            details: [{ errors: [{ message: 'The budget amount is too low for this currency.', errorCode: { campaignBudgetError: 'INVALID_BUDGET_AMOUNT' } }] }]
+          }
+        });
+      }
+      const ops = req.body?.operations || [];
+      res.json({
+        results: ops.map((_: unknown, i: number) => ({
+          resourceName: `customers/1234567890/${prefix}/${900 + i}`
+        }))
+      });
+    });
+  }
+
+  /* ---- TikTok --------------------------------------------------- */
+  app.get('/v2/user/info/', (req, res) => {
+    if ((req.headers.authorization || '').includes('BAD')) {
+      return res.status(401).json({ error: { code: 'access_token_invalid', message: 'Invalid token.' } });
+    }
+    res.json({ data: { user: { open_id: 'tt_open_1', display_name: 'Stub Creator', follower_count: 4200 } } });
+  });
+  app.post('/v2/post/publish/inbox/video/init/', (_req, res) =>
+    res.json({ data: { publish_id: 'tt_publish_inbox_1' }, error: { code: 'ok' } }));
+  app.post('/v2/post/publish/video/init/', (req, res) => {
+    if (String(req.body?.source_info?.video_url || '').includes('unverified')) {
+      return res.json({ error: { code: 'url_ownership_unverified', message: 'The domain is not verified.' } });
+    }
+    res.json({ data: { publish_id: 'tt_publish_direct_1' }, error: { code: 'ok' } });
+  });
+  app.post('/v2/post/publish/status/fetch/', (_req, res) =>
+    res.json({ data: { status: 'PUBLISH_COMPLETE', publicly_available_post_id: ['tt_post_1'] }, error: { code: 'ok' } }));
+
+  /* ---- YouTube -------------------------------------------------- */
+  app.get('/youtube/v3/channels', (_req, res) => res.json({
+    items: [{ id: 'UC_stub', snippet: { title: 'Stub Channel', customUrl: '@stub' }, statistics: { subscriberCount: '910', videoCount: '12' } }]
+  }));
+  app.post('/upload/youtube/v3/videos', (_req, res) => {
+    res.setHeader('location', `${(process.env.YOUTUBE_BASE_URL || '')}/__stub/youtube-upload`);
+    res.json({ ok: true });
+  });
+  app.put('/__stub/youtube-upload', express.raw({ type: '*/*', limit: '50mb' }), (_req, res) =>
+    res.json({ id: 'yt_video_1', snippet: { title: 'Stub' } }));
+
+  /* ---- A hosted video the platforms can fetch ------------------- */
+  app.get('/__stub/video.mp4', (_req, res) => {
+    res.setHeader('content-type', 'video/mp4');
+    res.send(Buffer.from('not-really-a-video-but-enough-bytes'));
+  });
+
   app.all('*', (req, res) =>
     res.status(404).json({ error: { message: `no stub for ${req.method} ${req.path}`, code: 803 } }));
 
@@ -121,10 +254,23 @@ export const startHarness = async (): Promise<Harness> => {
   process.env.MEDIA_LOCAL_DIR = path.join(root, 'media');
   process.env.ENCRYPTION_KEY = 'test-encryption-key-not-used-in-production';
   process.env.META_GRAPH_BASE_URL = graphUrl;
+  process.env.GOOGLE_ADS_BASE_URL = graphUrl;
+  process.env.GOOGLE_OAUTH_BASE_URL = graphUrl;
+  process.env.TIKTOK_BASE_URL = graphUrl;
+  process.env.YOUTUBE_BASE_URL = graphUrl;
+  process.env.GOOGLE_ADS_DEVELOPER_TOKEN = 'test-developer-token';
+  process.env.GOOGLE_CLIENT_ID = 'test-client-id';
+  process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
   process.env.ADMIN_PASSWORD = 'Harness-Admin-Passw0rd!';
   process.env.NODE_ENV = 'test';
   // The real 5s container poll would dominate the run.
   process.env.IG_CONTAINER_POLL_MS = '20';
+  // Suites create many users from one address, which is exactly what the
+  // limiter exists to stop. It is switched on explicitly by its own tests.
+  process.env.RATE_LIMIT_DISABLED = 'true';
+  // The stand-ins serve fixtures from loopback, which production refuses.
+  process.env.ALLOW_LOOPBACK_MEDIA = 'true';
+  process.env.LOG_LEVEL = 'error';
   delete process.env.DATABASE_URL;
   delete process.env.S3_BUCKET;
   delete process.env.CRON_SECRET;

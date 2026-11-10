@@ -14,6 +14,7 @@
 import crypto from 'crypto';
 import { q, ensureStoreReady, timestamp, num } from './store';
 import { randomId, sha256 } from './crypto';
+import { logger } from './logging';
 
 /** Long enough to be comfortable, short enough that a stolen token expires. */
 const SESSION_TTL_HOURS = Number(process.env.SESSION_TTL_HOURS || 24 * 14);
@@ -184,7 +185,7 @@ export const pruneExpired = async (): Promise<void> => {
     await q(`DELETE FROM sessions WHERE expires_at < $1`, [timestamp()]);
     await q(`DELETE FROM login_attempts WHERE attempted_at < $1`, [minutesAgo(60 * 24)]);
   } catch (err) {
-    console.error('Session prune failed:', (err as Error).message);
+    logger.error('Session prune failed', { detail: (err as Error).message });
   }
 };
 

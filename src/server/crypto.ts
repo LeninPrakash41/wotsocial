@@ -8,6 +8,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { logger } from './logging';
 
 const ALGO = 'aes-256-gcm';
 const IV_BYTES = 12;
@@ -45,10 +46,8 @@ export const getEncryptionKey = (): Buffer => {
     }
     const generated = crypto.randomBytes(32).toString('hex');
     fs.writeFileSync(KEY_FILE, generated, { mode: 0o600 });
-    console.warn(
-      '⚠️  No ENCRYPTION_KEY set. Generated a local dev key at .wotsocial-encryption-key ' +
-      '(git-ignored). Set ENCRYPTION_KEY before deploying.'
-    );
+    logger.warn('⚠️  No ENCRYPTION_KEY set. Generated a local dev key at .wotsocial-encryption-key ' +
+      '(git-ignored). Set ENCRYPTION_KEY before deploying.');
     cachedKey = deriveKey(generated);
     return cachedKey;
   } catch (err) {

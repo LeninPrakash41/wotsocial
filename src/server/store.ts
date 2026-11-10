@@ -7,8 +7,11 @@
  */
 import { dbMode, pgPool, sqliteDb, initDatabase } from '../db/db';
 import { encryptSecret, decryptSecret, maskSecret, randomId, sha256 } from './crypto';
+import { logger } from './logging';
 
-export type Platform = 'meta_ads' | 'instagram' | 'whatsapp' | 'facebook_page';
+export type Platform =
+  | 'meta_ads' | 'instagram' | 'whatsapp' | 'facebook_page'
+  | 'google_ads' | 'tiktok' | 'youtube';
 export type ConnectionStatus = 'connected' | 'expired' | 'revoked' | 'error';
 
 export interface PlatformConnection {
@@ -492,6 +495,83 @@ const DDL = [
   `CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log (created_at)`,
   `CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log (user_id)`,
 
+  `CREATE TABLE IF NOT EXISTS brand_policies (
+     brand_id TEXT PRIMARY KEY,
+     require_approval TEXT DEFAULT '0',
+     approver_role TEXT DEFAULT 'admin',
+     daily_spend_cap TEXT,
+     monthly_spend_cap TEXT,
+     max_campaign_daily_budget TEXT,
+     spend_alert_threshold TEXT DEFAULT '0.8',
+     block_on_cap TEXT DEFAULT '1',
+     updated_by TEXT,
+     updated_at TEXT
+   )`,
+
+  `CREATE TABLE IF NOT EXISTS approvals (
+     id TEXT PRIMARY KEY,
+     post_id TEXT NOT NULL,
+     brand_id TEXT NOT NULL,
+     requested_by TEXT,
+     reviewer_id TEXT,
+     reviewer_email TEXT,
+     decision TEXT,
+     comment TEXT,
+     requested_at TEXT,
+     decided_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_approval_post ON approvals (post_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_approval_brand ON approvals (brand_id)`,
+
+  `CREATE TABLE IF NOT EXISTS spend_events (
+     id TEXT PRIMARY KEY,
+     brand_id TEXT NOT NULL,
+     campaign_id TEXT,
+     amount TEXT,
+     currency TEXT,
+     recorded_for TEXT,
+     source TEXT,
+     created_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_spend_brand ON spend_events (brand_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_spend_unique ON spend_events (brand_id, campaign_id, recorded_for)`,
+
+  `CREATE TABLE IF NOT EXISTS google_campaigns (
+     id TEXT PRIMARY KEY,
+     brand_id TEXT NOT NULL,
+     connection_id TEXT,
+     customer_id TEXT,
+     name TEXT,
+     status TEXT,
+     daily_budget TEXT,
+     budget_resource TEXT,
+     campaign_resource TEXT,
+     ad_group_resource TEXT,
+     ad_resource TEXT,
+     config TEXT,
+     created_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_gcampaign_brand ON google_campaigns (brand_id)`,
+
+  `CREATE TABLE IF NOT EXISTS video_publications (
+     id TEXT PRIMARY KEY,
+     brand_id TEXT NOT NULL,
+     platform TEXT NOT NULL,
+     connection_id TEXT,
+     title TEXT,
+     caption TEXT,
+     video_url TEXT,
+     remote_id TEXT,
+     publish_id TEXT,
+     permalink TEXT,
+     privacy TEXT,
+     status TEXT,
+     error TEXT,
+     created_at TEXT,
+     published_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_videopub_brand ON video_publications (brand_id)`,
+
   `CREATE TABLE IF NOT EXISTS oauth_states (
      state TEXT PRIMARY KEY,
      user_id TEXT,
@@ -550,9 +630,9 @@ const migrateColumns = async (): Promise<void> => {
       if (existing.has(column.name)) continue;
       try {
         await q(`ALTER TABLE ${table} ADD COLUMN ${column.name} ${column.definition}`);
-        console.log(`   migrated: ${table}.${column.name}`);
+        logger.info(`   migrated: ${table}.${column.name}`);
       } catch (err) {
-        console.error(`   migration failed for ${table}.${column.name}:`, (err as Error).message);
+        logger.error(`   migration failed for ${table}.${column.name}`, { detail: (err as Error).message });
       }
     }
   }
@@ -568,11 +648,11 @@ export const ensureStoreReady = async (): Promise<void> => {
         try {
           await q(stmt);
         } catch (err) {
-          console.error('Integration schema statement failed:', (err as Error).message);
+          logger.error('Integration schema statement failed', { detail: (err as Error).message });
         }
       }
       await migrateColumns();
-      console.log('🔌 Live integration schema ready.');
+      logger.info('🔌 Live integration schema ready.');
     })();
   }
   return readyPromise;
@@ -732,7 +812,15 @@ export const deleteConnection = async (brandId: string, platform: Platform) => {
 /* Generic row helpers used by the route modules                       */
 /* ------------------------------------------------------------------ */
 
-export const saveRow = async (table: string, row: Record<string, any>) => {
+/**
+ * Upserts a row.
+ *
+ * `conflictKey` names the column the table is keyed on. It defaults to `id`
+ * because most tables use it, but a table keyed on something else — a policy
+ * keyed per brand, say — must say so or the upsert targets a column that is
+ * not there.
+ */
+export const saveRow = async (table: string, row: Record<string, any>, conflictKey = 'id') => {
   await ensureStoreReady();
   const cols = Object.keys(row);
   const placeholders = cols.map((_, i) => `$${i + 1}`);
@@ -743,11 +831,11 @@ export const saveRow = async (table: string, row: Record<string, any>) => {
     if (typeof v === 'boolean') return v ? '1' : '0';
     return String(v);
   });
-  const updates = cols.filter(c => c !== 'id').map(c => `${c} = EXCLUDED.${c}`).join(', ');
+  const updates = cols.filter(c => c !== conflictKey).map(c => `${c} = EXCLUDED.${c}`).join(', ');
 
   await q(
     `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders.join(', ')})
-     ON CONFLICT (id) DO UPDATE SET ${updates || 'id = EXCLUDED.id'}`,
+     ON CONFLICT (${conflictKey}) DO UPDATE SET ${updates || `${conflictKey} = EXCLUDED.${conflictKey}`}`,
     values
   );
 };

@@ -7,6 +7,7 @@
  * MetaApiError — never a silently swallowed failure.
  */
 import crypto from 'crypto';
+import { logger } from './logging';
 
 export const GRAPH_VERSION = process.env.META_GRAPH_VERSION || 'v21.0';
 
@@ -279,8 +280,7 @@ export const graphRequest = async <T = any>(
 
     // Exponential backoff with jitter, capped at 8s.
     const backoff = Math.min(8000, 500 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 250);
-    console.warn(
-      `Graph ${method} ${cleanPath} attempt ${attempt}/${attempts} failed (${lastError?.message}); retrying in ${backoff}ms`
+    logger.warn(`Graph ${method} ${cleanPath} attempt ${attempt}/${attempts} failed (${lastError?.message}); retrying in ${backoff}ms`
     );
     await sleep(backoff);
   }
