@@ -493,6 +493,47 @@ const DDL = [
   `CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log (created_at)`,
   `CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log (user_id)`,
 
+  `CREATE TABLE IF NOT EXISTS brand_policies (
+     brand_id TEXT PRIMARY KEY,
+     require_approval TEXT DEFAULT '0',
+     approver_role TEXT DEFAULT 'admin',
+     daily_spend_cap TEXT,
+     monthly_spend_cap TEXT,
+     max_campaign_daily_budget TEXT,
+     spend_alert_threshold TEXT DEFAULT '0.8',
+     block_on_cap TEXT DEFAULT '1',
+     updated_by TEXT,
+     updated_at TEXT
+   )`,
+
+  `CREATE TABLE IF NOT EXISTS approvals (
+     id TEXT PRIMARY KEY,
+     post_id TEXT NOT NULL,
+     brand_id TEXT NOT NULL,
+     requested_by TEXT,
+     reviewer_id TEXT,
+     reviewer_email TEXT,
+     decision TEXT,
+     comment TEXT,
+     requested_at TEXT,
+     decided_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_approval_post ON approvals (post_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_approval_brand ON approvals (brand_id)`,
+
+  `CREATE TABLE IF NOT EXISTS spend_events (
+     id TEXT PRIMARY KEY,
+     brand_id TEXT NOT NULL,
+     campaign_id TEXT,
+     amount TEXT,
+     currency TEXT,
+     recorded_for TEXT,
+     source TEXT,
+     created_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_spend_brand ON spend_events (brand_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_spend_unique ON spend_events (brand_id, campaign_id, recorded_for)`,
+
   `CREATE TABLE IF NOT EXISTS oauth_states (
      state TEXT PRIMARY KEY,
      user_id TEXT,
@@ -733,7 +774,15 @@ export const deleteConnection = async (brandId: string, platform: Platform) => {
 /* Generic row helpers used by the route modules                       */
 /* ------------------------------------------------------------------ */
 
-export const saveRow = async (table: string, row: Record<string, any>) => {
+/**
+ * Upserts a row.
+ *
+ * `conflictKey` names the column the table is keyed on. It defaults to `id`
+ * because most tables use it, but a table keyed on something else — a policy
+ * keyed per brand, say — must say so or the upsert targets a column that is
+ * not there.
+ */
+export const saveRow = async (table: string, row: Record<string, any>, conflictKey = 'id') => {
   await ensureStoreReady();
   const cols = Object.keys(row);
   const placeholders = cols.map((_, i) => `$${i + 1}`);
@@ -744,11 +793,11 @@ export const saveRow = async (table: string, row: Record<string, any>) => {
     if (typeof v === 'boolean') return v ? '1' : '0';
     return String(v);
   });
-  const updates = cols.filter(c => c !== 'id').map(c => `${c} = EXCLUDED.${c}`).join(', ');
+  const updates = cols.filter(c => c !== conflictKey).map(c => `${c} = EXCLUDED.${c}`).join(', ');
 
   await q(
     `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders.join(', ')})
-     ON CONFLICT (id) DO UPDATE SET ${updates || 'id = EXCLUDED.id'}`,
+     ON CONFLICT (${conflictKey}) DO UPDATE SET ${updates || `${conflictKey} = EXCLUDED.${conflictKey}`}`,
     values
   );
 };

@@ -7,6 +7,7 @@
  */
 import { graphGet, graphPost, MetaApiError } from './graphClient';
 import { getConnection, q, ensureStoreReady, timestamp } from './store';
+import { assertPublishable } from './governance';
 import { logger } from './logging';
 
 export interface PublishOutcome {
@@ -204,6 +205,21 @@ export const publishDuePosts = async (options: { limit?: number } = {}): Promise
     );
     const stillScheduled = await q<any>(`SELECT status FROM posts WHERE id = $1`, [post.id]);
     if (stillScheduled[0]?.status !== 'publishing') continue;
+
+    // Approval is enforced here, not only in the interface: a post can reach
+    // the scheduler through the API or an agent without ever being reviewed.
+    try {
+      await assertPublishable(post);
+    } catch (err: any) {
+      await q(`UPDATE posts SET status = 'failed', updated_at = $1 WHERE id = $2`, [timestamp(), post.id]);
+      failed++;
+      results.push({
+        postId: post.id,
+        brandId: post.brand_id,
+        outcomes: [{ platform: 'approval', ok: false, error: err?.message || 'Not approved for publishing.' }]
+      });
+      continue;
+    }
 
     let platforms: string[] = [];
     try {

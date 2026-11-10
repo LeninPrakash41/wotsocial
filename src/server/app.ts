@@ -24,6 +24,7 @@ import crmRoutes from './crmRoutes';
 import agentRoutes from './agentRoutes';
 import contentRoutes from './contentRoutes';
 import mediaRoutes from './mediaRoutes';
+import governanceRoutes from './governanceRoutes';
 import authRoutes from './authRoutes';
 import { requireAuth } from './authMiddleware';
 import { integrationErrorHandler } from './http';
@@ -107,6 +108,7 @@ export const createApiApp = (): Express => {
   app.use('/api/media', mediaRoutes);
   app.use('/api/agents', agentRoutes);
   app.use('/api/content', contentRoutes);
+  app.use('/api/governance', governanceRoutes);
 
   // The local media driver's objects are fetched anonymously by the
   // platforms, so this sits outside the authenticated /api tree.

@@ -18,6 +18,7 @@ import {
 import { asyncHandler, badRequest, notFound, notConnected, requireParam, currentUserId, HttpError } from './http';
 import { requireOwnedBrand, audit } from './authMiddleware';
 import { randomId } from './crypto';
+import { assertSpendAllowed, recordSpend } from './governance';
 import { logger } from './logging';
 
 const router = Router();
@@ -459,6 +460,14 @@ export const launchMetaCampaign = async (brandId: string, input: CampaignLaunchI
   const created: Record<string, string> = {};
   const desiredStatus = activate === true ? 'ACTIVE' : 'PAUSED';
 
+  // Checked before anything is created on Meta, so a blocked launch leaves
+  // nothing behind to clean up.
+  const guard = await assertSpendAllowed({
+    brandId,
+    dailyBudget: dailyBudget ? Number(dailyBudget) : undefined,
+    activating: desiredStatus === 'ACTIVE'
+  });
+
   try {
     /* 1. Campaign ------------------------------------------------- */
     const { data: campaign } = await graphPost<any>(`${act}/campaigns`, token, {
@@ -595,6 +604,8 @@ export const launchMetaCampaign = async (brandId: string, input: CampaignLaunchI
       status: desiredStatus,
       activated: desiredStatus === 'ACTIVE',
       targetingWarnings: warnings,
+      spendWarnings: guard.warnings,
+      spend: guard.status,
       reviewUrl: `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${act.replace('act_', '')}&selected_campaign_ids=${campaign.id}`
     };
   } catch (err: any) {
@@ -708,7 +719,20 @@ router.get('/campaigns', asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  res.json({ campaigns, accountId: conn.externalId, currency: conn.metadata?.currency || 'USD' });
+  // Recording spend as insights are read keeps the caps accurate without a
+  // separate polling job. Keyed per day, so a restated figure overwrites
+  // rather than accumulating.
+  const currency = conn.metadata?.currency || 'USD';
+  for (const c of campaigns) {
+    if (c.spent > 0) {
+      await recordSpend({
+        brandId, campaignId: c.id, amount: c.spent, currency,
+        forDate: new Date().toISOString().slice(0, 10)
+      }).catch(err => logger.warn('could not record spend', { detail: err.message }));
+    }
+  }
+
+  res.json({ campaigns, accountId: conn.externalId, currency });
 }));
 
 /**
@@ -724,6 +748,19 @@ router.post('/campaigns/:id/status', asyncHandler(async (req: Request, res: Resp
 
   const conn = await requireMetaConnection(brandId);
   const campaignId = req.params.id;
+
+  // Resuming delivery is the moment spend restarts, so the cap applies here
+  // just as it does at launch.
+  let spendWarnings: string[] = [];
+  if (status === 'ACTIVE') {
+    const [local] = await selectRows<any>('meta_campaigns', 'id = $1', [campaignId]);
+    const guard = await assertSpendAllowed({
+      brandId,
+      dailyBudget: local?.daily_budget ? Number(local.daily_budget) : undefined,
+      activating: true
+    });
+    spendWarnings = guard.warnings;
+  }
 
   await graphPost(campaignId, conn.accessToken, { status });
 
@@ -744,7 +781,7 @@ router.post('/campaigns/:id/status', asyncHandler(async (req: Request, res: Resp
       [status, status, timestamp(), campaignId]);
   }
 
-  res.json({ success: true, campaignId, status, updatedObjects: updated });
+  res.json({ success: true, campaignId, status, updatedObjects: updated, spendWarnings });
 }));
 
 /** Time-series insights for the whole account or one campaign. */
