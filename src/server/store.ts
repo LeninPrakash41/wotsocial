@@ -9,7 +9,9 @@ import { dbMode, pgPool, sqliteDb, initDatabase } from '../db/db';
 import { encryptSecret, decryptSecret, maskSecret, randomId, sha256 } from './crypto';
 import { logger } from './logging';
 
-export type Platform = 'meta_ads' | 'instagram' | 'whatsapp' | 'facebook_page';
+export type Platform =
+  | 'meta_ads' | 'instagram' | 'whatsapp' | 'facebook_page'
+  | 'google_ads' | 'tiktok' | 'youtube';
 export type ConnectionStatus = 'connected' | 'expired' | 'revoked' | 'error';
 
 export interface PlatformConnection {
@@ -533,6 +535,42 @@ const DDL = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_spend_brand ON spend_events (brand_id)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_spend_unique ON spend_events (brand_id, campaign_id, recorded_for)`,
+
+  `CREATE TABLE IF NOT EXISTS google_campaigns (
+     id TEXT PRIMARY KEY,
+     brand_id TEXT NOT NULL,
+     connection_id TEXT,
+     customer_id TEXT,
+     name TEXT,
+     status TEXT,
+     daily_budget TEXT,
+     budget_resource TEXT,
+     campaign_resource TEXT,
+     ad_group_resource TEXT,
+     ad_resource TEXT,
+     config TEXT,
+     created_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_gcampaign_brand ON google_campaigns (brand_id)`,
+
+  `CREATE TABLE IF NOT EXISTS video_publications (
+     id TEXT PRIMARY KEY,
+     brand_id TEXT NOT NULL,
+     platform TEXT NOT NULL,
+     connection_id TEXT,
+     title TEXT,
+     caption TEXT,
+     video_url TEXT,
+     remote_id TEXT,
+     publish_id TEXT,
+     permalink TEXT,
+     privacy TEXT,
+     status TEXT,
+     error TEXT,
+     created_at TEXT,
+     published_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_videopub_brand ON video_publications (brand_id)`,
 
   `CREATE TABLE IF NOT EXISTS oauth_states (
      state TEXT PRIMARY KEY,

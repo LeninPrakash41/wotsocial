@@ -1,6 +1,7 @@
 /** Shared Express helpers: async error propagation and consistent error shapes. */
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { MetaApiError } from './graphClient';
+import { GoogleAdsError } from './googleAdsClient';
 import { logger } from './logging';
 
 export const asyncHandler =
@@ -44,6 +45,15 @@ export const integrationErrorHandler = (
     const status = err.isAuthError ? 401 : err.isPermissionError ? 403 : err.status >= 400 ? err.status : 502;
     logger.error(`[meta] ${err.endpoint} → ${err.message} (code ${err.code}, trace ${err.fbtraceId})`);
     return res.status(status).json({ error: payload.message, meta: payload });
+  }
+
+  if (err instanceof GoogleAdsError) {
+    const payload = err.toJSON();
+    const status = err.isAuthError ? 401 : err.isPermissionError ? 403 : err.status >= 400 ? err.status : 502;
+    logger.error('google ads error', {
+      endpoint: err.endpoint, errorCode: err.errorCode, requestId: err.requestId, detail: err.message
+    });
+    return res.status(status).json({ error: payload.message, google: payload });
   }
 
   if (err instanceof HttpError) {

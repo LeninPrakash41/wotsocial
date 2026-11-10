@@ -25,6 +25,8 @@ import agentRoutes from './agentRoutes';
 import contentRoutes from './contentRoutes';
 import mediaRoutes from './mediaRoutes';
 import governanceRoutes from './governanceRoutes';
+import googleAdsRoutes from './googleAdsRoutes';
+import videoPlatformRoutes from './videoPlatformRoutes';
 import authRoutes from './authRoutes';
 import { requireAuth } from './authMiddleware';
 import { integrationErrorHandler } from './http';
@@ -90,6 +92,9 @@ export const createApiApp = (): Express => {
   // Tighter limits where a call costs money: platform writes, AI generation
   // and anything that creates ad spend.
   app.use('/api/meta/campaigns', costlyLimiter);
+  app.use('/api/google-ads/campaigns', costlyLimiter);
+  app.use('/api/video/tiktok/publish', costlyLimiter);
+  app.use('/api/video/youtube/publish', costlyLimiter);
   app.use('/api/instagram/publish', costlyLimiter);
   app.use('/api/whatsapp/broadcasts', costlyLimiter);
   app.use('/api/whatsapp/send', costlyLimiter);
@@ -109,6 +114,8 @@ export const createApiApp = (): Express => {
   app.use('/api/agents', agentRoutes);
   app.use('/api/content', contentRoutes);
   app.use('/api/governance', governanceRoutes);
+  app.use('/api/google-ads', googleAdsRoutes);
+  app.use('/api/video', videoPlatformRoutes);
 
   // The local media driver's objects are fetched anonymously by the
   // platforms, so this sits outside the authenticated /api tree.
