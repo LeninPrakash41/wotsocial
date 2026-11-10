@@ -17,6 +17,7 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { HttpError } from './http';
 
 export type StorageDriver = 's3' | 'local';
 
@@ -88,12 +89,15 @@ export interface StoredMedia {
   checksum: string;
 }
 
-export class MediaError extends Error {
-  status: number;
+/**
+ * Extends HttpError so the shared error handler returns the real status.
+ * As a plain Error it was reported as a 500, which told the caller the server
+ * had broken rather than that the file was the wrong type.
+ */
+export class MediaError extends HttpError {
   constructor(status: number, message: string) {
-    super(message);
+    super(status, message);
     this.name = 'MediaError';
-    this.status = status;
   }
 }
 

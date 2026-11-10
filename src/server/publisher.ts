@@ -18,6 +18,9 @@ export interface PublishOutcome {
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+/** Tunable so the test suite does not spend most of its time waiting. */
+const CONTAINER_POLL_MS = Number(process.env.IG_CONTAINER_POLL_MS || 5_000);
+
 /** Media must be fetchable by the platform, not a data URL or a localhost URL. */
 const assertFetchable = (url: string | undefined, platform: string): string => {
   if (!url) throw new Error(`${platform} requires media, and this post has none.`);
@@ -60,7 +63,7 @@ const publishInstagram = async (brandId: string, post: any): Promise<PublishOutc
     if (status?.status_code === 'ERROR') {
       throw new Error(`Instagram could not process the media: ${status?.status || 'container returned ERROR'}`);
     }
-    await sleep(5_000);
+    await sleep(CONTAINER_POLL_MS);
   }
 
   const { data: published } = await graphPost<any>(`${conn.externalId}/media_publish`, conn.accessToken, {

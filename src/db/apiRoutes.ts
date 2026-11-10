@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { queryDb, initDatabase } from './db';
 import { currentUserId } from '../server/http';
 import { assertOwnsBrand, forgetBrandOwner, audit } from '../server/authMiddleware';
@@ -11,7 +11,7 @@ initDatabase().catch(err => console.error("Database initialization error:", err)
 // Sign-in lives in src/server/authRoutes.ts, which issues a session token.
 
 // 2. Brands Endpoints
-router.get('/brands', async (req: Request, res: Response) => {
+router.get('/brands', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = currentUserId(req);
     const rows = await queryDb('SELECT * FROM brands WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
@@ -38,11 +38,11 @@ router.get('/brands', async (req: Request, res: Response) => {
 
     res.json(brands);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
-router.post('/brands', async (req: Request, res: Response) => {
+router.post('/brands', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = req.body;
     const id = `brand-${Date.now()}`;
@@ -77,11 +77,11 @@ router.post('/brands', async (req: Request, res: Response) => {
 
     res.json({ id, ...data });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
-router.put('/brands/:id', async (req: Request, res: Response) => {
+router.put('/brands/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const data = req.body;
@@ -128,11 +128,11 @@ router.put('/brands/:id', async (req: Request, res: Response) => {
 
     res.json({ success: true, id });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
-router.delete('/brands/:id', async (req: Request, res: Response) => {
+router.delete('/brands/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = currentUserId(req);
@@ -142,7 +142,7 @@ router.delete('/brands/:id', async (req: Request, res: Response) => {
     audit(req, { action: 'brand.delete', targetType: 'brand', targetId: id });
     res.json({ success: true, id });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -170,7 +170,7 @@ const parseSafeISOString = (val: any): string | null => {
 };
 
 // 3. Posts Endpoints
-router.get('/posts', async (req: Request, res: Response) => {
+router.get('/posts', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = currentUserId(req);
     const brandId = req.query.brandId as string;
@@ -201,11 +201,11 @@ router.get('/posts', async (req: Request, res: Response) => {
 
     res.json(posts);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
-router.post('/posts', async (req: Request, res: Response) => {
+router.post('/posts', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = req.body;
     const id = `post-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
@@ -238,7 +238,7 @@ router.post('/posts', async (req: Request, res: Response) => {
   }
 });
 
-router.put('/posts/:id', async (req: Request, res: Response) => {
+router.put('/posts/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const data = req.body;
@@ -267,14 +267,14 @@ router.put('/posts/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/posts/:id', async (req: Request, res: Response) => {
+router.delete('/posts/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = currentUserId(req);
     await queryDb('DELETE FROM posts WHERE id = $1 AND user_id = $2', [id, userId]);
     res.json({ success: true, id });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 

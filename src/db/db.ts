@@ -24,9 +24,11 @@ export const initDatabase = async () => {
     });
     await initPostgresSchema();
   } else {
-    console.log("⚡ Zero-config local SQLite database mode (wotsocial.db)...");
+    console.log(`⚡ SQLite database: ${process.env.SQLITE_PATH || 'wotsocial.db'}`);
     dbMode = 'sqlite';
-    sqliteDb = new Database('wotsocial.db');
+    // Configurable so tests can point at a throwaway file rather than the
+    // developer's own database.
+    sqliteDb = new Database(process.env.SQLITE_PATH || 'wotsocial.db');
     sqliteDb.pragma('journal_mode = WAL');
     initSqliteSchema();
   }
